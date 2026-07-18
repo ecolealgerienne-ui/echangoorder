@@ -16,7 +16,7 @@ class EchangoAuthController(http.Controller):
     n'a pas nativement : la connexion par téléphone+PIN.
     """
 
-    @http.route("/echango/auth/register", type="json", auth="public", methods=["POST"], csrf=False)
+    @http.route("/echango/auth/register", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
     def register(self, phone=None, pin=None, name=None, lang=None, **kw):
         phone = (phone or "").strip()
         pin = (pin or "").strip()
@@ -45,7 +45,7 @@ class EchangoAuthController(http.Controller):
         user._set_pin(pin)
         return {"success": True, "user_id": user.id}
 
-    @http.route("/echango/auth/login", type="json", auth="public", methods=["POST"], csrf=False)
+    @http.route("/echango/auth/login", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
     def login(self, phone=None, pin=None, **kw):
         phone = (phone or "").strip()
         pin = (pin or "").strip()
@@ -54,7 +54,7 @@ class EchangoAuthController(http.Controller):
 
         credential = {"login": phone, "password": pin, "type": "pin"}
         try:
-            auth_info = request.session.authenticate(request.db, credential)
+            auth_info = request.session.authenticate(request.env, credential)
         except AccessDenied as exc:
             return {"error": str(exc) or "auth.invalid_credentials"}
 
