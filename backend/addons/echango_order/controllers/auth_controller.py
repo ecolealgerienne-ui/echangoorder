@@ -1,6 +1,6 @@
 import re
 
-from odoo import http
+from odoo import fields, http
 from odoo.exceptions import AccessDenied
 from odoo.http import request
 
@@ -33,7 +33,7 @@ class EchangoAuthController(http.Controller):
         partner = request.env["res.partner"].sudo().create({
             "name": name or phone,
             "mobile": phone,
-            "lang": lang or request.env.company.partner_id.lang or "fr_FR",
+            "lang": lang or "fr_FR",
         })
         user = users.create({
             "name": partner.name,
@@ -52,11 +52,19 @@ class EchangoAuthController(http.Controller):
         if not phone or not pin:
             return {"error": "validation.required"}
 
+        # Odoo's AccessDenied écrase volontairement son message par "Access
+        # Denied" (anti fuite d'info) : impossible d'y lire un code d'erreur
+        # après coup. On vérifie donc l'état de verrouillage nous-mêmes avant
+        # d'appeler authenticate(), plutôt que d'inspecter l'exception.
+        user = request.env["res.users"].sudo().search([("login", "=", phone)], limit=1)
+        if user.x_pin_locked_until and user.x_pin_locked_until > fields.Datetime.now():
+            return {"error": "auth.account_locked"}
+
         credential = {"login": phone, "password": pin, "type": "pin"}
         try:
             auth_info = request.session.authenticate(request.env, credential)
-        except AccessDenied as exc:
-            return {"error": str(exc) or "auth.invalid_credentials"}
+        except AccessDenied:
+            return {"error": "auth.invalid_credentials"}
 
         uid = auth_info.get("uid") if isinstance(auth_info, dict) else request.session.uid
         return {"success": True, "uid": uid}
