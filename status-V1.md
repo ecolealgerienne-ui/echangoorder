@@ -24,7 +24,7 @@ Dernière mise à jour : 2026-07-18
 | Firebase Cloud Messaging configuré | Non démarré | |
 | Stockage sécurisé PIN (Keychain/Keystore) | Non démarré | |
 | Build & run réel sur simulateur/device (iOS/Android) | Non démarré | Non testable dans l'environnement de dev actuel (pas de SDK Android/Xcode) — à faire sur poste local/CI |
-| Vulnérabilité npm modérée (`fast-xml-parser` via `@react-native-community/cli`, tooling Android build only) | À surveiller | `npm audit` — pas de fix direct sans sortir de la plage de version RN 0.86 supportée ; à revoir avant soumission stores |
+| Nettoyage warnings/vuln `npm install` | Terminé | `npm audit` : 7 vulnérabilités modérées → 0 (bump `@react-native-community/cli*` en 20.2.0). ESLint migré en v9 (flat config, `eslint.config.js`) → warnings de dépréciation `eslint@8`/`@humanwhocodes/*`/`rimraf@3` éliminés. Reste `glob@7.2.3`/`inflight@1.0.6` (transitif de `@react-native/jest-preset` → `babel-jest@29`), upstream React Native (pas de preset compatible Jest 30 publié à ce jour) ; testé le passage à Jest 30 mais le preset officiel RN 0.86 reste figé sur `babel-jest@^29.7.0` et ça n'élimine pas le warning (en ajoute même un nouveau, `glob@10` déprécié côté Jest 30) → revert, pas de bénéfice réel |
 
 ## 1. Fonctionnalités Phase 1 (F00–F17)
 
