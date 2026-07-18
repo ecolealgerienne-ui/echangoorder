@@ -13,4 +13,20 @@
         <field name="perm_create">0</field>
         <field name="perm_unlink">0</field>
     </record>
+
+    <!-- product.template.qty_available est un champ calculé qui lit les
+         variantes (product.product) pour agréger le stock — sans cet
+         accès, le simple fait de demander qty_available dans un
+         search_read plantait pour le portail. sale_ok est délégué depuis
+         product.template via _inherits, donc directement filtrable ici. -->
+    <record id="product_product_portal_rule" model="ir.rule">
+        <field name="name">Portail : variantes de produits vendables uniquement</field>
+        <field name="model_id" ref="product.model_product_product"/>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="domain_force">[('sale_ok', '=', True)]</field>
+        <field name="perm_read">1</field>
+        <field name="perm_write">0</field>
+        <field name="perm_create">0</field>
+        <field name="perm_unlink">0</field>
+    </record>
 </odoo>
