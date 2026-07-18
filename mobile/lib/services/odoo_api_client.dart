@@ -87,6 +87,26 @@ class OdooApiClient {
     return (result as List).cast<Map<String, dynamic>>();
   }
 
+  /// `read_group` standard : regroupe des enregistrements existants par
+  /// champ (ex : produits par catégorie). Contrairement à un `search_read`
+  /// sur le modèle "parent" (ici `product.category`), ça ne fait remonter
+  /// que les groupes qui contiennent effectivement des enregistrements
+  /// visibles — pas les catégories techniques vides côté portail.
+  Future<List<Map<String, dynamic>>> readGroup({
+    required String model,
+    List<dynamic> domain = const [],
+    required List<String> fields,
+    required List<String> groupBy,
+  }) async {
+    final result = await _rpc('/web/dataset/call_kw', {
+      'model': model,
+      'method': 'read_group',
+      'args': [domain, fields, groupBy],
+      'kwargs': {},
+    });
+    return (result as List).cast<Map<String, dynamic>>();
+  }
+
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom
   /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
   /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré

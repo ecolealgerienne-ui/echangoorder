@@ -6,8 +6,11 @@ import '../../errors/app_error.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 
-/// F04 — Catalogue : liste des catégories (`product.category`), tap →
-/// grille de produits filtrée par catégorie.
+/// F04 — Catalogue : catégories dérivées des produits réellement visibles
+/// (`read_group` sur `product.template` par `categ_id`), pas d'un
+/// `search_read` direct sur `product.category` — celui-ci ferait
+/// remonter aussi les catégories techniques par défaut d'Odoo (Dépenses,
+/// Achats...) qui n'ont aucun produit vendable dedans.
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
 
@@ -27,10 +30,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
   void _loadCategories() {
     final api = context.read<OdooApiClient>();
     setState(() {
-      _categoriesFuture = api.searchRead(
-        model: 'product.category',
-        fields: const ['name'],
-        limit: 100,
+      _categoriesFuture = api.readGroup(
+        model: 'product.template',
+        domain: const [
+          ['sale_ok', '=', true],
+        ],
+        fields: const ['categ_id'],
+        groupBy: const ['categ_id'],
       );
     });
   }
@@ -60,8 +66,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   snapshot.error is AppError ? snapshot.error as AppError : const AppError(AppError.unknown);
               return ErrorStateView.forError(error, onRetry: _loadCategories);
             }
-            final categories = snapshot.data!;
-            if (categories.isEmpty) {
+            final groups = snapshot.data!;
+            if (groups.isEmpty) {
               return const ErrorStateView(
                 icon: Icons.category_outlined,
                 titleKey: 'emptyStates.categoriesTitle',
@@ -69,16 +75,27 @@ class _CatalogScreenState extends State<CatalogScreen> {
               );
             }
             return ListView.separated(
-              itemCount: categories.length,
+              itemCount: groups.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final category = categories[index];
-                final name = category['name'] as String? ?? '';
+                // categ_id remonte comme [id, "Nom affiché"] (many2one).
+                final categField = groups[index]['categ_id'] as List<dynamic>?;
+                if (categField == null) return const SizedBox.shrink();
+                final categId = categField[0] as int;
+                final categName = categField[1] as String;
+                final count = groups[index]['categ_id_count'] as int? ?? 0;
                 return ListTile(
                   leading: const Icon(Icons.category_outlined),
-                  title: Text(name),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/catalog/category/${category['id']}', extra: name),
+                  title: Text(categName),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('$count', style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: () => context.push('/catalog/category/$categId', extra: categName),
                 );
               },
             );
