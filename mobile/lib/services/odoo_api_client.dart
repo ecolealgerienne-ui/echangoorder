@@ -137,7 +137,7 @@ class OdooApiClient {
   /// le seul cas qu'on distingue explicitement (constante `AppError`
   /// existante), le reste (bug, droits manquants...) reste générique.
   String _mapRpcFault(dynamic error) {
-    final name = error is Map ? error['data']?['name'] as String? : null;
+    final name = error is Map ? (error['data']?['name'] as String?) : null;
     if (name != null && name.contains('SessionExpired')) {
       return AppError.authSessionExpired;
     }
