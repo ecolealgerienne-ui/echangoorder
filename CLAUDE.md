@@ -16,11 +16,13 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 
 ## Stack technique (Phase 1)
 
-- **Frontend mobile** : React Native (iOS & Android), bilingue FR/AR avec support RTL natif
+- **Frontend mobile** : Flutter (iOS & Android), bilingue FR/AR avec support RTL natif
 - **Backend** : Odoo 19, API JSON-RPC (`/web/dataset/call_kw`)
 - **Notifications** : Firebase Cloud Messaging
 - **Paiement** : cash uniquement (à la réception / au retrait) — aucune intégration paiement en ligne en Phase 1
 - **Auth** : téléphone + PIN 4 chiffres (endpoint custom Odoo, PIN hashé, stockage device via iOS Keychain / Android Keystore)
+
+> **Note** : les specs (`docs/specs_phase1_echango_order.md`, `docs/specs_macro_drive_transport.md`) mentionnent React Native comme stack d'origine. Décision prise en cours de projet de basculer sur **Flutter** (choix de l'équipe, expérience Flutter préalable). Cette section fait foi pour le choix technique actuel ; les specs restent la référence fonctionnelle (écrans, parcours, API, critères QA), inchangée par ce changement de framework. Un premier projet React Native a existé brièvement dans `mobile/` avant d'être remplacé — historique consultable dans le log git si besoin.
 
 ## Périmètre Phase 1
 
@@ -60,30 +62,46 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 ## Structure du repo
 
 - `docs/` — specs macro et Phase 1 (voir ci-dessus).
-- `mobile/` — app React Native CLI (bare, TypeScript). Code applicatif dans `mobile/src/` : `navigation/` (stacks + tabs), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (contexts locaux), `i18n/` (i18next, `locales/fr.json` et `ar.json`), `theme/`, `components/`.
+- `mobile/` — app Flutter. Code applicatif dans `mobile/lib/` : `navigation/` (`app_router.dart` avec go_router, `main_tab_scaffold.dart`), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (`auth_state.dart`, `ChangeNotifier` + `provider`), `theme/` (`app_theme.dart`), `widgets/` (composants partagés : `screen_placeholder.dart`, `app_button.dart`), `utils/`. Traductions dans `mobile/assets/translations/` (`fr.json`, `ar.json`, format `easy_localization`).
+- Les dossiers `mobile/android/` et `mobile/ios/` (scaffolding natif Flutter) ne sont **pas** générés par Claude Code — voir note ci-dessous.
 
 ## Environnement de dev — app mobile
 
-Le développement de `mobile/` se fait côté utilisateur sous **Windows / PowerShell** (pas bash/zsh). Toute commande shell suggérée pour `mobile/` doit être en syntaxe PowerShell, pas Unix. Équivalences utiles :
+Le développement de `mobile/` se fait côté utilisateur sous **Windows / PowerShell** (pas bash/zsh), avec **Android Studio** installé. Toute commande shell suggérée pour `mobile/` doit être en syntaxe PowerShell, pas Unix. Équivalences utiles :
 
 | Unix (bash/zsh) | PowerShell |
 |---|---|
-| `rm -rf node_modules package-lock.json` | `Remove-Item -Recurse -Force node_modules, package-lock.json` |
+| `rm -rf build .dart_tool` | `Remove-Item -Recurse -Force build, .dart_tool` |
 | `rm -f fichier` | `Remove-Item -Force fichier` |
 | `cat fichier` | `Get-Content fichier` |
 | `ls -la` | `Get-ChildItem -Force` |
 | `export VAR=valeur` | `$env:VAR = "valeur"` |
 | `&&` (chaînage conditionnel) | `;` (ou `&&` fonctionne aussi en PowerShell 7+) |
 
-En cas de doute sur la disponibilité d'une syntaxe, préférer la commande PowerShell native ou l'équivalent `npm`/`npx` multiplateforme plutôt qu'un outil Unix.
+En cas de doute sur la disponibilité d'une syntaxe, préférer la commande PowerShell native ou l'équivalent `flutter`/`dart` multiplateforme plutôt qu'un outil Unix.
+
+**Commandes Flutter courantes** (depuis `mobile/`) :
+- `flutter pub get` — installer les dépendances (équivalent `npm install`)
+- `flutter analyze` — analyse statique (équivalent `tsc`/`eslint`)
+- `flutter test` — tests unitaires/widgets
+- `flutter run` — lance sur l'émulateur/device par défaut
+- `flutter doctor` — diagnostic de l'environnement (SDK, Android toolchain, licences)
+
+**Important — génération des dossiers natifs** : cet environnement cloud (sandbox Claude Code) n'a pas accès au SDK Flutter/Dart (le réseau bloque `storage.googleapis.com`, d'où proviennent les artefacts Dart/Flutter), donc Claude Code ne peut ni exécuter `flutter create`, ni `flutter analyze`/`flutter run`/`flutter test` pour vérifier son propre travail sur cette partie. En conséquence, **`mobile/android/` et `mobile/ios/` n'existent pas encore** dans le repo : après avoir récupéré du code Flutter écrit par Claude Code, lancer une fois en local :
+```powershell
+flutter create --org com.echangoorder .
+flutter pub get
+flutter analyze
+```
+`flutter create .` sur un dossier contenant déjà un `pubspec.yaml` ajoute uniquement les dossiers de plateforme manquants (`android/`, `ios/`, etc.) sans toucher à `lib/` ni `pubspec.yaml`. Toute vérification (`analyze`, `run`, `test`) doit se faire côté utilisateur ; Claude Code ne peut relire les erreurs qu'après que l'utilisateur les colle dans la conversation.
 
 ## Stratégie d'implémentation en cours
 
 Développement en deux temps, décidé pour ce projet :
-1. **Écrans + navigation d'abord, sans backend** — tous les écrans F00-F17 existent en placeholders (`ScreenPlaceholder`) et sont intégralement navigables, pour valider le parcours utilisateur et la structure de navigation avant toute donnée réelle. Pas de couche de mock/abstraction API — délibérément écarté pour ce projet.
+1. **Écrans + navigation d'abord, sans backend** — tous les écrans F00-F17 existent en placeholders (`ScreenPlaceholder`) et sont intégralement navigables (via `go_router`), pour valider le parcours utilisateur et la structure de navigation avant toute donnée réelle. Pas de couche de mock/abstraction API — délibérément écarté pour ce projet.
 2. **Branchement direct sur Odoo ensuite** — une fois les écrans stabilisés, chaque écran est rempli avec sa vraie UI + ses appels JSON-RPC Odoo, sans étape intermédiaire de mock.
 
-L'état de session (`state/AuthContext.tsx`) et de langue (`state/LanguageContext.tsx`) est un état **client local** (pas une simulation de backend) : nécessaire pour piloter la navigation (Public vs Main) dès maintenant, et qui restera après le branchement Odoo — seul le contenu du login réel changera.
+L'état de session (`state/auth_state.dart`, `ChangeNotifier`) est un état **client local** (pas une simulation de backend) : nécessaire pour piloter la navigation (routes publiques vs onglets principaux, via le `redirect` de `go_router`) dès maintenant, et qui restera après le branchement Odoo — seul le contenu du login réel changera. La langue est gérée directement par `easy_localization` (`context.setLocale()`), pas de contexte custom nécessaire.
 
 ## Custom fields Odoo attendus (Expert Odoo)
 

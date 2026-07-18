@@ -4,7 +4,9 @@ Suivi de l'avancement de l'implémentation. Statuts : `Non démarré` · `En cou
 
 Dernière mise à jour : 2026-07-18
 
-**Stratégie en cours** : phase 1 = écrans + navigation complets, sans données ni backend (état local simulé uniquement pour piloter la navigation : session auth, langue). Phase 2 = branchement direct sur Odoo (pas de couche mock intermédiaire).
+**Stratégie en cours** : phase 1 = écrans + navigation complets, sans données ni backend (état local simulé uniquement pour piloter la navigation : session auth). Phase 2 = branchement direct sur Odoo (pas de couche mock intermédiaire).
+
+**⚠️ Changement de stack (2026-07-18)** : le projet a démarré en React Native puis a été **entièrement basculé sur Flutter** en cours de route (choix de l'équipe, expérience Flutter préalable). Tout le code React Native a été supprimé et réécrit en Flutter/Dart — même périmètre fonctionnel (F00-F17), mêmes clés i18n, même logique de navigation, portés dans un nouveau framework. Voir CLAUDE.md § Stack technique pour la note de décision.
 
 ---
 
@@ -15,16 +17,15 @@ Dernière mise à jour : 2026-07-18
 | Repo Git créé (`main` + branche de travail) | Terminé | Repo initialisé, docs ajoutés |
 | Specs macro & Phase 1 versées dans `docs/` | Terminé | `docs/specs_macro_drive_transport.md`, `docs/specs_phase1_echango_order.md` |
 | `CLAUDE.md` rédigé | Terminé | |
-| Scaffolding app React Native CLI (bare, TypeScript) | Terminé | `mobile/`, RN 0.86, package `com.echangoorder.app` |
-| Navigation (stacks + bottom tabs) | Terminé | Tous les écrans F00-F17 créés en placeholders, navigables de bout en bout (`mobile/src/navigation/`) |
-| Config i18n FR/AR + bascule RTL | Terminé (base) | i18next, fichiers `fr.json`/`ar.json`, bascule `I18nManager` + redémarrage app. Reste à valider visuellement le mirroring RTL sur device/simulateur |
-| État local (session, langue) pour piloter la navigation | Terminé | `AuthContext`, `LanguageContext` — sera remplacé par la vraie session Odoo (F02) |
+| Scaffolding app Flutter | Terminé (partiel) | `mobile/`, `pubspec.yaml` + `lib/` écrits par Claude Code. **`android/` et `ios/` pas encore générés** — Claude Code n'a pas accès au SDK Flutter dans son environnement (réseau bloque `storage.googleapis.com`). À générer en local avec `flutter create --org com.echangoorder .` (voir CLAUDE.md) |
+| Navigation (go_router : routes publiques + StatefulShellRoute tabs) | Terminé (à vérifier) | Tous les écrans F00-F17 créés en placeholders, navigables de bout en bout (`mobile/lib/navigation/app_router.dart`). Écrit avec soin mais **jamais passé par `flutter analyze`** — Claude Code ne peut pas l'exécuter ici, à valider en premier en local |
+| Config i18n FR/AR + RTL | Terminé (base) | `easy_localization`, fichiers `assets/translations/fr.json`/`ar.json`. RTL géré nativement par Flutter (`Directionality` auto sur `Locale('ar')`) — pas de redémarrage app nécessaire contrairement à React Native. Reste à valider visuellement sur device/émulateur |
+| État local (session) pour piloter la navigation | Terminé | `state/auth_state.dart` (`ChangeNotifier` + `provider`), branché sur le `redirect` de `go_router` — sera remplacé par la vraie session Odoo (F02) |
 | Client API JSON-RPC Odoo | Non démarré | Branchement direct prévu après validation des écrans |
 | Environnement Odoo 19 (dev/staging) accessible | Non démarré | Dépendance Expert Odoo |
 | Firebase Cloud Messaging configuré | Non démarré | |
-| Stockage sécurisé PIN (Keychain/Keystore) | Non démarré | |
-| Build & run réel sur simulateur/device (iOS/Android) | Non démarré | Non testable dans l'environnement de dev actuel (pas de SDK Android/Xcode) — à faire sur poste local/CI |
-| Nettoyage warnings/vuln `npm install` | Terminé (plancher atteint) | `npm audit` : 7 vulnérabilités modérées → 0 (bump `@react-native-community/cli*` en 20.2.0). ESLint migré en v9 (flat config, `eslint.config.js`) → warnings de dépréciation `eslint@8`/`@humanwhocodes/*`/`rimraf@3` éliminés. **Restent `glob@7.2.3`/`inflight@1.0.6` — non résolubles sans risque.** Chaîne exacte : `@react-native/jest-preset` → `babel-jest@29` → `babel-plugin-istanbul` → `test-exclude@6` → `glob@7`. `test-exclude` (utilisé par `jest --coverage`) appelle `require('glob')` comme fonction directe + `.sync()` — API supprimée dans `glob` v9+. Forcer un `glob` récent via `overrides` casserait silencieusement le rapport de couverture. Testé aussi le passage de `jest` en v30 : n'élimine pas le warning (preset RN 0.86 reste figé sur `babel-jest@^29.7.0`) et en ajoute un nouveau (`glob@10` déprécié côté Jest 30 lui-même) → reverté. Aucune vulnérabilité de sécurité (`npm audit` = 0) ; réparable uniquement par une future version du preset officiel `@react-native/jest-preset`. Option cosmétique pour masquer l'affichage : `npm install --loglevel=error`. |
+| Stockage sécurisé PIN (Keychain/Keystore) | Non démarré | Côté Flutter : `flutter_secure_storage` pressenti (pas encore ajouté) |
+| Build & run réel sur simulateur/device (iOS/Android) | Non démarré | Non testable dans l'environnement de dev actuel (pas de SDK Flutter/Android/Xcode) — à faire sur poste local (Android Studio déjà installé côté utilisateur) |
 
 ## 1. Fonctionnalités Phase 1 (F00–F17)
 
