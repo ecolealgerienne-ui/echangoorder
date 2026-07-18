@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## ⚠️ Règle impérative — synchronisation avant toute nouvelle branche
+
+**Avant de créer une nouvelle branche, il faut impérativement synchroniser avec toutes les branches distantes** (`git fetch --all`) afin de ne rien perdre et de récupérer tous les commits existants dans la nouvelle branche (partir de l'état le plus à jour, typiquement `origin/main`, plutôt que d'un historique local potentiellement obsolète). Ne jamais créer une branche à partir d'un état local non synchronisé.
+
 Ce fichier guide Claude Code (et tout contributeur) sur le contexte, les conventions et l'état du projet **Echango Order**.
 
 ## Contexte projet
@@ -12,11 +16,15 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 
 ## Stack technique (Phase 1)
 
-- **Frontend mobile** : React Native (iOS & Android), bilingue FR/AR avec support RTL natif
+- **Frontend mobile** : Flutter (iOS & Android), bilingue FR/AR avec support RTL natif
 - **Backend** : Odoo 19, API JSON-RPC (`/web/dataset/call_kw`)
 - **Notifications** : Firebase Cloud Messaging
 - **Paiement** : cash uniquement (à la réception / au retrait) — aucune intégration paiement en ligne en Phase 1
-- **Auth** : téléphone + PIN 4 chiffres (endpoint custom Odoo, PIN hashé, stockage device via iOS Keychain / Android Keystore)
+- **Auth** : téléphone + PIN **6 à 12 chiffres** (endpoint custom Odoo, PIN hashé, stockage device via iOS Keychain / Android Keystore)
+
+> **Note** : les specs (`docs/specs_phase1_echango_order.md`, `docs/specs_macro_drive_transport.md`) mentionnent React Native comme stack d'origine. Décision prise en cours de projet de basculer sur **Flutter** (choix de l'équipe, expérience Flutter préalable). Cette section fait foi pour le choix technique actuel ; les specs restent la référence fonctionnelle (écrans, parcours, API, critères QA), inchangée par ce changement de framework. Un premier projet React Native a existé brièvement dans `mobile/` avant d'être remplacé — historique consultable dans le log git si besoin.
+
+> **Note** : les specs prévoient un PIN à **4 chiffres** partout (wireframes F02/F10, critères QA "PIN de 4 chiffres"). Décision produit de passer à un **PIN de 6 à 12 chiffres** pour plus d'entropie (constantes `kPinMinLength`/`kPinMaxLength` dans `mobile/lib/validation/validators.dart`). Impact : tout écran de saisie/confirmation PIN (inscription, connexion, PIN oublié, modification, suppression de compte) et le futur endpoint Odoo (`x_pin` hashé) doivent respecter cette plage, pas 4 chiffres fixes. Le champ `x_pin` (spec Expert Odoo) reste valide, seule sa longueur de saisie change côté app.
 
 ## Périmètre Phase 1
 
@@ -53,6 +61,119 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 - **Accessibilité** : police min 14px, boutons min 44px de hauteur, contraste lisible en plein soleil.
 - **Gestion d'erreurs** : message clair hors-ligne, retry automatique sur échec API, aucune erreur silencieuse.
 
+## Structure du repo
+
+- `docs/` — specs macro et Phase 1 (voir ci-dessus).
+- `mobile/` — app Flutter. Code applicatif dans `mobile/lib/` : `navigation/` (`app_router.dart` avec go_router, `main_tab_scaffold.dart`), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (`auth_state.dart`, `ChangeNotifier` + `provider`, persisté via `shared_preferences`), `services/` (`permission_service.dart`), `errors/` (`app_error.dart`, `app_messenger.dart`, `error_state_view.dart` — voir § Gestion des erreurs), `validation/` (`validators.dart` — téléphone, PIN, requis, correspondance), `theme/` (`app_theme.dart`), `widgets/` (composants partagés : `screen_placeholder.dart`, `app_button.dart`, `pin_input_field.dart`, `delete_account_dialog.dart`), `utils/`. Traductions dans `mobile/assets/translations/` (`fr.json`, `ar.json`, format `easy_localization`).
+- Les dossiers `mobile/android/` et `mobile/ios/` (scaffolding natif Flutter) ne sont **pas** générés par Claude Code — voir note ci-dessous.
+- `backend/` — backend Odoo 19 + Postgres, exécuté via Docker (WSL côté utilisateur). `docker-compose.yml` (services `db` postgres:16 et `odoo` odoo:19), `config/odoo.conf`, `addons/echango_order/` (module custom — squelette pour l'instant, champs/modèles/endpoints ajoutés au fur et à mesure du branchement de chaque écran, F02 en premier). Voir § Environnement de dev — backend Odoo.
+
+## Environnement de dev — app mobile
+
+Le développement de `mobile/` se fait côté utilisateur sous **Windows / PowerShell** (pas bash/zsh), avec **Android Studio** installé. Toute commande shell suggérée pour `mobile/` doit être en syntaxe PowerShell, pas Unix. Équivalences utiles :
+
+| Unix (bash/zsh) | PowerShell |
+|---|---|
+| `rm -rf build .dart_tool` | `Remove-Item -Recurse -Force build, .dart_tool` |
+| `rm -f fichier` | `Remove-Item -Force fichier` |
+| `cat fichier` | `Get-Content fichier` |
+| `ls -la` | `Get-ChildItem -Force` |
+| `export VAR=valeur` | `$env:VAR = "valeur"` |
+| `&&` (chaînage conditionnel) | `;` (ou `&&` fonctionne aussi en PowerShell 7+) |
+
+En cas de doute sur la disponibilité d'une syntaxe, préférer la commande PowerShell native ou l'équivalent `flutter`/`dart` multiplateforme plutôt qu'un outil Unix.
+
+**Commandes Flutter courantes** (depuis `mobile/`) :
+- `flutter pub get` — installer les dépendances (équivalent `npm install`)
+- `flutter analyze` — analyse statique (équivalent `tsc`/`eslint`)
+- `flutter test` — tests unitaires/widgets
+- `flutter run` — lance sur l'émulateur/device par défaut
+- `flutter doctor` — diagnostic de l'environnement (SDK, Android toolchain, licences)
+
+**Permissions natives (`permission_handler`, F14)** : le package a besoin de déclarations natives que Claude Code ne peut pas ajouter (fichiers `android/`, `ios/` inexistants ici). Après `flutter create .` en local, ajouter :
+
+- **Android** — dans `android/app/src/main/AndroidManifest.xml`, avant `<application>` :
+  ```xml
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  ```
+- **iOS** — dans `ios/Runner/Info.plist` :
+  ```xml
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>Echango Order utilise votre position pour pré-remplir votre adresse de livraison.</string>
+  ```
+- **iOS** — `permission_handler` nécessite aussi d'activer les modules de permission utilisés dans `ios/Podfile` (macros de préprocesseur `PERMISSION_LOCATION`, `PERMISSION_NOTIFICATIONS`) — se référer au README du package (`permission_handler` sur pub.dev) au moment de configurer, la syntaxe exacte peut évoluer selon la version résolue par `flutter pub get`.
+
+Sans ces déclarations, `flutter run` peut compiler mais la demande de permission plantera ou sera silencieusement refusée au runtime.
+
+**Important — génération des dossiers natifs** : cet environnement cloud (sandbox Claude Code) n'a pas accès au SDK Flutter/Dart (le réseau bloque `storage.googleapis.com`, d'où proviennent les artefacts Dart/Flutter), donc Claude Code ne peut ni exécuter `flutter create`, ni `flutter analyze`/`flutter run`/`flutter test` pour vérifier son propre travail sur cette partie. En conséquence, **`mobile/android/` et `mobile/ios/` n'existent pas encore** dans le repo : après avoir récupéré du code Flutter écrit par Claude Code, lancer une fois en local :
+```powershell
+flutter create --org com.echangoorder .
+flutter pub get
+flutter analyze
+```
+`flutter create .` sur un dossier contenant déjà un `pubspec.yaml` ajoute uniquement les dossiers de plateforme manquants (`android/`, `ios/`, etc.) sans toucher à `lib/` ni `pubspec.yaml`. Toute vérification (`analyze`, `run`, `test`) doit se faire côté utilisateur ; Claude Code ne peut relire les erreurs qu'après que l'utilisateur les colle dans la conversation.
+
+## Environnement de dev — backend Odoo
+
+Le backend Odoo 19 tourne via **Docker** dans **WSL** côté utilisateur (pas dans ce sandbox cloud). Tout se passe dans `backend/`.
+
+**Premier lancement :**
+```bash
+cd backend
+cp .env.example .env        # ajuster DB_USER/DB_PASSWORD si besoin (dev local uniquement)
+docker compose up -d
+```
+Puis ouvrir `http://localhost:8069` — l'assistant Odoo de création de base de données s'affiche au premier accès (choisir un nom de base, un mot de passe admin, cocher "Demo data" seulement si besoin de données d'exemple pour tester). Le module custom `echango_order` (dans `backend/addons/`) apparaît dans **Apps** une fois la base créée — retirer le filtre "Apps" par défaut et chercher "Echango Order" pour l'installer (`--dev=all` ou un `-u echango_order` en ligne de commande fonctionne aussi si préféré).
+
+**Commandes utiles :**
+- `docker compose up -d` — démarre Odoo + Postgres en arrière-plan
+- `docker compose logs -f odoo` — logs Odoo en continu (indispensable pour déboguer un module qui ne charge pas)
+- `docker compose down` — arrête (les données restent dans les volumes Docker nommés)
+- `docker compose down -v` — arrête ET supprime les volumes (repart de zéro, perd la base)
+- `docker compose restart odoo` — redémarre juste Odoo après une modif du module custom (nécessaire pour recharger le code Python — un simple hot-reload n'existe pas côté Odoo)
+
+**WSL — points d'attention :**
+- Cloner le repo **dans le filesystem WSL** (`~/...` ou `/home/...`), pas sous `/mnt/c/...` — les performances de build/volume Docker sont nettement dégradées sur un chemin Windows monté.
+- Docker Desktop avec l'intégration WSL2 activée (Paramètres → Resources → WSL Integration → cocher la distro utilisée), ou Docker Engine installé directement dans la distro — les deux fonctionnent, les commandes `docker compose` sont identiques.
+- Si le port 8069 est déjà pris (autre projet Odoo local), changer le port publié dans `docker-compose.yml` (`"8069:8069"` → `"8070:8069"` par exemple).
+
+**Limite d'environnement (comme pour Flutter)** : ce sandbox cloud n'a pas accès à Docker Hub (réseau bloqué, même politique que `storage.googleapis.com`), donc Claude Code ne peut ni tirer les images `odoo:19`/`postgres:16`, ni lancer de conteneur pour vérifier son propre travail. `docker-compose.yml` a été validé avec `docker compose config` (parsing/résolution complets, sans nécessiter le daemon) mais **jamais réellement exécuté** — la première vérification réelle (`docker compose up`, accès à `http://localhost:8069`, installation du module) doit se faire côté utilisateur.
+
+## Stratégie d'implémentation en cours
+
+Développement en deux temps, décidé pour ce projet :
+1. **Écrans + navigation d'abord, sans backend** — tous les écrans F00-F17 existent en placeholders (`ScreenPlaceholder`) et sont intégralement navigables (via `go_router`), pour valider le parcours utilisateur et la structure de navigation avant toute donnée réelle. Pas de couche de mock/abstraction API — délibérément écarté pour ce projet.
+2. **Branchement direct sur Odoo ensuite** — une fois les écrans stabilisés, chaque écran est rempli avec sa vraie UI + ses appels JSON-RPC Odoo, sans étape intermédiaire de mock.
+
+L'état de session (`state/auth_state.dart`, `ChangeNotifier`) est un état **client local** (pas une simulation de backend) : nécessaire pour piloter la navigation (routes publiques vs onglets principaux, via le `redirect` de `go_router`) dès maintenant, et qui restera après le branchement Odoo — seul le contenu du login réel changera. La langue est gérée directement par `easy_localization` (`context.setLocale()`), pas de contexte custom nécessaire.
+
+## Gestion des erreurs (convention — obligatoire pour tout nouveau code)
+
+Toute erreur ou message affiché à l'utilisateur passe par le système centralisé dans `mobile/lib/errors/`, jamais par un `ScaffoldMessenger`/`showDialog` direct dans un écran.
+
+- **`app_error.dart`** — classe `AppError` : une erreur = un **code** (`String`), pas un message en dur. Le code est un chemin en points qui correspond exactement à une clé dans `errors.*` des fichiers `assets/translations/*.json` (ex : code `network.offline` → traduction `errors.network.offline`). Les codes connus sont des constantes statiques sur `AppError` (`AppError.networkOffline`, `AppError.authSessionExpired`, `AppError.promoInvalid`, etc.), classées par domaine (network, server, auth, validation, checkout, promo, order, permissions).
+- **`app_messenger.dart`** — classe `AppMessenger`, seul point d'affichage :
+  - `AppMessenger.showError(context, error, {onRetry})` — snackbar rouge, bouton "Réessayer" optionnel.
+  - `AppMessenger.showInfo(context, messageKey)` — snackbar neutre (message non-erreur, ex: "bientôt disponible").
+  - `AppMessenger.showErrorDialog(context, error, {onRetry})` — dialog bloquant (erreur critique, session expirée...).
+- **`error_state_view.dart`** — widget plein écran réutilisable (icône + titre + message + bouton retry) pour les états vides (panier vide, aucune commande...) et les erreurs bloquantes (ex : `MaintenanceScreen`). `ErrorStateView.forError(error, {onRetry})` construit l'état directement depuis un `AppError`.
+
+**Pourquoi des codes et pas des messages en dur** : un·e traducteur·rice ne touche que les fichiers JSON, jamais le code Dart. Et surtout, ça prépare le branchement Odoo (F02+) : les erreurs JSON-RPC d'Odoo (`error.data.name`, codes HTTP, etc.) devront être mappées vers ces mêmes constantes `AppError.*` dans la couche d'appel API, sans toucher à l'affichage ni aux traductions déjà en place. Si un nouveau cas d'erreur apparaît côté Odoo sans code `AppError` correspondant, ajouter la constante + les 2 traductions (fr/ar) avant de l'utiliser.
+
+## Traductions (i18n) — vérification automatisée
+
+Toute chaîne affichée à l'utilisateur passe par `easy_localization` (`'clé'.tr()`), jamais de texte en dur — y compris les préfixes de labels (ex: `common.reference` pour "Réf :", pas juste `Text('Réf : $x')`). Seules exceptions tolérées : libellés techniques de debug (`productId: $id`, disparaîtront avec les vraies données Odoo) et noms de langue dans le sélecteur de langue ("Français"/"العربية" — ne se traduisent pas par définition).
+
+`mobile/test/translations_completeness_test.dart` est le point centralisé pour détecter des traductions manquantes — à lancer après tout ajout d'écran ou de clé i18n :
+```powershell
+flutter test test/translations_completeness_test.dart
+```
+Il vérifie trois choses : (1) `fr.json` et `ar.json` ont exactement les mêmes clés (pas de dérive entre les deux langues), (2) toute clé statique `'x.y.z'.tr()` utilisée dans `lib/` existe bien dans les deux fichiers, (3) tout `screenKey` passé à `ScreenPlaceholder` a bien un `title` + `subtitle` en FR et en AR. Si le test échoue, le message d'erreur liste exactement les clés manquantes.
+
+**Si du texte reste en français en mode AR malgré ce test qui passe** : ce n'est pas un problème de traduction manquante mais probablement un souci de rebuild — les fichiers JSON sont des *assets* embarqués au build, un hot reload ne les recharge pas toujours. Faire un arrêt complet + `flutter run` (pas juste hot reload/hot restart) avant de considérer que c'est un bug.
+
 ## Custom fields Odoo attendus (Expert Odoo)
 
 `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_pin` (hashé), `x_langue`, `x_latitude`, `x_longitude`, `x_adresse_favorite`, `x_substitution_produit`, modèle `x_delivery_zone`.
@@ -69,3 +190,4 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 - Mettre à jour `status-V1.md` à chaque fonctionnalité livrée ou changement d'état significatif.
 - Respecter les critères d'acceptation QA de chaque fonctionnalité (checklists dans les specs Phase 1) avant de la considérer terminée.
 - Tout nouveau champ custom Odoo doit être documenté et validé contre la liste ci-dessus avant création.
+- Tout message d'erreur ou d'information affiché à l'utilisateur passe par `AppMessenger`/`ErrorStateView` (voir § Gestion des erreurs) — jamais de `ScaffoldMessenger`/`showDialog` direct dans un écran, jamais de message en dur non traduit.

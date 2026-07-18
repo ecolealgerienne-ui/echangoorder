@@ -1,0 +1,9 @@
+# Secrets locaux — jamais commités (voir .env.example)
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Logs Odoo locaux
+*.log

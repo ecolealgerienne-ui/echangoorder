@@ -4,6 +4,12 @@ Suivi de l'avancement de l'implémentation. Statuts : `Non démarré` · `En cou
 
 Dernière mise à jour : 2026-07-18
 
+**Stratégie en cours** : phase 1 = écrans + navigation complets, sans données ni backend (état local simulé uniquement pour piloter la navigation : session auth). Phase 2 = branchement direct sur Odoo (pas de couche mock intermédiaire).
+
+**⚠️ Changement de stack (2026-07-18)** : le projet a démarré en React Native puis a été **entièrement basculé sur Flutter** en cours de route (choix de l'équipe, expérience Flutter préalable). Tout le code React Native a été supprimé et réécrit en Flutter/Dart — même périmètre fonctionnel (F00-F17), mêmes clés i18n, même logique de navigation, portés dans un nouveau framework. Voir CLAUDE.md § Stack technique pour la note de décision.
+
+**⚠️ Changement PIN (2026-07-18)** : les specs prévoient un PIN à 4 chiffres partout ; décision produit de passer à **6-12 chiffres** (plus d'entropie). Voir CLAUDE.md § Stack technique.
+
 ---
 
 ## 0. Setup projet
@@ -13,36 +19,51 @@ Dernière mise à jour : 2026-07-18
 | Repo Git créé (`main` + branche de travail) | Terminé | Repo initialisé, docs ajoutés |
 | Specs macro & Phase 1 versées dans `docs/` | Terminé | `docs/specs_macro_drive_transport.md`, `docs/specs_phase1_echango_order.md` |
 | `CLAUDE.md` rédigé | Terminé | |
-| Scaffolding app React Native (iOS & Android) | Non démarré | |
-| Config i18n FR/AR + RTL | Non démarré | |
-| Config navigation (stack + tab bar) | Non démarré | |
-| Client API JSON-RPC Odoo | Non démarré | |
-| Environnement Odoo 19 (dev/staging) accessible | Non démarré | Dépendance Expert Odoo |
+| Scaffolding app Flutter | Terminé | `mobile/`, `pubspec.yaml` + `lib/` écrits par Claude Code. `android`/`ios` générés côté utilisateur via `flutter create --org com.echangoorder .` |
+| Navigation (go_router : routes publiques + StatefulShellRoute tabs) | Terminé — `flutter analyze` OK | Tous les écrans F00-F17 navigables de bout en bout (`mobile/lib/navigation/app_router.dart`). `flutter analyze` passé côté utilisateur (2 warnings cosmétiques corrigés : import inutile, doc comment) |
+| Config i18n FR/AR + RTL | Terminé (base) | `easy_localization`, fichiers `assets/translations/fr.json`/`ar.json`. RTL géré nativement par Flutter (`Directionality` auto sur `Locale('ar')`) — pas de redémarrage app nécessaire contrairement à React Native. Reste à valider visuellement sur device/émulateur |
+| État local (session, onboarding) pour piloter la navigation | Terminé | `state/auth_state.dart` (`ChangeNotifier` + `provider`), branché sur le `redirect` de `go_router`, **persisté via `shared_preferences`** (survit au redémarrage de l'app) — sera remplacé par la vraie session Odoo (F02) |
+| F14 — Permissions natives réelles (GPS, notifications) | Terminé (code) | `permission_handler` : dialog d'explication + demande système, gestion du refus sans bloquer l'app. **Déclarations natives Android (`AndroidManifest.xml`) et iOS (`Info.plist`/`Podfile`) pas encore ajoutées** — voir CLAUDE.md, à faire après génération de `android/`/`ios/` |
+| F17 — Écran substitution produit | Terminé | Accessible via bouton démo depuis le suivi de commande (pas de vrai trigger tant que F11 n'existe pas) |
+| F12 — Bouton partage produit | Terminé (partiel) | `share_plus`, sheet natif avec lien placeholder. Réception du deep link non câblée (nécessite domaine + choix de techno, cf. §4) |
+| F10 — Suppression de compte (popup + PIN) | Terminé (UI) | `delete_account_dialog.dart` — saisie 6-12 chiffres via `PinInputField`, aucune validation réelle du PIN contre un compte (attend Odoo) |
+| Nouvelles dépendances (`permission_handler`, `share_plus`, `shared_preferences`) | Terminé — `flutter analyze` OK | Corrigé suite au 1er `flutter analyze` local : `SharePlus.instance.share(ShareParams(...))` n'existait pas dans la version résolue → remplacé par `Share.share(text)` (API historique, stable). `test/widget_test.dart` généré par `flutter create .` référençait l'ancien template (`MyApp`) → réécrit pour pointer sur `EchangoOrderApp` avec `SharedPreferences.setMockInitialValues({})` |
+| Gestion d'erreurs centralisée (codes + i18n) | Terminé (infra) | `lib/errors/` : `AppError` (codes en dot-path mappés 1:1 sur `errors.*` dans les traductions), `AppMessenger` (seul point d'affichage : snackbar erreur/info, dialog bloquant), `ErrorStateView` (état plein écran réutilisable, vides + erreurs). Tous les `ScaffoldMessenger`/messages en dur existants migrés (`coming_soon.dart`, `permission_service.dart`, `MaintenanceScreen`). Convention documentée dans CLAUDE.md — **obligatoire pour tout nouveau code**, y compris le futur client Odoo (mapper les erreurs JSON-RPC vers ces mêmes codes) |
+| Validation de formulaire centralisée | Terminé (infra) | `lib/validation/validators.dart` : `validatePhone`, `validatePin` (6-12 chiffres), `validateRequired`, `validatePinMatch` — retournent des `AppError?`, affichées via `AppMessenger` |
+| Champ PIN réutilisable | Terminé | `widgets/pin_input_field.dart` — masqué, bascule visibilité, 6-12 chiffres. Câblé (vrais champs + validation) dans Login, RegisterStep1 (téléphone) et RegisterStep3, ChangePin, ForgotPin, DeleteAccount. Aucune vérification contre un vrai compte (attend Odoo) |
+| États vides (Cart, OrderHistory, Search) | Terminé | `ErrorStateView` appliqué aux 3 écrans (specs QA : panier vide, aucune commande — avec message spécifique invité, aucun résultat recherche). Boutons démo conservés pour continuer à tester la navigation checkout/suivi/fiche produit tant qu'il n'y a pas de vraies données |
+| Numéro de version dans "À propos" | Terminé | `package_info_plus`, F14 QA "Numéro de version visible et à jour" |
+| Vérification automatisée des traductions FR/AR | Terminé | `test/translations_completeness_test.dart` — audit demandé suite à un signalement "traductions AR manquantes" (titre "Mon Panier", plusieurs boutons). Audit complet effectué (clés `.tr()` statiques + tous les `screenKey` × title/subtitle) : **aucune clé manquante trouvée** dans le code actuel, fr.json et ar.json parfaitement synchronisés. Seul écart réel trouvé et corrigé : 2 labels "Réf :" en dur (→ `common.reference`). Le signalement initial est probablement un souci de rebuild (assets JSON non rechargés en hot reload) plutôt qu'une vraie traduction manquante — ce test tourne maintenant en continu pour objectiver ça à l'avenir |
+| Environnement Odoo 19 + Postgres (Docker/WSL) | Terminé (infra, non exécuté) | `backend/docker-compose.yml` (odoo:19 + postgres:16), `backend/config/odoo.conf`, squelette module `backend/addons/echango_order/` (manifeste + inits, pas encore de modèles/champs). `docker compose config` validé (parsing OK) mais **jamais réellement lancé** — Claude Code n'a pas accès à Docker Hub dans ce sandbox (réseau bloqué). Premier `docker compose up` + création de la base à faire côté utilisateur (WSL). Voir CLAUDE.md § Environnement de dev — backend Odoo |
+| Client API JSON-RPC Odoo | Non démarré | Branchement direct prévu après validation de l'environnement Docker + premier module (F02 en premier) |
 | Firebase Cloud Messaging configuré | Non démarré | |
-| Stockage sécurisé PIN (Keychain/Keystore) | Non démarré | |
+| Stockage sécurisé PIN (Keychain/Keystore) | Non démarré | Côté Flutter : `flutter_secure_storage` pressenti (pas encore ajouté) |
+| Build & run réel sur simulateur/device (iOS/Android) | En cours | `flutter analyze` validé côté utilisateur (une passe) ; du nouveau code non re-vérifié ajouté depuis (validators, PinInputField, écrans auth câblés, états vides, `package_info_plus`) — à repasser en `flutter analyze`/`flutter run` avant de continuer. Non testable dans l'environnement Claude Code (pas de SDK Flutter/Android/Xcode) |
 
 ## 1. Fonctionnalités Phase 1 (F00–F17)
 
-| # | Fonctionnalité | Statut | Frontend RN | API Odoo | QA / critères d'acceptation | Notes |
-|---|---|---|---|---|---|---|
-| F00 | Vitrine publique | Non démarré | ☐ | ☐ | ☐ | Nécessite champ `x_vitrine_publique` |
-| F01 | Onboarding | Non démarré | ☐ | — | ☐ | Aucun appel API |
-| F02 | Authentification (inscription/connexion/invité) | Non démarré | ☐ | ☐ | ☐ | Endpoint custom téléphone+PIN à développer côté Odoo |
-| F03 | Accueil | Non démarré | ☐ | ☐ | ☐ | |
-| F04 | Catalogue & Recherche | Non démarré | ☐ | ☐ | ☐ | |
-| F05 | Fiche Produit | Non démarré | ☐ | ☐ | ☐ | |
-| F06 | Panier | Non démarré | ☐ | ☐ | ☐ | |
-| F07 | Checkout & Mode de Réception | Non démarré | ☐ | ☐ | ☐ | Zones de livraison (`x_delivery_zone`), créneaux |
-| F08 | Confirmation & Suivi Commande | Non démarré | ☐ | ☐ | ☐ | Statuts synchronisés + notifs push |
-| F09 | Historique Commandes & Reorder | Non démarré | ☐ | ☐ | ☐ | Reorder 1 tap |
-| F10 | Profil Utilisateur | Non démarré | ☐ | ☐ | ☐ | Suppression compte (logique, PIN + SMS) |
-| F11 | Notifications Push | Non démarré | ☐ | ☐ | ☐ | Webhook Odoo → FCM |
-| F12 | Partage Produit (Deep Link) | Non démarré | ☐ | ☐ | ☐ | Branch.io / Firebase Dynamic Links à choisir |
-| F13 | Pages Légales | Non démarré | ☐ | — | ☐ | Contenu à valider avec juriste avant soumission stores |
-| F14 | Permissions & États Système | Non démarré | ☐ | ☐ | ☐ | Écran maintenance, permissions GPS/notifs |
-| F15 | Code Promo | Non démarré | ☐ | ☐ | ☐ | Module coupon Odoo 19 à valider |
-| F16 | Annulation Commande | Non démarré | ☐ | ☐ | ☐ | Délai d'annulation à définir (PO) |
-| F17 | Substitution Produit | Non démarré | ☐ | ☐ | ☐ | Délai de réponse client 30 min |
+Colonne **Écrans** : placeholders créés + navigables (sans données ni logique métier réelle). Colonne **API Odoo** : intégration backend réelle.
+
+| # | Fonctionnalité | Écrans | API Odoo | QA / critères d'acceptation | Notes |
+|---|---|---|---|---|---|
+| F00 | Vitrine publique | Terminé | ☐ | ☐ | Nécessite champ `x_vitrine_publique` |
+| F01 | Onboarding | Terminé | — | ☐ | Aucun appel API |
+| F02 | Authentification (inscription/connexion/invité) | Terminé | ☐ | ☐ | Endpoint custom téléphone+PIN à développer côté Odoo |
+| F03 | Accueil | Terminé | ☐ | ☐ | |
+| F04 | Catalogue & Recherche | Terminé | ☐ | ☐ | |
+| F05 | Fiche Produit | Terminé | ☐ | ☐ | |
+| F06 | Panier | Terminé | ☐ | ☐ | |
+| F07 | Checkout & Mode de Réception | Terminé | ☐ | ☐ | Zones de livraison (`x_delivery_zone`), créneaux |
+| F08 | Confirmation & Suivi Commande | Terminé | ☐ | ☐ | Statuts synchronisés + notifs push |
+| F09 | Historique Commandes & Reorder | Terminé | ☐ | ☐ | Reorder 1 tap |
+| F10 | Profil Utilisateur | Terminé | ☐ | ☐ | Suppression compte : popup + saisie PIN (6-12 chiffres) implémentés (`delete_account_dialog.dart`) ; validation réelle du PIN + SMS de confirmation nécessitent Odoo |
+| F11 | Notifications Push | Non démarré | ☐ | ☐ | Webhook Odoo → FCM. La permission notification (F14) est déjà demandée après confirmation de commande, mais aucun envoi réel |
+| F12 | Partage Produit (Deep Link) | Terminé (partiel) | ☐ | ☐ | Bouton partage sur fiche produit (`share_plus`, sheet natif) avec lien placeholder. **Réception du deep link (Universal/App Links) non câblée** — nécessite un domaine réel + choix de techno (Branch.io vs Firebase Dynamic Links, cf. §4) + fichiers natifs `android/`/`ios/` |
+| F13 | Pages Légales | Terminé (placeholder) | — | ☐ | Contenu réel à intégrer + validation juriste avant soumission stores |
+| F14 | Permissions & États Système | Terminé | ☐ | ☐ | Écran maintenance + permissions réelles (`permission_handler`) : dialog d'explication puis demande système pour GPS (Register/CheckoutAddress/MyLocation) et notifications (auto après confirmation commande). **Déclarations natives Android/iOS pas encore ajoutées** (voir CLAUDE.md) |
+| F15 | Code Promo | Terminé (placeholder dans récap checkout) | ☐ | ☐ | Module coupon Odoo 19 à valider |
+| F16 | Annulation Commande | Terminé (popup confirmation) | ☐ | ☐ | Délai d'annulation à définir (PO) |
+| F17 | Substitution Produit | Terminé | ☐ | ☐ | Écran substitution (produit original/suggestion, accepter/refuser). Accessible pour l'instant via un bouton démo dans le suivi de commande — en réel, déclenché par une notification push (dépend de F11) |
 
 ## 2. Sécurité (transversal — bloquant pour release)
 
@@ -59,7 +80,7 @@ Dernière mise à jour : 2026-07-18
 
 | Exigence | Statut |
 |---|---|
-| Externalisation complète des chaînes (fichiers de traduction FR/AR) | Non démarré |
+| Externalisation complète des chaînes (fichiers de traduction FR/AR) | Terminé — vérifié automatiquement (`translations_completeness_test.dart`) |
 | Layout RTL validé sur chaque écran | Non démarré |
 | Formats date/heure localisés | Non démarré |
 
