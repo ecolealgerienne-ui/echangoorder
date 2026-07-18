@@ -62,6 +62,21 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 - `docs/` — specs macro et Phase 1 (voir ci-dessus).
 - `mobile/` — app React Native CLI (bare, TypeScript). Code applicatif dans `mobile/src/` : `navigation/` (stacks + tabs), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (contexts locaux), `i18n/` (i18next, `locales/fr.json` et `ar.json`), `theme/`, `components/`.
 
+## Environnement de dev — app mobile
+
+Le développement de `mobile/` se fait côté utilisateur sous **Windows / PowerShell** (pas bash/zsh). Toute commande shell suggérée pour `mobile/` doit être en syntaxe PowerShell, pas Unix. Équivalences utiles :
+
+| Unix (bash/zsh) | PowerShell |
+|---|---|
+| `rm -rf node_modules package-lock.json` | `Remove-Item -Recurse -Force node_modules, package-lock.json` |
+| `rm -f fichier` | `Remove-Item -Force fichier` |
+| `cat fichier` | `Get-Content fichier` |
+| `ls -la` | `Get-ChildItem -Force` |
+| `export VAR=valeur` | `$env:VAR = "valeur"` |
+| `&&` (chaînage conditionnel) | `;` (ou `&&` fonctionne aussi en PowerShell 7+) |
+
+En cas de doute sur la disponibilité d'une syntaxe, préférer la commande PowerShell native ou l'équivalent `npm`/`npx` multiplateforme plutôt qu'un outil Unix.
+
 ## Stratégie d'implémentation en cours
 
 Développement en deux temps, décidé pour ce projet :
