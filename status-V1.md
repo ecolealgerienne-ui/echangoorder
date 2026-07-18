@@ -35,7 +35,8 @@ Dernière mise à jour : 2026-07-18
 | Numéro de version dans "À propos" | Terminé | `package_info_plus`, F14 QA "Numéro de version visible et à jour" |
 | Vérification automatisée des traductions FR/AR | Terminé | `test/translations_completeness_test.dart` — audit demandé suite à un signalement "traductions AR manquantes" (titre "Mon Panier", plusieurs boutons). Audit complet effectué (clés `.tr()` statiques + tous les `screenKey` × title/subtitle) : **aucune clé manquante trouvée** dans le code actuel, fr.json et ar.json parfaitement synchronisés. Seul écart réel trouvé et corrigé : 2 labels "Réf :" en dur (→ `common.reference`). Le signalement initial est probablement un souci de rebuild (assets JSON non rechargés en hot reload) plutôt qu'une vraie traduction manquante — ce test tourne maintenant en continu pour objectiver ça à l'avenir |
 | Environnement Odoo 19 + Postgres (Docker/WSL) | Terminé (infra, non exécuté) | `backend/docker-compose.yml` (odoo:19 + postgres:16), `backend/config/odoo.conf`, squelette module `backend/addons/echango_order/` (manifeste + inits, pas encore de modèles/champs). `docker compose config` validé (parsing OK) mais **jamais réellement lancé** — Claude Code n'a pas accès à Docker Hub dans ce sandbox (réseau bloqué). Premier `docker compose up` + création de la base à faire côté utilisateur (WSL). Voir CLAUDE.md § Environnement de dev — backend Odoo |
-| Client API JSON-RPC Odoo | Non démarré | Branchement direct prévu après validation de l'environnement Docker + premier module (F02 en premier) |
+| Module Odoo F02 — auth téléphone/PIN | Terminé (code, non exécuté) | `backend/addons/echango_order/` : `models/res_users.py` (champs `x_pin` haché, `x_pin_fail_count`, `x_pin_locked_until` sur `res.users` — voir CLAUDE.md § Principe architecture Odoo), `controllers/auth_controller.py` (`/echango/auth/register`, `/echango/auth/login`). Identité client = utilisateur portail Odoo (`base.group_portal`) lié à un `res.partner`, pas de modèle custom séparé. Connexion branchée sur le point d'extension standard `res.users._check_credentials` (type `pin`, mécanisme utilisé par `auth_oauth`/`auth_ldap`) plutôt qu'une réimplémentation de session — mais **signature interne non garantie stable entre versions Odoo, jamais testée contre un Odoo 19 réel** (pas de Docker Hub dans ce sandbox) : premier `docker compose up` + tentative d'inscription/connexion réelle à faire côté utilisateur, logs (`docker compose logs -f odoo`) à coller ici en cas d'erreur. Délai anti brute-force implémenté en fenêtre `locked_until` (pas de `time.sleep`) : 1/2/4/8s puis **15 min de blocage au 5e échec — durée arbitraire, à valider avec le PO** |
+| Client API JSON-RPC Odoo (Flutter) | Non démarré | Prochaine étape : brancher les écrans Login/Register F02 sur `/echango/auth/register` et `/echango/auth/login` (JSON-RPC), gérer session/cookie côté Flutter, mapper les codes d'erreur (`auth.*`, `validation.*`) vers des constantes `AppError` (à créer, cf. CLAUDE.md § Gestion des erreurs — aucune n'existe encore pour ces codes) |
 | Firebase Cloud Messaging configuré | Non démarré | |
 | Stockage sécurisé PIN (Keychain/Keystore) | Non démarré | Côté Flutter : `flutter_secure_storage` pressenti (pas encore ajouté) |
 | Build & run réel sur simulateur/device (iOS/Android) | En cours | `flutter analyze` validé côté utilisateur (une passe) ; du nouveau code non re-vérifié ajouté depuis (validators, PinInputField, écrans auth câblés, états vides, `package_info_plus`) — à repasser en `flutter analyze`/`flutter run` avant de continuer. Non testable dans l'environnement Claude Code (pas de SDK Flutter/Android/Xcode) |
@@ -48,7 +49,7 @@ Colonne **Écrans** : placeholders créés + navigables (sans données ni logiqu
 |---|---|---|---|---|---|
 | F00 | Vitrine publique | Terminé | ☐ | ☐ | Nécessite champ `x_vitrine_publique` |
 | F01 | Onboarding | Terminé | — | ☐ | Aucun appel API |
-| F02 | Authentification (inscription/connexion/invité) | Terminé | ☐ | ☐ | Endpoint custom téléphone+PIN à développer côté Odoo |
+| F02 | Authentification (inscription/connexion/invité) | Terminé | En cours | ☐ | Backend Odoo écrit (voir §0) : `res.users` étendu + endpoints `/echango/auth/register`+`/login`. Client Flutter (JSON-RPC) pas encore branché sur ces endpoints |
 | F03 | Accueil | Terminé | ☐ | ☐ | |
 | F04 | Catalogue & Recherche | Terminé | ☐ | ☐ | |
 | F05 | Fiche Produit | Terminé | ☐ | ☐ | |
@@ -72,7 +73,7 @@ Colonne **Écrans** : placeholders créés + navigables (sans données ni logiqu
 | HTTPS/TLS 1.3 sur tous les appels | Non démarré |
 | PIN jamais stocké en clair (Keychain/Keystore) | Non démarré |
 | Session 24h + re-auth PIN | Non démarré |
-| Délai progressif tentatives PIN (1s/2s/4s/8s + blocage) | Non démarré |
+| Délai progressif tentatives PIN (1s/2s/4s/8s + blocage) | En cours — implémenté serveur (`res.users._check_pin`), non testé en réel |
 | Filtrage strict des champs API (pas de surexposition) | Non démarré |
 | Rate limiting endpoints publics (vitrine, deep links) | Non démarré |
 
@@ -95,6 +96,7 @@ Colonne **Écrans** : placeholders créés + navigables (sans données ni logiqu
 - [ ] Définir la page desktop de destination pour les deep links
 - [ ] Confirmer la disponibilité des endpoints Odoo 19 listés dans les specs
 - [ ] Valider le module coupon/promo compatible Odoo 19
+- [ ] Valider la durée de blocage du compte après 5 échecs de PIN (15 min implémenté par défaut, arbitraire — voir §0 module F02)
 
 ## 5. Roadmap macro (rappel — voir `docs/specs_macro_drive_transport.md` §8)
 
