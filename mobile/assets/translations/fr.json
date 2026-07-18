@@ -125,6 +125,9 @@
     "receiveSms": "Recevoir un SMS",
     "browseCatalog": "Voir le catalogue"
   },
+  "catalog": {
+    "outOfStock": "Épuisé"
+  },
   "emptyStates": {
     "cartTitle": "Votre panier est vide",
     "cartMessage": "Ajoutez des produits depuis le catalogue pour commencer votre commande.",
@@ -134,7 +137,9 @@
     "searchTitle": "Aucun résultat",
     "searchMessage": "Essayez avec un autre mot-clé.",
     "productsTitle": "Aucun produit disponible",
-    "productsMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour."
+    "productsMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour.",
+    "categoriesTitle": "Aucune catégorie disponible",
+    "categoriesMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour."
   },
   "screens": {
     "Vitrine": { "title": "Nos meilleurs prix", "subtitle": "Vitrine publique — F00" },

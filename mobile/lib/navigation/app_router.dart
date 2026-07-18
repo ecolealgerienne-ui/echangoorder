@@ -100,8 +100,10 @@ GoRouter buildAppRouter(AuthState authState) {
               routes: [
                 GoRoute(
                   path: 'category/:categoryId',
-                  builder: (context, state) =>
-                      CategoryProductsScreen(categoryId: state.pathParameters['categoryId']!),
+                  builder: (context, state) => CategoryProductsScreen(
+                    categoryId: state.pathParameters['categoryId']!,
+                    categoryName: state.extra as String?,
+                  ),
                 ),
                 GoRoute(path: 'search', builder: (context, state) => const SearchScreen()),
                 GoRoute(

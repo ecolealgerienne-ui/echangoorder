@@ -125,6 +125,9 @@
     "receiveSms": "استلام رمز عبر الرسائل القصيرة",
     "browseCatalog": "تصفح الكتالوج"
   },
+  "catalog": {
+    "outOfStock": "غير متوفر"
+  },
   "emptyStates": {
     "cartTitle": "سلتك فارغة",
     "cartMessage": "أضف منتجات من الكتالوج لبدء طلبك.",
@@ -134,7 +137,9 @@
     "searchTitle": "لا توجد نتائج",
     "searchMessage": "جرّب كلمة بحث أخرى.",
     "productsTitle": "لا توجد منتجات متاحة",
-    "productsMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا."
+    "productsMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا.",
+    "categoriesTitle": "لا توجد فئات متاحة",
+    "categoriesMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا."
   },
   "screens": {
     "Vitrine": { "title": "أفضل أسعارنا", "subtitle": "واجهة عامة — F00" },

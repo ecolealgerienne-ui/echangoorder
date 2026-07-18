@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +6,7 @@ import '../../errors/app_error.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/product_grid_tile.dart';
 
 /// F03 — Accueil : grille des produits vendables (`product.template`,
 /// `sale_ok = true`) via le `search_read` standard d'Odoo. La curation
@@ -78,57 +77,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 childAspectRatio: 0.72,
               ),
               itemCount: products.length,
-              itemBuilder: (context, index) => _ProductCard(product: products[index]),
+              itemBuilder: (context, index) {
+                final product = products[index];
+                return ProductGridTile(
+                  product: product,
+                  onTap: () => context.push('/home/product/${product['id']}'),
+                );
+              },
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _ProductCard extends StatelessWidget {
-  final Map<String, dynamic> product;
-
-  const _ProductCard({required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    final name = product['name'] as String? ?? '';
-    final price = (product['list_price'] as num?)?.toDouble() ?? 0;
-    final imageBase64 = product['image_128'];
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppLayout.radius),
-      onTap: () => context.push('/home/product/${product['id']}'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppLayout.radius),
-              ),
-              child: imageBase64 is String
-                  ? Image.memory(base64Decode(imageBase64), fit: BoxFit.cover)
-                  : const Icon(Icons.image_not_supported_outlined, size: 40, color: AppColors.textMuted),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          Text(
-            '${price.toStringAsFixed(2)} €',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
       ),
     );
   }
