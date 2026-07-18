@@ -62,7 +62,7 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 ## Structure du repo
 
 - `docs/` — specs macro et Phase 1 (voir ci-dessus).
-- `mobile/` — app Flutter. Code applicatif dans `mobile/lib/` : `navigation/` (`app_router.dart` avec go_router, `main_tab_scaffold.dart`), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (`auth_state.dart`, `ChangeNotifier` + `provider`, persisté via `shared_preferences`), `services/` (`permission_service.dart`), `theme/` (`app_theme.dart`), `widgets/` (composants partagés : `screen_placeholder.dart`, `app_button.dart`, `delete_account_dialog.dart`), `utils/`. Traductions dans `mobile/assets/translations/` (`fr.json`, `ar.json`, format `easy_localization`).
+- `mobile/` — app Flutter. Code applicatif dans `mobile/lib/` : `navigation/` (`app_router.dart` avec go_router, `main_tab_scaffold.dart`), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (`auth_state.dart`, `ChangeNotifier` + `provider`, persisté via `shared_preferences`), `services/` (`permission_service.dart`), `errors/` (`app_error.dart`, `app_messenger.dart`, `error_state_view.dart` — voir § Gestion des erreurs), `theme/` (`app_theme.dart`), `widgets/` (composants partagés : `screen_placeholder.dart`, `app_button.dart`, `delete_account_dialog.dart`), `utils/`. Traductions dans `mobile/assets/translations/` (`fr.json`, `ar.json`, format `easy_localization`).
 - Les dossiers `mobile/android/` et `mobile/ios/` (scaffolding natif Flutter) ne sont **pas** générés par Claude Code — voir note ci-dessous.
 
 ## Environnement de dev — app mobile
@@ -120,6 +120,19 @@ Développement en deux temps, décidé pour ce projet :
 
 L'état de session (`state/auth_state.dart`, `ChangeNotifier`) est un état **client local** (pas une simulation de backend) : nécessaire pour piloter la navigation (routes publiques vs onglets principaux, via le `redirect` de `go_router`) dès maintenant, et qui restera après le branchement Odoo — seul le contenu du login réel changera. La langue est gérée directement par `easy_localization` (`context.setLocale()`), pas de contexte custom nécessaire.
 
+## Gestion des erreurs (convention — obligatoire pour tout nouveau code)
+
+Toute erreur ou message affiché à l'utilisateur passe par le système centralisé dans `mobile/lib/errors/`, jamais par un `ScaffoldMessenger`/`showDialog` direct dans un écran.
+
+- **`app_error.dart`** — classe `AppError` : une erreur = un **code** (`String`), pas un message en dur. Le code est un chemin en points qui correspond exactement à une clé dans `errors.*` des fichiers `assets/translations/*.json` (ex : code `network.offline` → traduction `errors.network.offline`). Les codes connus sont des constantes statiques sur `AppError` (`AppError.networkOffline`, `AppError.authSessionExpired`, `AppError.promoInvalid`, etc.), classées par domaine (network, server, auth, validation, checkout, promo, order, permissions).
+- **`app_messenger.dart`** — classe `AppMessenger`, seul point d'affichage :
+  - `AppMessenger.showError(context, error, {onRetry})` — snackbar rouge, bouton "Réessayer" optionnel.
+  - `AppMessenger.showInfo(context, messageKey)` — snackbar neutre (message non-erreur, ex: "bientôt disponible").
+  - `AppMessenger.showErrorDialog(context, error, {onRetry})` — dialog bloquant (erreur critique, session expirée...).
+- **`error_state_view.dart`** — widget plein écran réutilisable (icône + titre + message + bouton retry) pour les états vides (panier vide, aucune commande...) et les erreurs bloquantes (ex : `MaintenanceScreen`). `ErrorStateView.forError(error, {onRetry})` construit l'état directement depuis un `AppError`.
+
+**Pourquoi des codes et pas des messages en dur** : un·e traducteur·rice ne touche que les fichiers JSON, jamais le code Dart. Et surtout, ça prépare le branchement Odoo (F02+) : les erreurs JSON-RPC d'Odoo (`error.data.name`, codes HTTP, etc.) devront être mappées vers ces mêmes constantes `AppError.*` dans la couche d'appel API, sans toucher à l'affichage ni aux traductions déjà en place. Si un nouveau cas d'erreur apparaît côté Odoo sans code `AppError` correspondant, ajouter la constante + les 2 traductions (fr/ar) avant de l'utiliser.
+
 ## Custom fields Odoo attendus (Expert Odoo)
 
 `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_pin` (hashé), `x_langue`, `x_latitude`, `x_longitude`, `x_adresse_favorite`, `x_substitution_produit`, modèle `x_delivery_zone`.
@@ -136,3 +149,4 @@ L'état de session (`state/auth_state.dart`, `ChangeNotifier`) est un état **cl
 - Mettre à jour `status-V1.md` à chaque fonctionnalité livrée ou changement d'état significatif.
 - Respecter les critères d'acceptation QA de chaque fonctionnalité (checklists dans les specs Phase 1) avant de la considérer terminée.
 - Tout nouveau champ custom Odoo doit être documenté et validé contre la liste ci-dessus avant création.
+- Tout message d'erreur ou d'information affiché à l'utilisateur passe par `AppMessenger`/`ErrorStateView` (voir § Gestion des erreurs) — jamais de `ScaffoldMessenger`/`showDialog` direct dans un écran, jamais de message en dur non traduit.

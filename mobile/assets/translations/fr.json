@@ -35,8 +35,48 @@
     "notificationTitle": "Notifications",
     "notificationBody": "Recevez des alertes sur l'avancement de vos commandes.",
     "allow": "Autoriser",
-    "notNow": "Pas maintenant",
-    "denied": "Permission refusée — vous pouvez continuer sans, ou l'activer plus tard dans les réglages du téléphone."
+    "notNow": "Pas maintenant"
+  },
+  "errors": {
+    "title": "Une erreur est survenue",
+    "unknown": "Une erreur inattendue s'est produite. Merci de réessayer.",
+    "not_found": "Élément introuvable.",
+    "network": {
+      "offline": "Pas de connexion internet. Vérifiez votre réseau et réessayez.",
+      "timeout": "Le serveur met trop de temps à répondre. Réessayez.",
+      "unknown": "Erreur réseau. Réessayez."
+    },
+    "server": {
+      "unavailable": "Service momentanément indisponible.",
+      "unknown": "Erreur serveur. Réessayez plus tard."
+    },
+    "auth": {
+      "invalid_credentials": "Numéro de téléphone ou code PIN incorrect.",
+      "phone_already_used": "Ce numéro de téléphone est déjà utilisé.",
+      "session_expired": "Votre session a expiré. Merci de vous reconnecter.",
+      "pin_locked": "Trop de tentatives incorrectes. Compte bloqué temporairement."
+    },
+    "validation": {
+      "required": "Ce champ est obligatoire.",
+      "invalid_phone": "Numéro de téléphone invalide.",
+      "pin_mismatch": "Les codes PIN ne correspondent pas."
+    },
+    "checkout": {
+      "out_of_stock": "Ce produit n'est plus disponible.",
+      "slot_full": "Ce créneau est complet.",
+      "out_of_delivery_zone": "Votre adresse n'est pas dans notre zone de livraison."
+    },
+    "promo": {
+      "invalid": "Code promo invalide.",
+      "expired": "Ce code promo a expiré.",
+      "already_used": "Ce code promo a déjà été utilisé."
+    },
+    "order": {
+      "cannot_cancel": "Cette commande ne peut plus être annulée."
+    },
+    "permissions": {
+      "denied": "Permission refusée — vous pouvez continuer sans, ou l'activer plus tard dans les réglages du téléphone."
+    }
   },
   "deleteAccount": {
     "title": "Supprimer votre compte ?",

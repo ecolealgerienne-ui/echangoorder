@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../errors/app_error.dart';
+import '../errors/app_messenger.dart';
 
 /// Affiche l'explication AVANT toute demande de permission système
 /// (specs F14 : "Explication affichée AVANT la demande de permission système"),
@@ -34,9 +36,7 @@ Future<void> requestPermissionWithExplanation(
 
   final status = await permission.request();
   if (!status.isGranted && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('permissions.denied'.tr())),
-    );
+    AppMessenger.showError(context, const AppError(AppError.permissionDenied));
   }
 }
 
