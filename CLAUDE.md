@@ -66,6 +66,7 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 - `docs/` — specs macro et Phase 1 (voir ci-dessus).
 - `mobile/` — app Flutter. Code applicatif dans `mobile/lib/` : `navigation/` (`app_router.dart` avec go_router, `main_tab_scaffold.dart`), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (`auth_state.dart`, `ChangeNotifier` + `provider`, persisté via `shared_preferences`), `services/` (`permission_service.dart`), `errors/` (`app_error.dart`, `app_messenger.dart`, `error_state_view.dart` — voir § Gestion des erreurs), `validation/` (`validators.dart` — téléphone, PIN, requis, correspondance), `theme/` (`app_theme.dart`), `widgets/` (composants partagés : `screen_placeholder.dart`, `app_button.dart`, `pin_input_field.dart`, `delete_account_dialog.dart`), `utils/`. Traductions dans `mobile/assets/translations/` (`fr.json`, `ar.json`, format `easy_localization`).
 - Les dossiers `mobile/android/` et `mobile/ios/` (scaffolding natif Flutter) ne sont **pas** générés par Claude Code — voir note ci-dessous.
+- `backend/` — backend Odoo 19 + Postgres, exécuté via Docker (WSL côté utilisateur). `docker-compose.yml` (services `db` postgres:16 et `odoo` odoo:19), `config/odoo.conf`, `addons/echango_order/` (module custom — squelette pour l'instant, champs/modèles/endpoints ajoutés au fur et à mesure du branchement de chaque écran, F02 en premier). Voir § Environnement de dev — backend Odoo.
 
 ## Environnement de dev — app mobile
 
@@ -113,6 +114,32 @@ flutter pub get
 flutter analyze
 ```
 `flutter create .` sur un dossier contenant déjà un `pubspec.yaml` ajoute uniquement les dossiers de plateforme manquants (`android/`, `ios/`, etc.) sans toucher à `lib/` ni `pubspec.yaml`. Toute vérification (`analyze`, `run`, `test`) doit se faire côté utilisateur ; Claude Code ne peut relire les erreurs qu'après que l'utilisateur les colle dans la conversation.
+
+## Environnement de dev — backend Odoo
+
+Le backend Odoo 19 tourne via **Docker** dans **WSL** côté utilisateur (pas dans ce sandbox cloud). Tout se passe dans `backend/`.
+
+**Premier lancement :**
+```bash
+cd backend
+cp .env.example .env        # ajuster DB_USER/DB_PASSWORD si besoin (dev local uniquement)
+docker compose up -d
+```
+Puis ouvrir `http://localhost:8069` — l'assistant Odoo de création de base de données s'affiche au premier accès (choisir un nom de base, un mot de passe admin, cocher "Demo data" seulement si besoin de données d'exemple pour tester). Le module custom `echango_order` (dans `backend/addons/`) apparaît dans **Apps** une fois la base créée — retirer le filtre "Apps" par défaut et chercher "Echango Order" pour l'installer (`--dev=all` ou un `-u echango_order` en ligne de commande fonctionne aussi si préféré).
+
+**Commandes utiles :**
+- `docker compose up -d` — démarre Odoo + Postgres en arrière-plan
+- `docker compose logs -f odoo` — logs Odoo en continu (indispensable pour déboguer un module qui ne charge pas)
+- `docker compose down` — arrête (les données restent dans les volumes Docker nommés)
+- `docker compose down -v` — arrête ET supprime les volumes (repart de zéro, perd la base)
+- `docker compose restart odoo` — redémarre juste Odoo après une modif du module custom (nécessaire pour recharger le code Python — un simple hot-reload n'existe pas côté Odoo)
+
+**WSL — points d'attention :**
+- Cloner le repo **dans le filesystem WSL** (`~/...` ou `/home/...`), pas sous `/mnt/c/...` — les performances de build/volume Docker sont nettement dégradées sur un chemin Windows monté.
+- Docker Desktop avec l'intégration WSL2 activée (Paramètres → Resources → WSL Integration → cocher la distro utilisée), ou Docker Engine installé directement dans la distro — les deux fonctionnent, les commandes `docker compose` sont identiques.
+- Si le port 8069 est déjà pris (autre projet Odoo local), changer le port publié dans `docker-compose.yml` (`"8069:8069"` → `"8070:8069"` par exemple).
+
+**Limite d'environnement (comme pour Flutter)** : ce sandbox cloud n'a pas accès à Docker Hub (réseau bloqué, même politique que `storage.googleapis.com`), donc Claude Code ne peut ni tirer les images `odoo:19`/`postgres:16`, ni lancer de conteneur pour vérifier son propre travail. `docker-compose.yml` a été validé avec `docker compose config` (parsing/résolution complets, sans nécessiter le daemon) mais **jamais réellement exécuté** — la première vérification réelle (`docker compose up`, accès à `http://localhost:8069`, installation du module) doit se faire côté utilisateur.
 
 ## Stratégie d'implémentation en cours
 
