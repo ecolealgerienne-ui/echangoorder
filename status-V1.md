@@ -25,7 +25,7 @@ Dernière mise à jour : 2026-07-18
 | F17 — Écran substitution produit | Terminé | Accessible via bouton démo depuis le suivi de commande (pas de vrai trigger tant que F11 n'existe pas) |
 | F12 — Bouton partage produit | Terminé (partiel) | `share_plus`, sheet natif avec lien placeholder. Réception du deep link non câblée (nécessite domaine + choix de techno, cf. §4) |
 | F10 — Suppression de compte (popup + PIN) | Terminé (UI) | `delete_account_dialog.dart` — saisie 4 chiffres, aucune validation réelle (attend Odoo) |
-| **Nouvelles dépendances non vérifiées ici** | À vérifier en local | `permission_handler`, `share_plus`, `shared_preferences` ajoutés à `pubspec.yaml` — Claude Code n'a pas pu relancer `flutter pub get`/`flutter analyze` après ces ajouts (même limitation réseau que d'habitude). À relancer avant de continuer. API `share_plus` notamment : le package a changé d'API récemment (`SharePlus.instance.share(ShareParams(...))`), à confirmer que la version résolue localement la supporte |
+| Nouvelles dépendances (`permission_handler`, `share_plus`, `shared_preferences`) | Terminé — `flutter analyze` OK | Corrigé suite au 1er `flutter analyze` local : `SharePlus.instance.share(ShareParams(...))` n'existait pas dans la version résolue → remplacé par `Share.share(text)` (API historique, stable). `test/widget_test.dart` généré par `flutter create .` référençait l'ancien template (`MyApp`) → réécrit pour pointer sur `EchangoOrderApp` avec `SharedPreferences.setMockInitialValues({})` |
 | Client API JSON-RPC Odoo | Non démarré | Branchement direct prévu après validation des écrans |
 | Environnement Odoo 19 (dev/staging) accessible | Non démarré | Dépendance Expert Odoo |
 | Firebase Cloud Messaging configuré | Non démarré | |

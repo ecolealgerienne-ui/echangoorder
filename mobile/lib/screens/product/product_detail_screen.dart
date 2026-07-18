@@ -8,13 +8,11 @@ class ProductDetailScreen extends StatelessWidget {
 
   const ProductDetailScreen({super.key, required this.productId});
 
-  void _share(BuildContext context) {
+  void _share() {
     // Lien placeholder — format et domaine réels à définir avec le choix de
     // techno deep link (Branch.io / Firebase Dynamic Links, cf. status-V1.md).
     final link = 'https://echanorder.app/produit/$productId';
-    SharePlus.instance.share(
-      ShareParams(text: '${'share.intro'.tr()}\n$link'),
-    );
+    Share.share('${'share.intro'.tr()}\n$link');
   }
 
   @override
@@ -24,7 +22,7 @@ class ProductDetailScreen extends StatelessWidget {
       appBarActions: [
         IconButton(
           icon: const Icon(Icons.ios_share),
-          onPressed: () => _share(context),
+          onPressed: _share,
         ),
       ],
       child: Text('productId: $productId'),

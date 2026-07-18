@@ -32,11 +32,11 @@ class SubstitutionScreen extends StatelessWidget {
           variant: AppButtonVariant.danger,
         ),
       ],
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _ProductRow(labelKey: 'substitution.original', name: 'Lait entier 1L', price: '1.20€'),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           _ProductRow(labelKey: 'substitution.suggested', name: 'Lait demi-écrémé 1L', price: '1.10€'),
         ],
       ),
