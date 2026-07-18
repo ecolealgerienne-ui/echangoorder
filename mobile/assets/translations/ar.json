@@ -6,7 +6,8 @@
     "continue": "متابعة",
     "confirm": "تأكيد",
     "cancel": "إلغاء",
-    "comingSoon": "قريبًا — يتطلب الاتصال بـ Odoo"
+    "comingSoon": "قريبًا — يتطلب الاتصال بـ Odoo",
+    "reference": "المرجع:"
   },
   "auth": {
     "phoneLabel": "رقم الهاتف",

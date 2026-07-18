@@ -135,6 +135,18 @@ Toute erreur ou message affiché à l'utilisateur passe par le système centrali
 
 **Pourquoi des codes et pas des messages en dur** : un·e traducteur·rice ne touche que les fichiers JSON, jamais le code Dart. Et surtout, ça prépare le branchement Odoo (F02+) : les erreurs JSON-RPC d'Odoo (`error.data.name`, codes HTTP, etc.) devront être mappées vers ces mêmes constantes `AppError.*` dans la couche d'appel API, sans toucher à l'affichage ni aux traductions déjà en place. Si un nouveau cas d'erreur apparaît côté Odoo sans code `AppError` correspondant, ajouter la constante + les 2 traductions (fr/ar) avant de l'utiliser.
 
+## Traductions (i18n) — vérification automatisée
+
+Toute chaîne affichée à l'utilisateur passe par `easy_localization` (`'clé'.tr()`), jamais de texte en dur — y compris les préfixes de labels (ex: `common.reference` pour "Réf :", pas juste `Text('Réf : $x')`). Seules exceptions tolérées : libellés techniques de debug (`productId: $id`, disparaîtront avec les vraies données Odoo) et noms de langue dans le sélecteur de langue ("Français"/"العربية" — ne se traduisent pas par définition).
+
+`mobile/test/translations_completeness_test.dart` est le point centralisé pour détecter des traductions manquantes — à lancer après tout ajout d'écran ou de clé i18n :
+```powershell
+flutter test test/translations_completeness_test.dart
+```
+Il vérifie trois choses : (1) `fr.json` et `ar.json` ont exactement les mêmes clés (pas de dérive entre les deux langues), (2) toute clé statique `'x.y.z'.tr()` utilisée dans `lib/` existe bien dans les deux fichiers, (3) tout `screenKey` passé à `ScreenPlaceholder` a bien un `title` + `subtitle` en FR et en AR. Si le test échoue, le message d'erreur liste exactement les clés manquantes.
+
+**Si du texte reste en français en mode AR malgré ce test qui passe** : ce n'est pas un problème de traduction manquante mais probablement un souci de rebuild — les fichiers JSON sont des *assets* embarqués au build, un hot reload ne les recharge pas toujours. Faire un arrêt complet + `flutter run` (pas juste hot reload/hot restart) avant de considérer que c'est un bug.
+
 ## Custom fields Odoo attendus (Expert Odoo)
 
 `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_pin` (hashé), `x_langue`, `x_latitude`, `x_longitude`, `x_adresse_favorite`, `x_substitution_produit`, modèle `x_delivery_zone`.

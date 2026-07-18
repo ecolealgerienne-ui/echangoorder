@@ -53,7 +53,7 @@ class OrderTrackingScreen extends StatelessWidget {
           variant: AppButtonVariant.danger,
         ),
       ],
-      child: Text('Réf : $orderRef'),
+      child: Text('${'common.reference'.tr()} $orderRef'),
     );
   }
 }

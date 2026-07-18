@@ -6,7 +6,8 @@
     "continue": "Continuer",
     "confirm": "Confirmer",
     "cancel": "Annuler",
-    "comingSoon": "Bientôt disponible — connexion Odoo requise"
+    "comingSoon": "Bientôt disponible — connexion Odoo requise",
+    "reference": "Réf :"
   },
   "auth": {
     "phoneLabel": "Téléphone",

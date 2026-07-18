@@ -45,7 +45,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             variant: AppButtonVariant.secondary,
           ),
         ],
-        child: Text('Réf : ${widget.orderRef}'),
+        child: Text('${'common.reference'.tr()} ${widget.orderRef}'),
       ),
     );
   }
