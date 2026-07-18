@@ -43,7 +43,12 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 ['categ_id', '=', categId],
               ]
             : const [],
-        fields: const ['name', 'list_price', 'image_128', 'qty_available'],
+        // Pas de qty_available : champ calculé qui lit product.product PUIS
+        // stock.warehouse (et probablement plus loin) — trop de surface
+        // interne à ouvrir au portail pour ce que ça apporte ici. Le badge
+        // "épuisé" restera inactif tant qu'on n'a pas un signal de stock
+        // plus étroit (voir status-V1.md).
+        fields: const ['name', 'list_price', 'image_128'],
         limit: 50,
       );
     });

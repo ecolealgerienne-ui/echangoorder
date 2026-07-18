@@ -49,7 +49,8 @@ class _SearchScreenState extends State<SearchScreen> {
         domain: [
           ['name', 'ilike', query],
         ],
-        fields: const ['name', 'list_price', 'image_128', 'qty_available'],
+        // Pas de qty_available ici non plus — voir CategoryProductsScreen.
+        fields: const ['name', 'list_price', 'image_128'],
         limit: 30,
       );
     });
