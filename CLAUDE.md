@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## ⚠️ Règle impérative — synchronisation avant toute nouvelle branche
+
+**Avant de créer une nouvelle branche, il faut impérativement synchroniser avec toutes les branches distantes** (`git fetch --all`) afin de ne rien perdre et de récupérer tous les commits existants dans la nouvelle branche (partir de l'état le plus à jour, typiquement `origin/main`, plutôt que d'un historique local potentiellement obsolète). Ne jamais créer une branche à partir d'un état local non synchronisé.
+
 Ce fichier guide Claude Code (et tout contributeur) sur le contexte, les conventions et l'état du projet **Echango Order**.
 
 ## Contexte projet
