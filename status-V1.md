@@ -56,7 +56,7 @@ Colonne **Écrans** : placeholders créés + navigables (sans données ni logiqu
 | F07 | Checkout & Mode de Réception | Terminé | ☐ | ☐ | Zones de livraison (`x_delivery_zone`), créneaux |
 | F08 | Confirmation & Suivi Commande | Terminé | ☐ | ☐ | Statuts synchronisés + notifs push |
 | F09 | Historique Commandes & Reorder | Terminé | ☐ | ☐ | Reorder 1 tap |
-| F10 | Profil Utilisateur | Terminé | ☐ | ☐ | Suppression compte : popup + saisie PIN (4 chiffres) implémentés (`delete_account_dialog.dart`) ; validation réelle du PIN + SMS de confirmation nécessitent Odoo |
+| F10 | Profil Utilisateur | Terminé | ☐ | ☐ | Suppression compte : popup + saisie PIN (6-12 chiffres) implémentés (`delete_account_dialog.dart`) ; validation réelle du PIN + SMS de confirmation nécessitent Odoo |
 | F11 | Notifications Push | Non démarré | ☐ | ☐ | Webhook Odoo → FCM. La permission notification (F14) est déjà demandée après confirmation de commande, mais aucun envoi réel |
 | F12 | Partage Produit (Deep Link) | Terminé (partiel) | ☐ | ☐ | Bouton partage sur fiche produit (`share_plus`, sheet natif) avec lien placeholder. **Réception du deep link (Universal/App Links) non câblée** — nécessite un domaine réel + choix de techno (Branch.io vs Firebase Dynamic Links, cf. §4) + fichiers natifs `android/`/`ios/` |
 | F13 | Pages Légales | Terminé (placeholder) | — | ☐ | Contenu réel à intégrer + validation juriste avant soumission stores |
@@ -80,7 +80,7 @@ Colonne **Écrans** : placeholders créés + navigables (sans données ni logiqu
 
 | Exigence | Statut |
 |---|---|
-| Externalisation complète des chaînes (fichiers de traduction FR/AR) | Non démarré |
+| Externalisation complète des chaînes (fichiers de traduction FR/AR) | Terminé — vérifié automatiquement (`translations_completeness_test.dart`) |
 | Layout RTL validé sur chaque écran | Non démarré |
 | Formats date/heure localisés | Non démarré |
 
