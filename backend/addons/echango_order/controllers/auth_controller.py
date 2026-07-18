@@ -32,7 +32,7 @@ class EchangoAuthController(http.Controller):
         portal_group = request.env.ref("base.group_portal")
         partner = request.env["res.partner"].sudo().create({
             "name": name or phone,
-            "mobile": phone,
+            "phone": phone,
             "lang": lang or "fr_FR",
         })
         user = users.create({

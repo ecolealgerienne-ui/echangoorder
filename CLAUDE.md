@@ -183,7 +183,7 @@ Conséquences déjà actées pour Echango Order :
 - **Identité client = utilisateur portail Odoo** (`res.users` + groupe `base.group_portal`, lié à un `res.partner`), pas un modèle custom séparé. On réutilise ainsi le modèle de sécurité (record rules) et la compatibilité `/web/dataset/call_kw` déjà fournis par Odoo pour les utilisateurs portail, plutôt que de coder des contrôleurs custom pour tout le CRUD client.
 - **Champs standards réutilisés tels quels** (pas de doublon `x_*`) :
   - Langue → `res.partner.lang` (champ standard, sélection des langues installées) — **remplace `x_langue`**, retiré de la liste ci-dessous.
-  - Téléphone → `res.partner.mobile` (ou `phone`) — pas de champ custom dédié.
+  - Téléphone → `res.partner.phone` — pas de champ custom dédié. **Odoo 19 a fusionné `mobile` dans `phone`** (le champ `mobile` n'existe plus sur `res.partner` depuis cette version, confirmé en testant contre une instance réelle) : ne pas utiliser `mobile`, il n'existe plus.
   - Adresse de livraison → adresses enfants standards de `res.partner` (mécanisme multi-adresses natif) plutôt qu'un champ texte libre — `x_adresse_favorite` reste dans la liste mais sera réduit au strict nécessaire (probablement un simple booléen "favorite" sur l'adresse) au moment de F07/F10, pas une réécriture de l'adresse.
   - Commandes → `sale.order` standard (statuts, lignes, `partner_id`) plutôt qu'un modèle de commande custom.
   - Coordonnées GPS → à vérifier au moment de F07 si le module standard `base_geolocalize` (`partner_latitude`/`partner_longitude` sur `res.partner`) est disponible en Odoo 19 CE avant de garder `x_latitude`/`x_longitude` en custom.
