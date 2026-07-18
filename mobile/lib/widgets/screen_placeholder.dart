@@ -24,6 +24,7 @@ class ScreenPlaceholder extends StatelessWidget {
   final List<PlaceholderAction> actions;
   final Widget? child;
   final bool showAppBar;
+  final List<Widget>? appBarActions;
 
   const ScreenPlaceholder({
     super.key,
@@ -31,12 +32,15 @@ class ScreenPlaceholder extends StatelessWidget {
     this.actions = const [],
     this.child,
     this.showAppBar = true,
+    this.appBarActions,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: showAppBar ? AppBar(title: Text('screens.$screenKey.title'.tr())) : null,
+      appBar: showAppBar
+          ? AppBar(title: Text('screens.$screenKey.title'.tr()), actions: appBarActions)
+          : null,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),

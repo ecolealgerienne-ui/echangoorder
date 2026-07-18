@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../state/auth_state.dart';
-import '../../utils/coming_soon.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/delete_account_dialog.dart';
 import '../../widgets/screen_placeholder.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -58,7 +58,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         PlaceholderAction(
           label: 'actions.deleteAccount'.tr(),
-          onPressed: () => showComingSoon(context),
+          onPressed: () => showDeleteAccountDialog(context),
           variant: AppButtonVariant.danger,
         ),
       ],

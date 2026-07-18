@@ -23,6 +23,30 @@
     "confirmCancel": "Confirmer l'annulation",
     "keepOrder": "Garder ma commande"
   },
+  "substitution": {
+    "original": "Produit original",
+    "suggested": "Suggestion",
+    "accept": "Accepter",
+    "refuse": "Refuser — Supprimer cet article"
+  },
+  "permissions": {
+    "locationTitle": "Votre localisation",
+    "locationBody": "Echango Order utilise votre position pour pré-remplir votre adresse de livraison.",
+    "notificationTitle": "Notifications",
+    "notificationBody": "Recevez des alertes sur l'avancement de vos commandes.",
+    "allow": "Autoriser",
+    "notNow": "Pas maintenant",
+    "denied": "Permission refusée — vous pouvez continuer sans, ou l'activer plus tard dans les réglages du téléphone."
+  },
+  "deleteAccount": {
+    "title": "Supprimer votre compte ?",
+    "body": "Cette action est irréversible. Vos données seront conservées 30 jours.",
+    "pinLabel": "Confirmez avec votre code PIN",
+    "confirm": "Confirmer suppression"
+  },
+  "share": {
+    "intro": "Découvre ce produit sur Echango Order :"
+  },
   "legal": {
     "cgu": "CGU",
     "privacy": "Confidentialité",
@@ -71,6 +95,7 @@
     "OrderConfirmation": { "title": "Commande confirmée !", "subtitle": "Confirmation — F08" },
     "OrderHistory": { "title": "Mes commandes", "subtitle": "Historique & reorder — F09" },
     "OrderTracking": { "title": "Suivi de commande", "subtitle": "Suivi, annulation, substitution — F08 / F16 / F17" },
+    "Substitution": { "title": "Produit indisponible", "subtitle": "Substitution produit — F17" },
     "Profile": { "title": "Mon Profil", "subtitle": "Profil utilisateur — F10" },
     "Addresses": { "title": "Mes adresses", "subtitle": "Adresses sauvegardées — F10" },
     "MyLocation": { "title": "Ma localisation", "subtitle": "Localisation GPS — F10" },

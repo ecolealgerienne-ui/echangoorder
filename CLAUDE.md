@@ -62,7 +62,7 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 ## Structure du repo
 
 - `docs/` — specs macro et Phase 1 (voir ci-dessus).
-- `mobile/` — app Flutter. Code applicatif dans `mobile/lib/` : `navigation/` (`app_router.dart` avec go_router, `main_tab_scaffold.dart`), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (`auth_state.dart`, `ChangeNotifier` + `provider`), `theme/` (`app_theme.dart`), `widgets/` (composants partagés : `screen_placeholder.dart`, `app_button.dart`), `utils/`. Traductions dans `mobile/assets/translations/` (`fr.json`, `ar.json`, format `easy_localization`).
+- `mobile/` — app Flutter. Code applicatif dans `mobile/lib/` : `navigation/` (`app_router.dart` avec go_router, `main_tab_scaffold.dart`), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (`auth_state.dart`, `ChangeNotifier` + `provider`, persisté via `shared_preferences`), `services/` (`permission_service.dart`), `theme/` (`app_theme.dart`), `widgets/` (composants partagés : `screen_placeholder.dart`, `app_button.dart`, `delete_account_dialog.dart`), `utils/`. Traductions dans `mobile/assets/translations/` (`fr.json`, `ar.json`, format `easy_localization`).
 - Les dossiers `mobile/android/` et `mobile/ios/` (scaffolding natif Flutter) ne sont **pas** générés par Claude Code — voir note ci-dessous.
 
 ## Environnement de dev — app mobile
@@ -86,6 +86,23 @@ En cas de doute sur la disponibilité d'une syntaxe, préférer la commande Powe
 - `flutter test` — tests unitaires/widgets
 - `flutter run` — lance sur l'émulateur/device par défaut
 - `flutter doctor` — diagnostic de l'environnement (SDK, Android toolchain, licences)
+
+**Permissions natives (`permission_handler`, F14)** : le package a besoin de déclarations natives que Claude Code ne peut pas ajouter (fichiers `android/`, `ios/` inexistants ici). Après `flutter create .` en local, ajouter :
+
+- **Android** — dans `android/app/src/main/AndroidManifest.xml`, avant `<application>` :
+  ```xml
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  ```
+- **iOS** — dans `ios/Runner/Info.plist` :
+  ```xml
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>Echango Order utilise votre position pour pré-remplir votre adresse de livraison.</string>
+  ```
+- **iOS** — `permission_handler` nécessite aussi d'activer les modules de permission utilisés dans `ios/Podfile` (macros de préprocesseur `PERMISSION_LOCATION`, `PERMISSION_NOTIFICATIONS`) — se référer au README du package (`permission_handler` sur pub.dev) au moment de configurer, la syntaxe exacte peut évoluer selon la version résolue par `flutter pub get`.
+
+Sans ces déclarations, `flutter run` peut compiler mais la demande de permission plantera ou sera silencieusement refusée au runtime.
 
 **Important — génération des dossiers natifs** : cet environnement cloud (sandbox Claude Code) n'a pas accès au SDK Flutter/Dart (le réseau bloque `storage.googleapis.com`, d'où proviennent les artefacts Dart/Flutter), donc Claude Code ne peut ni exécuter `flutter create`, ni `flutter analyze`/`flutter run`/`flutter test` pour vérifier son propre travail sur cette partie. En conséquence, **`mobile/android/` et `mobile/ios/` n'existent pas encore** dans le repo : après avoir récupéré du code Flutter écrit par Claude Code, lancer une fois en local :
 ```powershell

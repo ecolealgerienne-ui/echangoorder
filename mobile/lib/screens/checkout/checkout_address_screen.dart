@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../services/permission_service.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/screen_placeholder.dart';
 
@@ -12,6 +13,11 @@ class CheckoutAddressScreen extends StatelessWidget {
     return ScreenPlaceholder(
       screenKey: 'CheckoutAddress',
       actions: [
+        PlaceholderAction(
+          label: 'actions.useGpsLocation'.tr(),
+          onPressed: () => requestLocationPermission(context),
+          variant: AppButtonVariant.secondary,
+        ),
         PlaceholderAction(
           label: 'common.continue'.tr(),
           onPressed: () => context.push('/cart/checkout/timeslot'),

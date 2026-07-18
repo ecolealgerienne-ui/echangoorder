@@ -23,6 +23,30 @@
     "confirmCancel": "تأكيد الإلغاء",
     "keepOrder": "الاحتفاظ بطلبي"
   },
+  "substitution": {
+    "original": "المنتج الأصلي",
+    "suggested": "اقتراح",
+    "accept": "قبول",
+    "refuse": "رفض — حذف هذا العنصر"
+  },
+  "permissions": {
+    "locationTitle": "موقعك",
+    "locationBody": "يستخدم Echango Order موقعك لملء عنوان التوصيل تلقائيًا.",
+    "notificationTitle": "الإشعارات",
+    "notificationBody": "احصل على تنبيهات حول تقدم طلباتك.",
+    "allow": "السماح",
+    "notNow": "ليس الآن",
+    "denied": "تم رفض الإذن — يمكنك المتابعة بدونه، أو تفعيله لاحقًا من إعدادات الهاتف."
+  },
+  "deleteAccount": {
+    "title": "حذف حسابك؟",
+    "body": "هذا الإجراء نهائي. سيتم الاحتفاظ ببياناتك لمدة 30 يومًا.",
+    "pinLabel": "أكّد باستخدام رمزك السري",
+    "confirm": "تأكيد الحذف"
+  },
+  "share": {
+    "intro": "اكتشف هذا المنتج على Echango Order:"
+  },
   "legal": {
     "cgu": "الشروط والأحكام",
     "privacy": "الخصوصية",
@@ -71,6 +95,7 @@
     "OrderConfirmation": { "title": "تم تأكيد الطلب!", "subtitle": "التأكيد — F08" },
     "OrderHistory": { "title": "طلباتي", "subtitle": "السجل وإعادة الطلب — F09" },
     "OrderTracking": { "title": "تتبع الطلب", "subtitle": "التتبع، الإلغاء، الاستبدال — F08 / F16 / F17" },
+    "Substitution": { "title": "منتج غير متوفر", "subtitle": "استبدال المنتج — F17" },
     "Profile": { "title": "ملفي الشخصي", "subtitle": "الملف الشخصي — F10" },
     "Addresses": { "title": "عناويني", "subtitle": "العناوين المحفوظة — F10" },
     "MyLocation": { "title": "موقعي", "subtitle": "الموقع الجغرافي — F10" },
