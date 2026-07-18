@@ -1,0 +1,84 @@
+{
+  "common": {
+    "next": "Suivant",
+    "back": "Retour",
+    "skip": "Passer",
+    "continue": "Continuer",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "comingSoon": "Bientôt disponible — connexion Odoo requise"
+  },
+  "nav": {
+    "home": "Accueil",
+    "catalog": "Catalogue",
+    "cart": "Panier",
+    "profile": "Profil"
+  },
+  "checkout": {
+    "deliveryHome": "🏠 Livraison à domicile",
+    "pickupStore": "🏪 Retrait en magasin",
+    "modifyAddress": "Modifier l'adresse"
+  },
+  "order": {
+    "confirmCancel": "Confirmer l'annulation",
+    "keepOrder": "Garder ma commande"
+  },
+  "legal": {
+    "cgu": "CGU",
+    "privacy": "Confidentialité",
+    "legal": "Mentions légales",
+    "cookies": "Cookies"
+  },
+  "actions": {
+    "signUp": "S'inscrire",
+    "logIn": "Se connecter",
+    "continueAsGuest": "Continuer sans compte",
+    "later": "Plus tard",
+    "signUpToOrder": "S'inscrire pour commander",
+    "addToCart": "Ajouter au panier",
+    "goToCheckout": "Valider mon panier",
+    "confirmOrder": "Confirmer la commande",
+    "trackOrder": "Suivre ma commande",
+    "backHome": "Retour accueil",
+    "reorder": "Commander à nouveau",
+    "cancelOrder": "Annuler la commande",
+    "logout": "Se déconnecter",
+    "deleteAccount": "Supprimer mon compte",
+    "forgotPin": "PIN oublié ?",
+    "useGpsLocation": "Utiliser ma position GPS",
+    "retry": "Réessayer"
+  },
+  "screens": {
+    "Vitrine": { "title": "Nos meilleurs prix", "subtitle": "Vitrine publique — F00" },
+    "Onboarding": { "title": "Commandez vos produits locaux", "subtitle": "Onboarding — F01" },
+    "AuthWelcome": { "title": "Bienvenue", "subtitle": "Authentification — F02" },
+    "RegisterStep1": { "title": "Créer un compte — Infos", "subtitle": "Inscription étape 1 — F02" },
+    "RegisterStep2": { "title": "Adresse de livraison", "subtitle": "Inscription étape 2 — F02" },
+    "RegisterStep3": { "title": "Créez votre code PIN", "subtitle": "Inscription étape 3 — F02" },
+    "Login": { "title": "Se connecter", "subtitle": "Connexion — F02" },
+    "ForgotPin": { "title": "PIN oublié", "subtitle": "Réinitialisation PIN — F02" },
+    "Home": { "title": "Accueil", "subtitle": "Accueil — F03" },
+    "Catalog": { "title": "Catalogue", "subtitle": "Catégories — F04" },
+    "CategoryProducts": { "title": "Produits", "subtitle": "Produits par catégorie — F04" },
+    "Search": { "title": "Rechercher", "subtitle": "Recherche — F04" },
+    "ProductDetail": { "title": "Fiche produit", "subtitle": "Fiche produit — F05" },
+    "Cart": { "title": "Mon Panier", "subtitle": "Panier — F06" },
+    "CheckoutReceptionMode": { "title": "Réception", "subtitle": "Mode de réception — F07" },
+    "CheckoutAddress": { "title": "Adresse de livraison", "subtitle": "Adresse — F07" },
+    "CheckoutOutOfZone": { "title": "Zone non couverte", "subtitle": "Hors zone de livraison — F07" },
+    "CheckoutTimeslot": { "title": "Créneau", "subtitle": "Choix du créneau — F07" },
+    "CheckoutSummary": { "title": "Récapitulatif", "subtitle": "Récapitulatif & code promo — F07 / F15" },
+    "OrderConfirmation": { "title": "Commande confirmée !", "subtitle": "Confirmation — F08" },
+    "OrderHistory": { "title": "Mes commandes", "subtitle": "Historique & reorder — F09" },
+    "OrderTracking": { "title": "Suivi de commande", "subtitle": "Suivi, annulation, substitution — F08 / F16 / F17" },
+    "Profile": { "title": "Mon Profil", "subtitle": "Profil utilisateur — F10" },
+    "Addresses": { "title": "Mes adresses", "subtitle": "Adresses sauvegardées — F10" },
+    "MyLocation": { "title": "Ma localisation", "subtitle": "Localisation GPS — F10" },
+    "ChangePin": { "title": "Modifier PIN", "subtitle": "Modification du code PIN — F10" },
+    "NotificationSettings": { "title": "Notifications", "subtitle": "Préférences notifications — F10 / F11" },
+    "LanguageSettings": { "title": "Langue", "subtitle": "Français / Arabe — F10" },
+    "About": { "title": "À propos", "subtitle": "À propos — F14" },
+    "LegalDocument": { "title": "Document légal", "subtitle": "Pages légales — F13" },
+    "Maintenance": { "title": "App en maintenance", "subtitle": "Nous revenons très bientôt !" }
+  }
+}

@@ -4,6 +4,8 @@ Suivi de l'avancement de l'implémentation. Statuts : `Non démarré` · `En cou
 
 Dernière mise à jour : 2026-07-18
 
+**Stratégie en cours** : phase 1 = écrans + navigation complets, sans données ni backend (état local simulé uniquement pour piloter la navigation : session auth, langue). Phase 2 = branchement direct sur Odoo (pas de couche mock intermédiaire).
+
 ---
 
 ## 0. Setup projet
@@ -13,36 +15,41 @@ Dernière mise à jour : 2026-07-18
 | Repo Git créé (`main` + branche de travail) | Terminé | Repo initialisé, docs ajoutés |
 | Specs macro & Phase 1 versées dans `docs/` | Terminé | `docs/specs_macro_drive_transport.md`, `docs/specs_phase1_echango_order.md` |
 | `CLAUDE.md` rédigé | Terminé | |
-| Scaffolding app React Native (iOS & Android) | Non démarré | |
-| Config i18n FR/AR + RTL | Non démarré | |
-| Config navigation (stack + tab bar) | Non démarré | |
-| Client API JSON-RPC Odoo | Non démarré | |
+| Scaffolding app React Native CLI (bare, TypeScript) | Terminé | `mobile/`, RN 0.86, package `com.echangoorder.app` |
+| Navigation (stacks + bottom tabs) | Terminé | Tous les écrans F00-F17 créés en placeholders, navigables de bout en bout (`mobile/src/navigation/`) |
+| Config i18n FR/AR + bascule RTL | Terminé (base) | i18next, fichiers `fr.json`/`ar.json`, bascule `I18nManager` + redémarrage app. Reste à valider visuellement le mirroring RTL sur device/simulateur |
+| État local (session, langue) pour piloter la navigation | Terminé | `AuthContext`, `LanguageContext` — sera remplacé par la vraie session Odoo (F02) |
+| Client API JSON-RPC Odoo | Non démarré | Branchement direct prévu après validation des écrans |
 | Environnement Odoo 19 (dev/staging) accessible | Non démarré | Dépendance Expert Odoo |
 | Firebase Cloud Messaging configuré | Non démarré | |
 | Stockage sécurisé PIN (Keychain/Keystore) | Non démarré | |
+| Build & run réel sur simulateur/device (iOS/Android) | Non démarré | Non testable dans l'environnement de dev actuel (pas de SDK Android/Xcode) — à faire sur poste local/CI |
+| Vulnérabilité npm modérée (`fast-xml-parser` via `@react-native-community/cli`, tooling Android build only) | À surveiller | `npm audit` — pas de fix direct sans sortir de la plage de version RN 0.86 supportée ; à revoir avant soumission stores |
 
 ## 1. Fonctionnalités Phase 1 (F00–F17)
 
-| # | Fonctionnalité | Statut | Frontend RN | API Odoo | QA / critères d'acceptation | Notes |
-|---|---|---|---|---|---|---|
-| F00 | Vitrine publique | Non démarré | ☐ | ☐ | ☐ | Nécessite champ `x_vitrine_publique` |
-| F01 | Onboarding | Non démarré | ☐ | — | ☐ | Aucun appel API |
-| F02 | Authentification (inscription/connexion/invité) | Non démarré | ☐ | ☐ | ☐ | Endpoint custom téléphone+PIN à développer côté Odoo |
-| F03 | Accueil | Non démarré | ☐ | ☐ | ☐ | |
-| F04 | Catalogue & Recherche | Non démarré | ☐ | ☐ | ☐ | |
-| F05 | Fiche Produit | Non démarré | ☐ | ☐ | ☐ | |
-| F06 | Panier | Non démarré | ☐ | ☐ | ☐ | |
-| F07 | Checkout & Mode de Réception | Non démarré | ☐ | ☐ | ☐ | Zones de livraison (`x_delivery_zone`), créneaux |
-| F08 | Confirmation & Suivi Commande | Non démarré | ☐ | ☐ | ☐ | Statuts synchronisés + notifs push |
-| F09 | Historique Commandes & Reorder | Non démarré | ☐ | ☐ | ☐ | Reorder 1 tap |
-| F10 | Profil Utilisateur | Non démarré | ☐ | ☐ | ☐ | Suppression compte (logique, PIN + SMS) |
-| F11 | Notifications Push | Non démarré | ☐ | ☐ | ☐ | Webhook Odoo → FCM |
-| F12 | Partage Produit (Deep Link) | Non démarré | ☐ | ☐ | ☐ | Branch.io / Firebase Dynamic Links à choisir |
-| F13 | Pages Légales | Non démarré | ☐ | — | ☐ | Contenu à valider avec juriste avant soumission stores |
-| F14 | Permissions & États Système | Non démarré | ☐ | ☐ | ☐ | Écran maintenance, permissions GPS/notifs |
-| F15 | Code Promo | Non démarré | ☐ | ☐ | ☐ | Module coupon Odoo 19 à valider |
-| F16 | Annulation Commande | Non démarré | ☐ | ☐ | ☐ | Délai d'annulation à définir (PO) |
-| F17 | Substitution Produit | Non démarré | ☐ | ☐ | ☐ | Délai de réponse client 30 min |
+Colonne **Écrans** : placeholders créés + navigables (sans données ni logique métier réelle). Colonne **API Odoo** : intégration backend réelle.
+
+| # | Fonctionnalité | Écrans | API Odoo | QA / critères d'acceptation | Notes |
+|---|---|---|---|---|---|
+| F00 | Vitrine publique | Terminé | ☐ | ☐ | Nécessite champ `x_vitrine_publique` |
+| F01 | Onboarding | Terminé | — | ☐ | Aucun appel API |
+| F02 | Authentification (inscription/connexion/invité) | Terminé | ☐ | ☐ | Endpoint custom téléphone+PIN à développer côté Odoo |
+| F03 | Accueil | Terminé | ☐ | ☐ | |
+| F04 | Catalogue & Recherche | Terminé | ☐ | ☐ | |
+| F05 | Fiche Produit | Terminé | ☐ | ☐ | |
+| F06 | Panier | Terminé | ☐ | ☐ | |
+| F07 | Checkout & Mode de Réception | Terminé | ☐ | ☐ | Zones de livraison (`x_delivery_zone`), créneaux |
+| F08 | Confirmation & Suivi Commande | Terminé | ☐ | ☐ | Statuts synchronisés + notifs push |
+| F09 | Historique Commandes & Reorder | Terminé | ☐ | ☐ | Reorder 1 tap |
+| F10 | Profil Utilisateur | Terminé | ☐ | ☐ | Suppression compte (logique, PIN + SMS) — écran de confirmation PIN pas encore implémenté |
+| F11 | Notifications Push | Non démarré | ☐ | ☐ | Webhook Odoo → FCM |
+| F12 | Partage Produit (Deep Link) | Non démarré | ☐ | ☐ | Branch.io / Firebase Dynamic Links à choisir |
+| F13 | Pages Légales | Terminé (placeholder) | — | ☐ | Contenu réel à intégrer + validation juriste avant soumission stores |
+| F14 | Permissions & États Système | Terminé (partiel) | ☐ | ☐ | Écran maintenance créé ; demandes de permission natives (GPS/notifs) pas encore implémentées |
+| F15 | Code Promo | Terminé (placeholder dans récap checkout) | ☐ | ☐ | Module coupon Odoo 19 à valider |
+| F16 | Annulation Commande | Terminé (popup confirmation) | ☐ | ☐ | Délai d'annulation à définir (PO) |
+| F17 | Substitution Produit | Non démarré | ☐ | ☐ | Délai de réponse client 30 min |
 
 ## 2. Sécurité (transversal — bloquant pour release)
 

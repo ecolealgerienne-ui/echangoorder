@@ -1,0 +1,84 @@
+{
+  "common": {
+    "next": "التالي",
+    "back": "رجوع",
+    "skip": "تخطي",
+    "continue": "متابعة",
+    "confirm": "تأكيد",
+    "cancel": "إلغاء",
+    "comingSoon": "قريبًا — يتطلب الاتصال بـ Odoo"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "catalog": "الكتالوج",
+    "cart": "السلة",
+    "profile": "الملف الشخصي"
+  },
+  "checkout": {
+    "deliveryHome": "🏠 التوصيل إلى المنزل",
+    "pickupStore": "🏪 الاستلام من المتجر",
+    "modifyAddress": "تعديل العنوان"
+  },
+  "order": {
+    "confirmCancel": "تأكيد الإلغاء",
+    "keepOrder": "الاحتفاظ بطلبي"
+  },
+  "legal": {
+    "cgu": "الشروط والأحكام",
+    "privacy": "الخصوصية",
+    "legal": "الإشعار القانوني",
+    "cookies": "ملفات تعريف الارتباط"
+  },
+  "actions": {
+    "signUp": "إنشاء حساب",
+    "logIn": "تسجيل الدخول",
+    "continueAsGuest": "المتابعة بدون حساب",
+    "later": "لاحقًا",
+    "signUpToOrder": "أنشئ حسابًا للطلب",
+    "addToCart": "أضف إلى السلة",
+    "goToCheckout": "تأكيد السلة",
+    "confirmOrder": "تأكيد الطلب",
+    "trackOrder": "تتبع طلبي",
+    "backHome": "العودة للرئيسية",
+    "reorder": "إعادة الطلب",
+    "cancelOrder": "إلغاء الطلب",
+    "logout": "تسجيل الخروج",
+    "deleteAccount": "حذف حسابي",
+    "forgotPin": "نسيت الرمز السري؟",
+    "useGpsLocation": "استخدام موقعي الحالي",
+    "retry": "إعادة المحاولة"
+  },
+  "screens": {
+    "Vitrine": { "title": "أفضل أسعارنا", "subtitle": "واجهة عامة — F00" },
+    "Onboarding": { "title": "اطلب منتجاتك المحلية", "subtitle": "التعريف بالتطبيق — F01" },
+    "AuthWelcome": { "title": "مرحبًا", "subtitle": "المصادقة — F02" },
+    "RegisterStep1": { "title": "إنشاء حساب — المعلومات", "subtitle": "التسجيل خطوة 1 — F02" },
+    "RegisterStep2": { "title": "عنوان التوصيل", "subtitle": "التسجيل خطوة 2 — F02" },
+    "RegisterStep3": { "title": "أنشئ رمزك السري", "subtitle": "التسجيل خطوة 3 — F02" },
+    "Login": { "title": "تسجيل الدخول", "subtitle": "تسجيل الدخول — F02" },
+    "ForgotPin": { "title": "نسيت الرمز السري", "subtitle": "إعادة تعيين الرمز السري — F02" },
+    "Home": { "title": "الرئيسية", "subtitle": "الرئيسية — F03" },
+    "Catalog": { "title": "الكتالوج", "subtitle": "الفئات — F04" },
+    "CategoryProducts": { "title": "المنتجات", "subtitle": "منتجات حسب الفئة — F04" },
+    "Search": { "title": "بحث", "subtitle": "البحث — F04" },
+    "ProductDetail": { "title": "تفاصيل المنتج", "subtitle": "بطاقة المنتج — F05" },
+    "Cart": { "title": "سلتي", "subtitle": "السلة — F06" },
+    "CheckoutReceptionMode": { "title": "طريقة الاستلام", "subtitle": "طريقة الاستلام — F07" },
+    "CheckoutAddress": { "title": "عنوان التوصيل", "subtitle": "العنوان — F07" },
+    "CheckoutOutOfZone": { "title": "المنطقة غير مشمولة", "subtitle": "خارج منطقة التوصيل — F07" },
+    "CheckoutTimeslot": { "title": "الفترة الزمنية", "subtitle": "اختيار الفترة الزمنية — F07" },
+    "CheckoutSummary": { "title": "ملخص الطلب", "subtitle": "الملخص وكود الخصم — F07 / F15" },
+    "OrderConfirmation": { "title": "تم تأكيد الطلب!", "subtitle": "التأكيد — F08" },
+    "OrderHistory": { "title": "طلباتي", "subtitle": "السجل وإعادة الطلب — F09" },
+    "OrderTracking": { "title": "تتبع الطلب", "subtitle": "التتبع، الإلغاء، الاستبدال — F08 / F16 / F17" },
+    "Profile": { "title": "ملفي الشخصي", "subtitle": "الملف الشخصي — F10" },
+    "Addresses": { "title": "عناويني", "subtitle": "العناوين المحفوظة — F10" },
+    "MyLocation": { "title": "موقعي", "subtitle": "الموقع الجغرافي — F10" },
+    "ChangePin": { "title": "تغيير الرمز السري", "subtitle": "تعديل الرمز السري — F10" },
+    "NotificationSettings": { "title": "الإشعارات", "subtitle": "تفضيلات الإشعارات — F10 / F11" },
+    "LanguageSettings": { "title": "اللغة", "subtitle": "الفرنسية / العربية — F10" },
+    "About": { "title": "حول التطبيق", "subtitle": "حول التطبيق — F14" },
+    "LegalDocument": { "title": "وثيقة قانونية", "subtitle": "الصفحات القانونية — F13" },
+    "Maintenance": { "title": "التطبيق قيد الصيانة", "subtitle": "سنعود قريبًا جدًا!" }
+  }
+}

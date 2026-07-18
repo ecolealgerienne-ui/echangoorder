@@ -57,6 +57,19 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 - **Accessibilité** : police min 14px, boutons min 44px de hauteur, contraste lisible en plein soleil.
 - **Gestion d'erreurs** : message clair hors-ligne, retry automatique sur échec API, aucune erreur silencieuse.
 
+## Structure du repo
+
+- `docs/` — specs macro et Phase 1 (voir ci-dessus).
+- `mobile/` — app React Native CLI (bare, TypeScript). Code applicatif dans `mobile/src/` : `navigation/` (stacks + tabs), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (contexts locaux), `i18n/` (i18next, `locales/fr.json` et `ar.json`), `theme/`, `components/`.
+
+## Stratégie d'implémentation en cours
+
+Développement en deux temps, décidé pour ce projet :
+1. **Écrans + navigation d'abord, sans backend** — tous les écrans F00-F17 existent en placeholders (`ScreenPlaceholder`) et sont intégralement navigables, pour valider le parcours utilisateur et la structure de navigation avant toute donnée réelle. Pas de couche de mock/abstraction API — délibérément écarté pour ce projet.
+2. **Branchement direct sur Odoo ensuite** — une fois les écrans stabilisés, chaque écran est rempli avec sa vraie UI + ses appels JSON-RPC Odoo, sans étape intermédiaire de mock.
+
+L'état de session (`state/AuthContext.tsx`) et de langue (`state/LanguageContext.tsx`) est un état **client local** (pas une simulation de backend) : nécessaire pour piloter la navigation (Public vs Main) dès maintenant, et qui restera après le branchement Odoo — seul le contenu du login réel changera.
+
 ## Custom fields Odoo attendus (Expert Odoo)
 
 `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_pin` (hashé), `x_langue`, `x_latitude`, `x_longitude`, `x_adresse_favorite`, `x_substitution_produit`, modèle `x_delivery_zone`.
