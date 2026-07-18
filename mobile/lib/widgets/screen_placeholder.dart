@@ -19,7 +19,7 @@ class PlaceholderAction {
 /// chaque écran réel (F00-F17) utilise ce widget pour valider le parcours
 /// avant d'être rempli avec sa propre UI + les appels Odoo.
 class ScreenPlaceholder extends StatelessWidget {
-  /// Clé dans assets/translations/*.json → screens.<screenKey>
+  /// Clé dans assets/translations/*.json → `screens.` + [screenKey]
   final String screenKey;
   final List<PlaceholderAction> actions;
   final Widget? child;

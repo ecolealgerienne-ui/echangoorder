@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../state/auth_state.dart';
-import '../../widgets/app_button.dart';
 import '../../widgets/screen_placeholder.dart';
 
 class VitrineScreen extends StatelessWidget {
