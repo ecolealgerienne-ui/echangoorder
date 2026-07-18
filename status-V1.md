@@ -8,6 +8,8 @@ Dernière mise à jour : 2026-07-18
 
 **⚠️ Changement de stack (2026-07-18)** : le projet a démarré en React Native puis a été **entièrement basculé sur Flutter** en cours de route (choix de l'équipe, expérience Flutter préalable). Tout le code React Native a été supprimé et réécrit en Flutter/Dart — même périmètre fonctionnel (F00-F17), mêmes clés i18n, même logique de navigation, portés dans un nouveau framework. Voir CLAUDE.md § Stack technique pour la note de décision.
 
+**⚠️ Changement PIN (2026-07-18)** : les specs prévoient un PIN à 4 chiffres partout ; décision produit de passer à **6-12 chiffres** (plus d'entropie). Voir CLAUDE.md § Stack technique.
+
 ---
 
 ## 0. Setup projet
@@ -24,14 +26,18 @@ Dernière mise à jour : 2026-07-18
 | F14 — Permissions natives réelles (GPS, notifications) | Terminé (code) | `permission_handler` : dialog d'explication + demande système, gestion du refus sans bloquer l'app. **Déclarations natives Android (`AndroidManifest.xml`) et iOS (`Info.plist`/`Podfile`) pas encore ajoutées** — voir CLAUDE.md, à faire après génération de `android/`/`ios/` |
 | F17 — Écran substitution produit | Terminé | Accessible via bouton démo depuis le suivi de commande (pas de vrai trigger tant que F11 n'existe pas) |
 | F12 — Bouton partage produit | Terminé (partiel) | `share_plus`, sheet natif avec lien placeholder. Réception du deep link non câblée (nécessite domaine + choix de techno, cf. §4) |
-| F10 — Suppression de compte (popup + PIN) | Terminé (UI) | `delete_account_dialog.dart` — saisie 4 chiffres, aucune validation réelle (attend Odoo) |
+| F10 — Suppression de compte (popup + PIN) | Terminé (UI) | `delete_account_dialog.dart` — saisie 6-12 chiffres via `PinInputField`, aucune validation réelle du PIN contre un compte (attend Odoo) |
 | Nouvelles dépendances (`permission_handler`, `share_plus`, `shared_preferences`) | Terminé — `flutter analyze` OK | Corrigé suite au 1er `flutter analyze` local : `SharePlus.instance.share(ShareParams(...))` n'existait pas dans la version résolue → remplacé par `Share.share(text)` (API historique, stable). `test/widget_test.dart` généré par `flutter create .` référençait l'ancien template (`MyApp`) → réécrit pour pointer sur `EchangoOrderApp` avec `SharedPreferences.setMockInitialValues({})` |
 | Gestion d'erreurs centralisée (codes + i18n) | Terminé (infra) | `lib/errors/` : `AppError` (codes en dot-path mappés 1:1 sur `errors.*` dans les traductions), `AppMessenger` (seul point d'affichage : snackbar erreur/info, dialog bloquant), `ErrorStateView` (état plein écran réutilisable, vides + erreurs). Tous les `ScaffoldMessenger`/messages en dur existants migrés (`coming_soon.dart`, `permission_service.dart`, `MaintenanceScreen`). Convention documentée dans CLAUDE.md — **obligatoire pour tout nouveau code**, y compris le futur client Odoo (mapper les erreurs JSON-RPC vers ces mêmes codes) |
+| Validation de formulaire centralisée | Terminé (infra) | `lib/validation/validators.dart` : `validatePhone`, `validatePin` (6-12 chiffres), `validateRequired`, `validatePinMatch` — retournent des `AppError?`, affichées via `AppMessenger` |
+| Champ PIN réutilisable | Terminé | `widgets/pin_input_field.dart` — masqué, bascule visibilité, 6-12 chiffres. Câblé (vrais champs + validation) dans Login, RegisterStep1 (téléphone) et RegisterStep3, ChangePin, ForgotPin, DeleteAccount. Aucune vérification contre un vrai compte (attend Odoo) |
+| États vides (Cart, OrderHistory, Search) | Terminé | `ErrorStateView` appliqué aux 3 écrans (specs QA : panier vide, aucune commande — avec message spécifique invité, aucun résultat recherche). Boutons démo conservés pour continuer à tester la navigation checkout/suivi/fiche produit tant qu'il n'y a pas de vraies données |
+| Numéro de version dans "À propos" | Terminé | `package_info_plus`, F14 QA "Numéro de version visible et à jour" |
 | Client API JSON-RPC Odoo | Non démarré | Branchement direct prévu après validation des écrans |
 | Environnement Odoo 19 (dev/staging) accessible | Non démarré | Dépendance Expert Odoo |
 | Firebase Cloud Messaging configuré | Non démarré | |
 | Stockage sécurisé PIN (Keychain/Keystore) | Non démarré | Côté Flutter : `flutter_secure_storage` pressenti (pas encore ajouté) |
-| Build & run réel sur simulateur/device (iOS/Android) | En cours | `flutter analyze` validé côté utilisateur ; `flutter run` en cours de mise en place (génération `android`/`ios`). Non testable dans l'environnement Claude Code (pas de SDK Flutter/Android/Xcode) |
+| Build & run réel sur simulateur/device (iOS/Android) | En cours | `flutter analyze` validé côté utilisateur (une passe) ; du nouveau code non re-vérifié ajouté depuis (validators, PinInputField, écrans auth câblés, états vides, `package_info_plus`) — à repasser en `flutter analyze`/`flutter run` avant de continuer. Non testable dans l'environnement Claude Code (pas de SDK Flutter/Android/Xcode) |
 
 ## 1. Fonctionnalités Phase 1 (F00–F17)
 

@@ -20,9 +20,11 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 - **Backend** : Odoo 19, API JSON-RPC (`/web/dataset/call_kw`)
 - **Notifications** : Firebase Cloud Messaging
 - **Paiement** : cash uniquement (à la réception / au retrait) — aucune intégration paiement en ligne en Phase 1
-- **Auth** : téléphone + PIN 4 chiffres (endpoint custom Odoo, PIN hashé, stockage device via iOS Keychain / Android Keystore)
+- **Auth** : téléphone + PIN **6 à 12 chiffres** (endpoint custom Odoo, PIN hashé, stockage device via iOS Keychain / Android Keystore)
 
 > **Note** : les specs (`docs/specs_phase1_echango_order.md`, `docs/specs_macro_drive_transport.md`) mentionnent React Native comme stack d'origine. Décision prise en cours de projet de basculer sur **Flutter** (choix de l'équipe, expérience Flutter préalable). Cette section fait foi pour le choix technique actuel ; les specs restent la référence fonctionnelle (écrans, parcours, API, critères QA), inchangée par ce changement de framework. Un premier projet React Native a existé brièvement dans `mobile/` avant d'être remplacé — historique consultable dans le log git si besoin.
+
+> **Note** : les specs prévoient un PIN à **4 chiffres** partout (wireframes F02/F10, critères QA "PIN de 4 chiffres"). Décision produit de passer à un **PIN de 6 à 12 chiffres** pour plus d'entropie (constantes `kPinMinLength`/`kPinMaxLength` dans `mobile/lib/validation/validators.dart`). Impact : tout écran de saisie/confirmation PIN (inscription, connexion, PIN oublié, modification, suppression de compte) et le futur endpoint Odoo (`x_pin` hashé) doivent respecter cette plage, pas 4 chiffres fixes. Le champ `x_pin` (spec Expert Odoo) reste valide, seule sa longueur de saisie change côté app.
 
 ## Périmètre Phase 1
 
@@ -62,7 +64,7 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 ## Structure du repo
 
 - `docs/` — specs macro et Phase 1 (voir ci-dessus).
-- `mobile/` — app Flutter. Code applicatif dans `mobile/lib/` : `navigation/` (`app_router.dart` avec go_router, `main_tab_scaffold.dart`), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (`auth_state.dart`, `ChangeNotifier` + `provider`, persisté via `shared_preferences`), `services/` (`permission_service.dart`), `errors/` (`app_error.dart`, `app_messenger.dart`, `error_state_view.dart` — voir § Gestion des erreurs), `theme/` (`app_theme.dart`), `widgets/` (composants partagés : `screen_placeholder.dart`, `app_button.dart`, `delete_account_dialog.dart`), `utils/`. Traductions dans `mobile/assets/translations/` (`fr.json`, `ar.json`, format `easy_localization`).
+- `mobile/` — app Flutter. Code applicatif dans `mobile/lib/` : `navigation/` (`app_router.dart` avec go_router, `main_tab_scaffold.dart`), `screens/` (un dossier par domaine fonctionnel F00-F17), `state/` (`auth_state.dart`, `ChangeNotifier` + `provider`, persisté via `shared_preferences`), `services/` (`permission_service.dart`), `errors/` (`app_error.dart`, `app_messenger.dart`, `error_state_view.dart` — voir § Gestion des erreurs), `validation/` (`validators.dart` — téléphone, PIN, requis, correspondance), `theme/` (`app_theme.dart`), `widgets/` (composants partagés : `screen_placeholder.dart`, `app_button.dart`, `pin_input_field.dart`, `delete_account_dialog.dart`), `utils/`. Traductions dans `mobile/assets/translations/` (`fr.json`, `ar.json`, format `easy_localization`).
 - Les dossiers `mobile/android/` et `mobile/ios/` (scaffolding natif Flutter) ne sont **pas** générés par Claude Code — voir note ci-dessous.
 
 ## Environnement de dev — app mobile

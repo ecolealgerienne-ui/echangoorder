@@ -8,6 +8,15 @@
     "cancel": "Annuler",
     "comingSoon": "Bientôt disponible — connexion Odoo requise"
   },
+  "auth": {
+    "phoneLabel": "Téléphone",
+    "pinLabel": "Code PIN",
+    "pinHint": "6 à 12 chiffres",
+    "pinConfirmLabel": "Confirmez le code PIN",
+    "currentPinLabel": "PIN actuel",
+    "newPinLabel": "Nouveau PIN",
+    "smsCodeLabel": "Code reçu par SMS"
+  },
   "nav": {
     "home": "Accueil",
     "catalog": "Catalogue",
@@ -59,6 +68,7 @@
     "validation": {
       "required": "Ce champ est obligatoire.",
       "invalid_phone": "Numéro de téléphone invalide.",
+      "invalid_pin": "Le code PIN doit contenir entre 6 et 12 chiffres.",
       "pin_mismatch": "Les codes PIN ne correspondent pas."
     },
     "checkout": {
@@ -110,7 +120,18 @@
     "deleteAccount": "Supprimer mon compte",
     "forgotPin": "PIN oublié ?",
     "useGpsLocation": "Utiliser ma position GPS",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "receiveSms": "Recevoir un SMS",
+    "browseCatalog": "Voir le catalogue"
+  },
+  "emptyStates": {
+    "cartTitle": "Votre panier est vide",
+    "cartMessage": "Ajoutez des produits depuis le catalogue pour commencer votre commande.",
+    "ordersTitle": "Aucune commande",
+    "ordersMessage": "Vous n'avez pas encore passé de commande.",
+    "ordersGuestMessage": "Créez un compte pour retrouver l'historique de vos commandes.",
+    "searchTitle": "Aucun résultat",
+    "searchMessage": "Essayez avec un autre mot-clé."
   },
   "screens": {
     "Vitrine": { "title": "Nos meilleurs prix", "subtitle": "Vitrine publique — F00" },

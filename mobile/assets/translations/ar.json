@@ -8,6 +8,15 @@
     "cancel": "إلغاء",
     "comingSoon": "قريبًا — يتطلب الاتصال بـ Odoo"
   },
+  "auth": {
+    "phoneLabel": "رقم الهاتف",
+    "pinLabel": "الرمز السري",
+    "pinHint": "من 6 إلى 12 رقمًا",
+    "pinConfirmLabel": "تأكيد الرمز السري",
+    "currentPinLabel": "الرمز السري الحالي",
+    "newPinLabel": "الرمز السري الجديد",
+    "smsCodeLabel": "الرمز المستلم عبر الرسائل القصيرة"
+  },
   "nav": {
     "home": "الرئيسية",
     "catalog": "الكتالوج",
@@ -59,6 +68,7 @@
     "validation": {
       "required": "هذا الحقل إلزامي.",
       "invalid_phone": "رقم هاتف غير صالح.",
+      "invalid_pin": "يجب أن يتكون الرمز السري من 6 إلى 12 رقمًا.",
       "pin_mismatch": "الرمزان السريان غير متطابقين."
     },
     "checkout": {
@@ -110,7 +120,18 @@
     "deleteAccount": "حذف حسابي",
     "forgotPin": "نسيت الرمز السري؟",
     "useGpsLocation": "استخدام موقعي الحالي",
-    "retry": "إعادة المحاولة"
+    "retry": "إعادة المحاولة",
+    "receiveSms": "استلام رمز عبر الرسائل القصيرة",
+    "browseCatalog": "تصفح الكتالوج"
+  },
+  "emptyStates": {
+    "cartTitle": "سلتك فارغة",
+    "cartMessage": "أضف منتجات من الكتالوج لبدء طلبك.",
+    "ordersTitle": "لا توجد طلبات",
+    "ordersMessage": "لم تقم بأي طلب بعد.",
+    "ordersGuestMessage": "أنشئ حسابًا للوصول إلى سجل طلباتك.",
+    "searchTitle": "لا توجد نتائج",
+    "searchMessage": "جرّب كلمة بحث أخرى."
   },
   "screens": {
     "Vitrine": { "title": "أفضل أسعارنا", "subtitle": "واجهة عامة — F00" },

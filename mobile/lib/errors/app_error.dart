@@ -42,6 +42,7 @@ class AppError implements Exception {
   // --- Validation formulaire ---
   static const validationRequired = 'validation.required';
   static const validationInvalidPhone = 'validation.invalid_phone';
+  static const validationInvalidPin = 'validation.invalid_pin';
   static const validationPinMismatch = 'validation.pin_mismatch';
 
   // --- Checkout (F07) ---
