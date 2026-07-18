@@ -65,8 +65,14 @@ GoRouter buildAppRouter(AuthState authState) {
       GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
       GoRoute(path: '/auth-welcome', builder: (context, state) => const AuthWelcomeScreen()),
       GoRoute(path: '/register/step1', builder: (context, state) => const RegisterStep1Screen()),
-      GoRoute(path: '/register/step2', builder: (context, state) => const RegisterStep2Screen()),
-      GoRoute(path: '/register/step3', builder: (context, state) => const RegisterStep3Screen()),
+      GoRoute(
+        path: '/register/step2',
+        builder: (context, state) => RegisterStep2Screen(phone: (state.extra as String?) ?? ''),
+      ),
+      GoRoute(
+        path: '/register/step3',
+        builder: (context, state) => RegisterStep3Screen(phone: (state.extra as String?) ?? ''),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/forgot-pin', builder: (context, state) => const ForgotPinScreen()),
       // Affiché quand le health-check Odoo (GET /web/health) échoue, une fois branché.

@@ -29,7 +29,7 @@ class _RegisterStep1ScreenState extends State<RegisterStep1Screen> {
     }
     // Nom, prénom, langue, CGU : écran encore à compléter (UI seulement,
     // pas de dépendance Odoo) — hors scope de cette passe.
-    context.push('/register/step2');
+    context.push('/register/step2', extra: _phoneController.text.trim());
   }
 
   @override
