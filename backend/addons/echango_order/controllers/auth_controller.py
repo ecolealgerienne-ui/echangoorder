@@ -39,7 +39,7 @@ class EchangoAuthController(http.Controller):
             "name": partner.name,
             "login": phone,
             "partner_id": partner.id,
-            "groups_id": [(6, 0, [portal_group.id])],
+            "group_ids": [(6, 0, [portal_group.id])],
             "active": True,
         })
         user._set_pin(pin)
