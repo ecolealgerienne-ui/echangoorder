@@ -174,9 +174,28 @@ Il vérifie trois choses : (1) `fr.json` et `ar.json` ont exactement les mêmes 
 
 **Si du texte reste en français en mode AR malgré ce test qui passe** : ce n'est pas un problème de traduction manquante mais probablement un souci de rebuild — les fichiers JSON sont des *assets* embarqués au build, un hot reload ne les recharge pas toujours. Faire un arrêt complet + `flutter run` (pas juste hot reload/hot restart) avant de considérer que c'est un bug.
 
+## Principe architecture Odoo — standard avant custom
+
+**Règle non négociable pour tout développement backend : s'appuyer au maximum sur les modèles, champs et mécanismes standards d'Odoo** (logiciel stable depuis des années) plutôt que de recréer une couche custom. Un ajout custom (nouveau modèle, nouveau champ `x_*`, nouveau contrôleur HTTP) n'est justifié que lorsqu'Odoo standard **n'a aucun équivalent** pour le besoin — à vérifier explicitement avant toute création, et à documenter ici.
+
+Conséquences déjà actées pour Echango Order :
+
+- **Identité client = utilisateur portail Odoo** (`res.users` + groupe `base.group_portal`, lié à un `res.partner`), pas un modèle custom séparé. On réutilise ainsi le modèle de sécurité (record rules) et la compatibilité `/web/dataset/call_kw` déjà fournis par Odoo pour les utilisateurs portail, plutôt que de coder des contrôleurs custom pour tout le CRUD client.
+- **Champs standards réutilisés tels quels** (pas de doublon `x_*`) :
+  - Langue → `res.partner.lang` (champ standard, sélection des langues installées) — **remplace `x_langue`**, retiré de la liste ci-dessous.
+  - Téléphone → `res.partner.mobile` (ou `phone`) — pas de champ custom dédié.
+  - Adresse de livraison → adresses enfants standards de `res.partner` (mécanisme multi-adresses natif) plutôt qu'un champ texte libre — `x_adresse_favorite` reste dans la liste mais sera réduit au strict nécessaire (probablement un simple booléen "favorite" sur l'adresse) au moment de F07/F10, pas une réécriture de l'adresse.
+  - Commandes → `sale.order` standard (statuts, lignes, `partner_id`) plutôt qu'un modèle de commande custom.
+  - Coordonnées GPS → à vérifier au moment de F07 si le module standard `base_geolocalize` (`partner_latitude`/`partner_longitude` sur `res.partner`) est disponible en Odoo 19 CE avant de garder `x_latitude`/`x_longitude` en custom.
+- **Champs sans équivalent standard, donc custom, restent justifiés** : `x_pin` (hashé, sur `res.users` — aucune notion de PIN dans Odoo, l'auth standard est login/mot de passe), `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_substitution_produit`, modèle `x_delivery_zone` (pas de notion de zone de livraison simple nativement en Odoo 19 CE).
+
 ## Custom fields Odoo attendus (Expert Odoo)
 
-`x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_pin` (hashé), `x_langue`, `x_latitude`, `x_longitude`, `x_adresse_favorite`, `x_substitution_produit`, modèle `x_delivery_zone`.
+`x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_pin` (hashé, sur `res.users`), `x_adresse_favorite` (à réduire si possible, voir ci-dessus), `x_substitution_produit`, modèle `x_delivery_zone`.
+
+~~`x_langue`~~ : supprimé, remplacé par le champ standard `res.partner.lang` (voir § Principe architecture Odoo ci-dessus).
+
+~~`x_latitude`/`x_longitude`~~ : à confirmer au moment de F07 s'ils restent nécessaires ou si `base_geolocalize` (standard) suffit (voir ci-dessus).
 
 ## Documentation
 
