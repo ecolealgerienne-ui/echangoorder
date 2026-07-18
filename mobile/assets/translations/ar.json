@@ -132,7 +132,9 @@
     "ordersMessage": "لم تقم بأي طلب بعد.",
     "ordersGuestMessage": "أنشئ حسابًا للوصول إلى سجل طلباتك.",
     "searchTitle": "لا توجد نتائج",
-    "searchMessage": "جرّب كلمة بحث أخرى."
+    "searchMessage": "جرّب كلمة بحث أخرى.",
+    "productsTitle": "لا توجد منتجات متاحة",
+    "productsMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا."
   },
   "screens": {
     "Vitrine": { "title": "أفضل أسعارنا", "subtitle": "واجهة عامة — F00" },

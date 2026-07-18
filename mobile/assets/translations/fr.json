@@ -132,7 +132,9 @@
     "ordersMessage": "Vous n'avez pas encore passé de commande.",
     "ordersGuestMessage": "Créez un compte pour retrouver l'historique de vos commandes.",
     "searchTitle": "Aucun résultat",
-    "searchMessage": "Essayez avec un autre mot-clé."
+    "searchMessage": "Essayez avec un autre mot-clé.",
+    "productsTitle": "Aucun produit disponible",
+    "productsMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour."
   },
   "screens": {
     "Vitrine": { "title": "Nos meilleurs prix", "subtitle": "Vitrine publique — F00" },

@@ -21,13 +21,13 @@ const _errorCodeMap = <String, String>{
   'auth.account_locked': AppError.authPinLocked,
 };
 
-/// Client JSON-RPC pour les endpoints custom d'auth d'`echango_order`
-/// (`/echango/auth/register`, `/echango/auth/login`) — voir
-/// `backend/addons/echango_order/controllers/auth_controller.py`.
-///
-/// Une fois connecté, le reste des appels (catalogue, panier, commandes...)
-/// passera par le `/web/dataset/call_kw` standard d'Odoo ; ce client ne
-/// gère que ce que ces deux endpoints custom exposent pour l'instant.
+/// Client JSON-RPC Odoo : les endpoints custom d'auth d'`echango_order`
+/// (`/echango/auth/register`, `/echango/auth/login` — Odoo n'a pas de
+/// notion de PIN, voir `controllers/auth_controller.py`) et le
+/// `/web/dataset/call_kw` standard pour tout le reste une fois connecté
+/// (catalogue, panier, commandes...) — cf. CLAUDE.md § Principe
+/// architecture Odoo : pas de contrôleur custom là où le `call_kw`
+/// standard suffit.
 ///
 /// Gestion de session volontairement minimale pour cette première passe :
 /// le cookie `session_id` renvoyé par Odoo est gardé en mémoire (pas
@@ -46,21 +46,59 @@ class OdooApiClient {
     String? name,
     String? lang,
   }) async {
-    final result = await _call('/echango/auth/register', {
+    final result = await _rpc('/echango/auth/register', {
       'phone': phone,
       'pin': pin,
       if (name != null) 'name': name,
       if (lang != null) 'lang': lang,
-    });
+    }) as Map<String, dynamic>;
+    _throwIfOwnError(result);
     return result['user_id'] as int;
   }
 
   Future<int> login({required String phone, required String pin}) async {
-    final result = await _call('/echango/auth/login', {'phone': phone, 'pin': pin});
+    final result =
+        await _rpc('/echango/auth/login', {'phone': phone, 'pin': pin}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
     return result['uid'] as int;
   }
 
-  Future<Map<String, dynamic>> _call(String path, Map<String, dynamic> params) async {
+  /// `search_read` standard via `/web/dataset/call_kw` — pas de contrôleur
+  /// custom pour la lecture de modèles Odoo standards (catalogue, etc.),
+  /// seuls les droits d'accès portail sont accordés côté module
+  /// (`security/ir.model.access.csv` + `ir_rule.xml`).
+  Future<List<Map<String, dynamic>>> searchRead({
+    required String model,
+    List<dynamic> domain = const [],
+    required List<String> fields,
+    int? limit,
+    int offset = 0,
+  }) async {
+    final result = await _rpc('/web/dataset/call_kw', {
+      'model': model,
+      'method': 'search_read',
+      'args': [domain],
+      'kwargs': {
+        'fields': fields,
+        if (limit != null) 'limit': limit,
+        'offset': offset,
+      },
+    });
+    return (result as List).cast<Map<String, dynamic>>();
+  }
+
+  /// Vérifie la forme d'erreur propre à nos contrôleurs custom
+  /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
+  /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré
+  /// dans [_rpc]).
+  void _throwIfOwnError(Map<String, dynamic> result) {
+    final errorCode = result['error'] as String?;
+    if (errorCode != null) {
+      throw AppError(_errorCodeMap[errorCode] ?? AppError.unknown, cause: errorCode);
+    }
+  }
+
+  Future<dynamic> _rpc(String path, Map<String, dynamic> params) async {
     http.Response response;
     try {
       response = await _http
@@ -90,16 +128,19 @@ class OdooApiClient {
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (body['error'] != null) {
-      // Exception Odoo non anticipée par le contrôleur (bug serveur,
-      // signature interne incompatible...) — pas un cas métier attendu.
-      throw AppError(AppError.serverUnknown, cause: body['error']);
+      throw AppError(_mapRpcFault(body['error']), cause: body['error']);
     }
+    return body['result'];
+  }
 
-    final result = body['result'] as Map<String, dynamic>;
-    final errorCode = result['error'] as String?;
-    if (errorCode != null) {
-      throw AppError(_errorCodeMap[errorCode] ?? AppError.unknown, cause: errorCode);
+  /// Erreur JSON-RPC de niveau Odoo (pas la nôtre) : la session expirée est
+  /// le seul cas qu'on distingue explicitement (constante `AppError`
+  /// existante), le reste (bug, droits manquants...) reste générique.
+  String _mapRpcFault(dynamic error) {
+    final name = error is Map ? error['data']?['name'] as String? : null;
+    if (name != null && name.contains('SessionExpired')) {
+      return AppError.authSessionExpired;
     }
-    return result;
+    return AppError.serverUnknown;
   }
 }
