@@ -63,12 +63,12 @@ class _SubstitutionScreenState extends State<SubstitutionScreen> {
 
   Future<void> _respond({required bool accept}) async {
     if (_isSubmitting) return;
+    final api = context.read<OdooApiClient>();
     final substitution = await _substitutionFuture;
     final lineId = substitution['line_id'] as int;
 
     setState(() => _isSubmitting = true);
     try {
-      final api = context.read<OdooApiClient>();
       if (accept) {
         await api.acceptSubstitution(lineId: lineId);
       } else {

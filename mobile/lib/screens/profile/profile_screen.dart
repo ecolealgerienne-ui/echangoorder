@@ -78,7 +78,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return ScreenPlaceholder(
       screenKey: 'Profile',
-      child: isAuthenticated ? _buildHeader(context) : null,
       actions: [
         PlaceholderAction(
           label: 'screens.Addresses.title'.tr(),
@@ -125,6 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           variant: AppButtonVariant.danger,
         ),
       ],
+      child: isAuthenticated ? _buildHeader(context) : null,
     );
   }
 

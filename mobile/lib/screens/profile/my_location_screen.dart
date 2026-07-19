@@ -53,6 +53,7 @@ class _MyLocationScreenState extends State<MyLocationScreen> {
 
   Future<void> _useGpsLocation() async {
     if (_isFetchingPosition) return;
+    final api = context.read<OdooApiClient>();
     final granted = await requestLocationPermission(context);
     if (!granted || !mounted) return;
 
@@ -64,10 +65,7 @@ class _MyLocationScreenState extends State<MyLocationScreen> {
         return;
       }
       final position = await Geolocator.getCurrentPosition();
-      await context.read<OdooApiClient>().updateLocation(
-            latitude: position.latitude,
-            longitude: position.longitude,
-          );
+      await api.updateLocation(latitude: position.latitude, longitude: position.longitude);
       if (!mounted) return;
       setState(() {
         _latitude = position.latitude;

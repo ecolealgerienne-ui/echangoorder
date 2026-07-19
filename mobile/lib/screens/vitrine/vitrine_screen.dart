@@ -7,7 +7,6 @@ import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_button.dart';
 import '../../widgets/product_grid_tile.dart';
 import '../../widgets/screen_placeholder.dart';
 
