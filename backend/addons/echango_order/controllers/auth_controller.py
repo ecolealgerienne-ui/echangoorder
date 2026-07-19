@@ -51,6 +51,7 @@ class EchangoAuthController(http.Controller):
             # controllers/checkout_controller.py.
             "x_verification_state": "pending",
         })
+        partner._notify_verification_pending()
         user = users.create({
             "name": partner.name,
             "login": phone,
