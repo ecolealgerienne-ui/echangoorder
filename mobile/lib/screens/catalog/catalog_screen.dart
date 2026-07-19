@@ -40,6 +40,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
     });
   }
 
+  Future<void> _handleRefresh() async {
+    _loadCategories();
+    try {
+      await _categoriesFuture;
+    } catch (_) {
+      // Déjà affiché par le FutureBuilder (snapshot.hasError).
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,51 +63,55 @@ class _CatalogScreenState extends State<CatalogScreen> {
         ],
       ),
       body: SafeArea(
-        child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _categoriesFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              final error =
-                  snapshot.error is AppError ? snapshot.error as AppError : const AppError(AppError.unknown);
-              return ErrorStateView.forError(error, onRetry: _loadCategories);
-            }
-            final groups = snapshot.data!;
-            if (groups.isEmpty) {
-              return const ErrorStateView(
-                icon: Icons.category_outlined,
-                titleKey: 'emptyStates.categoriesTitle',
-                messageKey: 'emptyStates.categoriesMessage',
-              );
-            }
-            return ListView.separated(
-              itemCount: groups.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                // categ_id remonte comme [id, "Nom affiché"] (many2one).
-                final categField = groups[index]['categ_id'] as List<dynamic>?;
-                if (categField == null) return const SizedBox.shrink();
-                final categId = categField[0] as int;
-                final categName = categField[1] as String;
-                final count = groups[index]['__count'] as int? ?? 0;
-                return ListTile(
-                  leading: const Icon(Icons.category_outlined),
-                  title: Text(categName),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('$count', style: Theme.of(context).textTheme.bodySmall),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right),
-                    ],
-                  ),
-                  onTap: () => context.push('/catalog/category/$categId', extra: categName),
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _categoriesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                final error =
+                    snapshot.error is AppError ? snapshot.error as AppError : const AppError(AppError.unknown);
+                return ErrorStateView.forError(error, onRetry: _loadCategories);
+              }
+              final groups = snapshot.data!;
+              if (groups.isEmpty) {
+                return const ErrorStateView(
+                  icon: Icons.category_outlined,
+                  titleKey: 'emptyStates.categoriesTitle',
+                  messageKey: 'emptyStates.categoriesMessage',
                 );
-              },
-            );
-          },
+              }
+              return ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: groups.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  // categ_id remonte comme [id, "Nom affiché"] (many2one).
+                  final categField = groups[index]['categ_id'] as List<dynamic>?;
+                  if (categField == null) return const SizedBox.shrink();
+                  final categId = categField[0] as int;
+                  final categName = categField[1] as String;
+                  final count = groups[index]['__count'] as int? ?? 0;
+                  return ListTile(
+                    leading: const Icon(Icons.category_outlined),
+                    title: Text(categName),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('$count', style: Theme.of(context).textTheme.bodySmall),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                    onTap: () => context.push('/catalog/category/$categId', extra: categName),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );

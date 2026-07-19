@@ -99,6 +99,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _handleRefresh() async {
+    _loadProducts();
+    try {
+      await _productsFuture;
+    } catch (_) {
+      // Déjà affiché par le FutureBuilder (snapshot.hasError).
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartState>();
@@ -107,61 +116,65 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('screens.Home.title'.tr())),
       body: SafeArea(
-        child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _productsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              final error =
-                  snapshot.error is AppError ? snapshot.error as AppError : const AppError(AppError.unknown);
-              return ErrorStateView.forError(error, onRetry: _loadProducts);
-            }
-            final products = [...snapshot.data!, ..._extraProducts];
-            if (products.isEmpty) {
-              return const ErrorStateView(
-                icon: Icons.storefront_outlined,
-                titleKey: 'emptyStates.productsTitle',
-                messageKey: 'emptyStates.productsMessage',
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _productsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                final error =
+                    snapshot.error is AppError ? snapshot.error as AppError : const AppError(AppError.unknown);
+                return ErrorStateView.forError(error, onRetry: _loadProducts);
+              }
+              final products = [...snapshot.data!, ..._extraProducts];
+              if (products.isEmpty) {
+                return const ErrorStateView(
+                  icon: Icons.storefront_outlined,
+                  titleKey: 'emptyStates.productsTitle',
+                  messageKey: 'emptyStates.productsMessage',
+                );
+              }
+              return CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: AppSpacing.md,
+                        crossAxisSpacing: AppSpacing.md,
+                        childAspectRatio: 0.62,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final product = products[index];
+                          final productId = product['id'] as int;
+                          return ProductGridTile(
+                            product: product,
+                            onTap: () => context.push('/home/product/$productId'),
+                            cartQty: cart.quantityFor(productId),
+                            onIncrement: () => addProductToCart(context, productId),
+                            onDecrement: () => decrementCartProduct(context, productId),
+                            isFavorite: favorites.isFavorite(productId),
+                            onToggleFavorite: () => toggleFavorite(context, productId),
+                          );
+                        },
+                        childCount: products.length,
+                      ),
+                    ),
+                  ),
+                  if (_hasMore)
+                    SliverToBoxAdapter(
+                      child: LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore),
+                    ),
+                ],
               );
-            }
-            return CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: AppSpacing.md,
-                      crossAxisSpacing: AppSpacing.md,
-                      childAspectRatio: 0.62,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final product = products[index];
-                        final productId = product['id'] as int;
-                        return ProductGridTile(
-                          product: product,
-                          onTap: () => context.push('/home/product/$productId'),
-                          cartQty: cart.quantityFor(productId),
-                          onIncrement: () => addProductToCart(context, productId),
-                          onDecrement: () => decrementCartProduct(context, productId),
-                          isFavorite: favorites.isFavorite(productId),
-                          onToggleFavorite: () => toggleFavorite(context, productId),
-                        );
-                      },
-                      childCount: products.length,
-                    ),
-                  ),
-                ),
-                if (_hasMore)
-                  SliverToBoxAdapter(
-                    child: LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore),
-                  ),
-              ],
-            );
-          },
+            },
+          ),
         ),
       ),
     );
