@@ -286,6 +286,7 @@ class OdooApiClient {
   Future<Map<String, dynamic>> confirmOrder({
     required String receptionMode,
     required DateTime slotStart,
+    int? addressId,
     String? street,
     String? city,
     String? zipCode,
@@ -294,6 +295,12 @@ class OdooApiClient {
     final result = await _rpc('/echango/checkout/confirm', {
       'reception_mode': receptionMode,
       'slot_start': formatOdooDatetime(slotStart),
+      // Adresse sauvegardée (F10) : addressId prioritaire côté serveur,
+      // street/city/zipCode/notes ignorés dans ce cas (voir
+      // checkout_controller.py.confirm) mais transmis quand même, sans
+      // effet, pour garder confirmOrder() simple à appeler dans les deux
+      // cas plutôt que deux méthodes distinctes.
+      if (addressId != null) 'address_id': addressId,
       if (street != null) 'street': street,
       if (city != null) 'city': city,
       if (zipCode != null) 'zip_code': zipCode,

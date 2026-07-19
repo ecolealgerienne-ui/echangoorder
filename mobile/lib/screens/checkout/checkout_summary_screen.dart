@@ -67,6 +67,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
       final result = await context.read<OdooApiClient>().confirmOrder(
             receptionMode: mode == ReceptionMode.delivery ? 'home_delivery' : 'pickup',
             slotStart: slot,
+            addressId: mode == ReceptionMode.delivery ? checkout.addressId : null,
             street: mode == ReceptionMode.delivery ? checkout.street : null,
             city: mode == ReceptionMode.delivery ? checkout.city : null,
             zipCode: mode == ReceptionMode.delivery ? checkout.zipCode : null,

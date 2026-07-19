@@ -100,9 +100,15 @@ class EchangoCheckoutController(http.Controller):
 
         return EchangoCartController()._cart_payload(order)
 
+    @staticmethod
+    def _zone_covers(city, zip_code):
+        return bool(request.env["x_delivery_zone"].sudo().search([
+            "|", ("city", "=ilike", (city or "").strip()), ("zip_code", "=", (zip_code or "").strip()),
+        ], limit=1))
+
     @http.route("/echango/checkout/confirm", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     @require_fresh_session
-    def confirm(self, reception_mode=None, slot_start=None, street=None, city=None,
+    def confirm(self, reception_mode=None, slot_start=None, address_id=None, street=None, city=None,
                 zip_code=None, notes=None, **kw):
         if reception_mode not in ("home_delivery", "pickup"):
             return {"error": "validation.required"}
@@ -129,20 +135,31 @@ class EchangoCheckoutController(http.Controller):
             vals["x_creneau"] = slot_start
 
         if reception_mode == "home_delivery":
-            zone = request.env["x_delivery_zone"].sudo().search([
-                "|", ("city", "=ilike", (city or "").strip()), ("zip_code", "=", (zip_code or "").strip()),
-            ], limit=1)
-            if not zone:
-                return {"error": "checkout.out_of_delivery_zone"}
-            shipping = request.env["res.partner"].sudo().create({
-                "name": partner.name,
-                "parent_id": partner.id,
-                "type": "delivery",
-                "street": street,
-                "city": city,
-                "zip": zip_code,
-                "comment": notes,
-            })
+            if address_id:
+                # F10 — adresse sauvegardée (`res.partner` enfant type
+                # 'delivery') choisie au checkout plutôt qu'une adresse
+                # ressaisie à chaque commande (cf. status-V1.md § Points
+                # de vigilance). Réutilisée telle quelle comme
+                # partner_shipping_id, pas de recréation de contact.
+                shipping = request.env["res.partner"].sudo().search([
+                    ("id", "=", address_id), ("parent_id", "=", partner.id), ("type", "=", "delivery"),
+                ], limit=1)
+                if not shipping:
+                    return {"error": "not_found"}
+                if not self._zone_covers(shipping.city, shipping.zip):
+                    return {"error": "checkout.out_of_delivery_zone"}
+            else:
+                if not self._zone_covers(city, zip_code):
+                    return {"error": "checkout.out_of_delivery_zone"}
+                shipping = request.env["res.partner"].sudo().create({
+                    "name": partner.name,
+                    "parent_id": partner.id,
+                    "type": "delivery",
+                    "street": street,
+                    "city": city,
+                    "zip": zip_code,
+                    "comment": notes,
+                })
             vals["partner_shipping_id"] = shipping.id
 
         order.sudo().write(vals)
