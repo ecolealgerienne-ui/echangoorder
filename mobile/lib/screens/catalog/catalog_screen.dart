@@ -7,8 +7,8 @@ import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 
 /// F04 — Catalogue : catégories dérivées des produits réellement visibles
-/// (`read_group` sur `product.template` par `categ_id`), pas d'un
-/// `search_read` direct sur `product.category` — celui-ci ferait
+/// (`formatted_read_group` sur `product.template` par `categ_id`), pas
+/// d'un `search_read` direct sur `product.category` — celui-ci ferait
 /// remonter aussi les catégories techniques par défaut d'Odoo (Dépenses,
 /// Achats...) qui n'ont aucun produit vendable dedans.
 class CatalogScreen extends StatefulWidget {
@@ -35,7 +35,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
         domain: const [
           ['sale_ok', '=', true],
         ],
-        fields: const ['categ_id'],
         groupBy: const ['categ_id'],
       );
     });
@@ -83,7 +82,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 if (categField == null) return const SizedBox.shrink();
                 final categId = categField[0] as int;
                 final categName = categField[1] as String;
-                final count = groups[index]['categ_id_count'] as int? ?? 0;
+                final count = groups[index]['__count'] as int? ?? 0;
                 return ListTile(
                   leading: const Icon(Icons.category_outlined),
                   title: Text(categName),

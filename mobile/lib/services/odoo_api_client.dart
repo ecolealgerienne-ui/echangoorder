@@ -92,21 +92,28 @@ class OdooApiClient {
     return (result as List).cast<Map<String, dynamic>>();
   }
 
-  /// `read_group` standard : regroupe des enregistrements existants par
-  /// champ (ex : produits par catégorie). Contrairement à un `search_read`
-  /// sur le modèle "parent" (ici `product.category`), ça ne fait remonter
-  /// que les groupes qui contiennent effectivement des enregistrements
-  /// visibles — pas les catégories techniques vides côté portail.
+  /// `formatted_read_group` standard : regroupe des enregistrements
+  /// existants par champ (ex : produits par catégorie). Contrairement à un
+  /// `search_read` sur le modèle "parent" (ici `product.category`), ça ne
+  /// fait remonter que les groupes qui contiennent effectivement des
+  /// enregistrements visibles — pas les catégories techniques vides côté
+  /// portail.
+  ///
+  /// Remplace l'ancien `read_group`, déprécié depuis Odoo 19 (vérifié
+  /// contre le code source, `addons/web/models/models.py`) — même
+  /// représentation `[id, nom]` pour un champ many2one groupé, mais le
+  /// comptage n'est plus implicite : il faut le demander explicitement via
+  /// `aggregates` (clé `__count` dans le résultat, plus `<champ>_count`).
   Future<List<Map<String, dynamic>>> readGroup({
     required String model,
     List<dynamic> domain = const [],
-    required List<String> fields,
     required List<String> groupBy,
+    List<String> aggregates = const ['__count'],
   }) async {
     final result = await _rpc('/web/dataset/call_kw', {
       'model': model,
-      'method': 'read_group',
-      'args': [domain, fields, groupBy],
+      'method': 'formatted_read_group',
+      'args': [domain, groupBy, aggregates],
       'kwargs': {},
     });
     return (result as List).cast<Map<String, dynamic>>();
