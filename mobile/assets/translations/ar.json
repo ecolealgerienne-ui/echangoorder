@@ -164,7 +164,8 @@
     "browseCatalog": "تصفح الكتالوج"
   },
   "catalog": {
-    "outOfStock": "غير متوفر"
+    "outOfStock": "غير متوفر",
+    "onPromo": "عرض"
   },
   "emptyStates": {
     "cartTitle": "سلتك فارغة",

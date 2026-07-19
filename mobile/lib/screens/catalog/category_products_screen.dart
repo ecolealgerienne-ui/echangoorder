@@ -58,10 +58,13 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     // Disponibilité stock récupérée à part (contrôleur dédié, sudo() côté
     // serveur) plutôt que via le champ calculé qty_available exposé au
     // portail — voir status-V1.md § Points de vigilance.
-    final stock = await api.getStock(productIds: products.map((p) => p['id'] as int).toList());
+    final ids = products.map((p) => p['id'] as int).toList();
+    final stock = await api.getStock(productIds: ids);
+    final promoted = await api.getPromotedIds(productIds: ids);
     for (final product in products) {
       final qty = stock[product['id'] as int];
       if (qty != null) product['qty_available'] = qty;
+      product['on_promo'] = promoted.contains(product['id'] as int);
     }
     return products;
   }

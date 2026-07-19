@@ -164,7 +164,8 @@
     "browseCatalog": "Voir le catalogue"
   },
   "catalog": {
-    "outOfStock": "Épuisé"
+    "outOfStock": "Épuisé",
+    "onPromo": "Promo"
   },
   "emptyStates": {
     "cartTitle": "Votre panier est vide",

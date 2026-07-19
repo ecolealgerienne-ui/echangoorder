@@ -56,10 +56,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   Future<List<Map<String, dynamic>>> _fetchFavorites() async {
     final api = context.read<OdooApiClient>();
     final favorites = await api.getFavorites();
-    final stock = await api.getStock(productIds: favorites.map((p) => p['id'] as int).toList());
+    final ids = favorites.map((p) => p['id'] as int).toList();
+    final stock = await api.getStock(productIds: ids);
+    final promoted = await api.getPromotedIds(productIds: ids);
     for (final product in favorites) {
       final qty = stock[product['id'] as int];
       if (qty != null) product['qty_available'] = qty;
+      product['on_promo'] = promoted.contains(product['id'] as int);
     }
     return favorites;
   }

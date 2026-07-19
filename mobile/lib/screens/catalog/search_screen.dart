@@ -67,10 +67,13 @@ class _SearchScreenState extends State<SearchScreen> {
       limit: 30,
     );
     // Disponibilité stock à part — voir CategoryProductsScreen.
-    final stock = await api.getStock(productIds: results.map((p) => p['id'] as int).toList());
+    final ids = results.map((p) => p['id'] as int).toList();
+    final stock = await api.getStock(productIds: ids);
+    final promoted = await api.getPromotedIds(productIds: ids);
     for (final product in results) {
       final qty = stock[product['id'] as int];
       if (qty != null) product['qty_available'] = qty;
+      product['on_promo'] = promoted.contains(product['id'] as int);
     }
     return results;
   }
