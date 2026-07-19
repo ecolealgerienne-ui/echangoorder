@@ -2,7 +2,7 @@
 
 Suivi de l'avancement de l'implémentation. Statuts : `Non démarré` · `En cours` · `Bloqué` · `Terminé`.
 
-Dernière mise à jour : 2026-07-18
+Dernière mise à jour : 2026-07-19
 
 **Stratégie en cours** : phase 1 = écrans + navigation complets, sans données ni backend (état local simulé uniquement pour piloter la navigation : session auth). Phase 2 = branchement direct sur Odoo (pas de couche mock intermédiaire).
 
@@ -56,8 +56,7 @@ Colonne **Écrans** : placeholders créés + navigables (sans données ni logiqu
 | F01 | Onboarding | Terminé | — | ☐ | Aucun appel API |
 | F02 | Authentification (inscription/connexion/invité) | Terminé | Terminé — inscription + connexion validées en réel via l'app | ☐ | Backend Odoo `/echango/auth/register` + `/login` + client Flutter, testés avec succès de bout en bout (app réelle sur émulateur). Reste : scénario de blocage PIN (5 échecs) pas testé en réel, session non persistée (voir §0), et QA complet (RTL, perf) pas encore passé en revue formelle. Mode invité géré localement (pas d'appel Odoo) |
 | F03 | Accueil | Terminé | **Terminé — validé en réel** (grille produits affichée dans l'app après `-u echango_order`) | ☐ | Voir §0 pour le détail (accès portail accordé, filtre `sale_ok`, pas encore de "produits mis en avant"/bannière) |
-| F04 | Catalogue & Recherche | Terminé | Terminé (code) — **corrigé après retour utilisateur**, non re-testé | ☐ | `CatalogScreen` (voir §0 pour le détail du bug corrigé), `CategoryProductsScreen` (grille filtrée `categ_id`), `SearchScreen` (`name ilike`, anti-rebond 400ms). Widget partagé `ProductGridTile` (Accueil + Catalogue + Recherche) avec badge "Épuisé" (`qty_available <= 0`) et bouton "+" (`showComingSoon` — ajout réel au panier = F06, pas encore fait). Restriction `sale_ok` déjà imposée côté serveur par l'`ir.rule` de F03, pas dupliquée côté client |
-| F04 | Catalogue & Recherche | Terminé | ☐ | ☐ | |
+| F04 | Catalogue & Recherche | Terminé | Terminé (code) — corrigé après retours utilisateur (catégories + warning `read_group`), non re-testé depuis | ☐ | `CatalogScreen`/`CategoryProductsScreen`/`SearchScreen` (voir §0). Bouton "+" branché sur F06 (plus `showComingSoon`). Restriction `sale_ok` imposée côté serveur par l'`ir.rule` de F03 |
 | F05 | Fiche Produit | Terminé | Terminé (code), non testé en réel | ☐ | Voir §0 — `read` standard par id, description Html nettoyée côté client, `qty_available` volontairement absent (bouton "Ajouter au panier" toujours actif, critère QA "épuisé → désactivé" différé) |
 | F06 | Panier | Terminé | Terminé (code), non testé en réel | ☐ | Voir §0 — panier = devis Odoo (`sale.order` brouillon) réel, contrôleur custom (portail en lecture seule sur ces modèles par design Odoo). Pas de panier invité (partner temporaire non implémenté, cf. §4) |
 | F07 | Checkout & Mode de Réception | Terminé | ☐ | ☐ | Zones de livraison (`x_delivery_zone`), créneaux |
