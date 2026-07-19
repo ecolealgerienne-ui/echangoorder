@@ -68,12 +68,13 @@ class EchangoCartController(http.Controller):
         # couvrir aussi `/echango/cart` (simple consultation).
         order.sudo().action_open_reward_wizard()
         lines = []
+        product_lines = order.order_line.filtered(lambda l: not l.is_reward_line)
         # F15 — les lignes de récompense (code promo appliqué, module
         # standard `loyalty`/`sale_loyalty`) sont exclues de la liste
         # produit : elles n'ont pas de +/- quantité ni de bouton supprimer
         # côté app, la réduction est affichée séparément (`discount`,
         # `order.reward_amount` — champ standard, déjà négatif).
-        for line in order.order_line.filtered(lambda l: not l.is_reward_line):
+        for line in product_lines:
             product = line.product_id
             image = product.image_128
             lines.append({
@@ -89,7 +90,13 @@ class EchangoCartController(http.Controller):
         return {
             "order_id": order.id,
             "lines": lines,
-            "amount_subtotal": order.amount_untaxed,
+            # `order.amount_untaxed` inclut déjà la ligne de récompense
+            # (négative) : ce n'est donc pas un "sous-total brut" (demande
+            # utilisateur), juste `amount_total` sans les taxes. Le vrai
+            # sous-total brut est la somme des lignes produit seules, hors
+            # récompense — `amount_total` reste la source de vérité pour le
+            # montant final payé (déjà net de la remise).
+            "amount_subtotal": sum(product_lines.mapped("price_subtotal")),
             "amount_total": order.amount_total,
             "discount": order.reward_amount,
             "verification_state": verification_state,
