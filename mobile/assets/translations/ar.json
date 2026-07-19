@@ -27,7 +27,15 @@
   "checkout": {
     "deliveryHome": "🏠 التوصيل إلى المنزل",
     "pickupStore": "🏪 الاستلام من المتجر",
-    "modifyAddress": "تعديل العنوان"
+    "modifyAddress": "تعديل العنوان",
+    "streetLabel": "الشارع",
+    "cityLabel": "المدينة",
+    "zipLabel": "الرمز البريدي",
+    "notesLabel": "ملاحظات (اختياري)",
+    "today": "اليوم",
+    "tomorrow": "غدًا",
+    "paymentOnDelivery": "💵 الدفع عند الاستلام",
+    "itemsLabel": "منتجات"
   },
   "cart": {
     "subtotal": "المجموع الفرعي",

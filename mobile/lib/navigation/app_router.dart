@@ -141,8 +141,15 @@ GoRouter buildAppRouter(AuthState authState) {
                 ),
                 GoRoute(
                   path: 'checkout/confirmation/:orderRef',
-                  builder: (context, state) =>
-                      OrderConfirmationScreen(orderRef: state.pathParameters['orderRef']!),
+                  builder: (context, state) {
+                    final extra = state.extra as Map<String, dynamic>?;
+                    return OrderConfirmationScreen(
+                      orderRef: state.pathParameters['orderRef']!,
+                      amountTotal: (extra?['amount_total'] as num?)?.toDouble(),
+                      receptionMode: extra?['reception_mode'] as String?,
+                      slotStart: extra?['slot_start'] as String?,
+                    );
+                  },
                 ),
               ],
             ),

@@ -12,13 +12,8 @@ import '../../utils/add_to_cart.dart';
 import '../../widgets/app_button.dart';
 
 /// F05 — Fiche produit : `product.template` par id (`read` standard, pas
-/// de contrôleur custom).
-///
-/// `qty_available` volontairement absent (voir F04 / status-V1.md §
-/// Points de vigilance : champ calculé qui nécessiterait d'ouvrir tout le
-/// module stock au portail) — le bouton "Ajouter au panier" reste donc
-/// toujours actif ; le critère QA "produit épuisé → bouton désactivé"
-/// est différé jusqu'à ce qu'un signal de stock plus étroit existe.
+/// de contrôleur custom). Disponibilité stock récupérée à part via
+/// `OdooApiClient.getStock()` (contrôleur dédié en `sudo()`, voir F04).
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
 
@@ -41,14 +36,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void _loadProduct() {
     final id = int.tryParse(widget.productId);
     setState(() {
-      _productFuture = id == null
-          ? Future.error(const AppError(AppError.notFound))
-          : context.read<OdooApiClient>().read(
-                model: 'product.template',
-                id: id,
-                fields: const ['name', 'description', 'list_price', 'image_1920', 'uom_id'],
-              );
+      _productFuture = id == null ? Future.error(const AppError(AppError.notFound)) : _fetchProduct(id);
     });
+  }
+
+  Future<Map<String, dynamic>> _fetchProduct(int id) async {
+    final api = context.read<OdooApiClient>();
+    final product = await api.read(
+      model: 'product.template',
+      id: id,
+      fields: const ['name', 'description', 'list_price', 'image_1920', 'uom_id'],
+    );
+    final stock = await api.getStock(productIds: [id]);
+    final qty = stock[id];
+    if (qty != null) product['qty_available'] = qty;
+    return product;
   }
 
   void _share() {
@@ -87,6 +89,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             final description = descriptionRaw is String ? _stripHtml(descriptionRaw) : '';
             final uomField = product['uom_id'];
             final uomName = uomField is List && uomField.length > 1 ? uomField[1] as String : '';
+            final qtyAvailable = (product['qty_available'] as num?)?.toDouble();
+            final outOfStock = qtyAvailable != null && qtyAvailable <= 0;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -140,10 +144,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                     ],
                   ),
+                  if (outOfStock) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'errors.checkout.out_of_stock'.tr(),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.danger),
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.sm),
                   AppButton(
                     label: 'actions.addToCart'.tr(),
-                    onPressed: () => addProductToCart(context, product['id'] as int, qty: _quantity),
+                    onPressed: outOfStock
+                        ? null
+                        : () => addProductToCart(context, product['id'] as int, qty: _quantity),
                   ),
                 ],
               ),

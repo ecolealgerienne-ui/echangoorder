@@ -9,6 +9,7 @@ import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
 import '../../state/auth_state.dart';
 import '../../state/cart_state.dart';
+import '../../state/checkout_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_button.dart';
 
@@ -144,7 +145,12 @@ class _CartScreenState extends State<CartScreen> {
               const SizedBox(height: AppSpacing.sm),
               AppButton(
                 label: 'actions.goToCheckout'.tr(),
-                onPressed: () => context.push('/cart/checkout/reception-mode'),
+                onPressed: () {
+                  // Repart d'un état propre à chaque entrée dans le tunnel
+                  // (pas de résidu d'un essai précédent abandonné).
+                  context.read<CheckoutState>().reset();
+                  context.push('/cart/checkout/reception-mode');
+                },
               ),
             ],
           ),

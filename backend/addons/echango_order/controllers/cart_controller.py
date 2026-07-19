@@ -74,7 +74,10 @@ class EchangoCartController(http.Controller):
         template = request.env["product.template"].sudo().search(
             [("id", "=", product_id), ("sale_ok", "=", True)], limit=1,
         )
-        if not template:
+        # Vérification stock côté serveur (pas seulement client) : le
+        # bouton désactivé côté app ne suffit pas, un appel direct à cet
+        # endpoint doit aussi être bloqué.
+        if not template or template.qty_available <= 0:
             return {"error": "cart.product_unavailable"}
         qty = max(1, qty or 1)
 

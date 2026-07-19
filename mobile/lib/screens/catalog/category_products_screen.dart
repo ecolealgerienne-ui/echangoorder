@@ -33,25 +33,33 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   }
 
   void _loadProducts() {
+    setState(() {
+      _productsFuture = _fetchProducts();
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchProducts() async {
     final api = context.read<OdooApiClient>();
     final categId = int.tryParse(widget.categoryId);
-    setState(() {
-      _productsFuture = api.searchRead(
-        model: 'product.template',
-        domain: categId != null
-            ? [
-                ['categ_id', '=', categId],
-              ]
-            : const [],
-        // Pas de qty_available : champ calculé qui lit product.product PUIS
-        // stock.warehouse (et probablement plus loin) — trop de surface
-        // interne à ouvrir au portail pour ce que ça apporte ici. Le badge
-        // "épuisé" restera inactif tant qu'on n'a pas un signal de stock
-        // plus étroit (voir status-V1.md).
-        fields: const ['name', 'list_price', 'image_128'],
-        limit: 50,
-      );
-    });
+    final products = await api.searchRead(
+      model: 'product.template',
+      domain: categId != null
+          ? [
+              ['categ_id', '=', categId],
+            ]
+          : const [],
+      fields: const ['name', 'list_price', 'image_128'],
+      limit: 50,
+    );
+    // Disponibilité stock récupérée à part (contrôleur dédié, sudo() côté
+    // serveur) plutôt que via le champ calculé qty_available exposé au
+    // portail — voir status-V1.md § Points de vigilance.
+    final stock = await api.getStock(productIds: products.map((p) => p['id'] as int).toList());
+    for (final product in products) {
+      final qty = stock[product['id'] as int];
+      if (qty != null) product['qty_available'] = qty;
+    }
+    return products;
   }
 
   @override

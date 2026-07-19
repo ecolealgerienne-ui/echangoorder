@@ -19,6 +19,7 @@ mesure du branchement de chaque écran (F02 auth en premier).
     "data": [
         "security/ir.model.access.csv",
         "security/ir_rule.xml",
+        "views/delivery_zone_views.xml",
     ],
     "installable": True,
     "application": True,

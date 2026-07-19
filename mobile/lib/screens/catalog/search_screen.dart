@@ -42,18 +42,28 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _search(String query) {
-    final api = context.read<OdooApiClient>();
     setState(() {
-      _resultsFuture = api.searchRead(
-        model: 'product.template',
-        domain: [
-          ['name', 'ilike', query],
-        ],
-        // Pas de qty_available ici non plus — voir CategoryProductsScreen.
-        fields: const ['name', 'list_price', 'image_128'],
-        limit: 30,
-      );
+      _resultsFuture = _fetchResults(query);
     });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchResults(String query) async {
+    final api = context.read<OdooApiClient>();
+    final results = await api.searchRead(
+      model: 'product.template',
+      domain: [
+        ['name', 'ilike', query],
+      ],
+      fields: const ['name', 'list_price', 'image_128'],
+      limit: 30,
+    );
+    // Disponibilité stock à part — voir CategoryProductsScreen.
+    final stock = await api.getStock(productIds: results.map((p) => p['id'] as int).toList());
+    for (final product in results) {
+      final qty = stock[product['id'] as int];
+      if (qty != null) product['qty_available'] = qty;
+    }
+    return results;
   }
 
   void _clear() {

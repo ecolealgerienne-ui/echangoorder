@@ -27,7 +27,15 @@
   "checkout": {
     "deliveryHome": "🏠 Livraison à domicile",
     "pickupStore": "🏪 Retrait en magasin",
-    "modifyAddress": "Modifier l'adresse"
+    "modifyAddress": "Modifier l'adresse",
+    "streetLabel": "Rue",
+    "cityLabel": "Ville",
+    "zipLabel": "Code postal",
+    "notesLabel": "Notes (optionnel)",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "paymentOnDelivery": "💵 Paiement à la réception / au retrait",
+    "itemsLabel": "articles"
   },
   "cart": {
     "subtotal": "Sous-total",

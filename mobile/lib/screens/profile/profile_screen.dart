@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/delete_account_dialog.dart';
@@ -10,10 +11,13 @@ import '../../widgets/screen_placeholder.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  void _logout(BuildContext context) {
+    context.read<OdooApiClient>().clearSession();
+    context.read<AuthState>().logout();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authState = context.read<AuthState>();
-
     return ScreenPlaceholder(
       screenKey: 'Profile',
       actions: [
@@ -53,7 +57,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         PlaceholderAction(
           label: 'actions.logout'.tr(),
-          onPressed: authState.logout,
+          onPressed: () => _logout(context),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(

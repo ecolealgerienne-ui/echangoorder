@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
@@ -24,6 +26,7 @@ const _errorCodeMap = <String, String>{
   // traductions supplémentaires pour la même idée.
   'cart.product_unavailable': AppError.checkoutOutOfStock,
   'not_found': AppError.notFound,
+  'checkout.out_of_delivery_zone': AppError.checkoutOutOfDeliveryZone,
 };
 
 /// Client JSON-RPC Odoo : les endpoints custom d'auth d'`echango_order`
@@ -34,16 +37,33 @@ const _errorCodeMap = <String, String>{
 /// architecture Odoo : pas de contrôleur custom là où le `call_kw`
 /// standard suffit.
 ///
-/// Gestion de session volontairement minimale pour cette première passe :
-/// le cookie `session_id` renvoyé par Odoo est gardé en mémoire (pas
-/// persisté), donc perdu au redémarrage de l'app — le stockage sécurisé
-/// (`flutter_secure_storage`, cf. status-V1.md) reste à ajouter avant
-/// une vraie gestion de session 24h.
+/// Session persistée via `flutter_secure_storage` (Keychain/Keystore, cf.
+/// CLAUDE.md § Sécurité) : le cookie `session_id` survit au redémarrage de
+/// l'app. Appeler [restoreSession] une fois au démarrage avant le premier
+/// appel réseau. Aucune vérification proactive de validité au démarrage
+/// (pas d'appel "ping") : si la session Odoo a expiré côté serveur, le
+/// premier appel réel échoue avec [AppError.authSessionExpired], ce qui
+/// déclenche [onSessionExpired].
 class OdooApiClient {
-  OdooApiClient({http.Client? httpClient}) : _http = httpClient ?? http.Client();
+  OdooApiClient({http.Client? httpClient, FlutterSecureStorage? secureStorage, this.onSessionExpired})
+      : _http = httpClient ?? http.Client(),
+        _secureStorage = secureStorage ?? const FlutterSecureStorage();
+
+  static const _cookieStorageKey = 'echango_session_cookie';
 
   final http.Client _http;
+  final FlutterSecureStorage _secureStorage;
+  final VoidCallback? onSessionExpired;
   String? _sessionCookie;
+
+  Future<void> restoreSession() async {
+    _sessionCookie = await _secureStorage.read(key: _cookieStorageKey);
+  }
+
+  Future<void> clearSession() async {
+    _sessionCookie = null;
+    await _secureStorage.delete(key: _cookieStorageKey);
+  }
 
   Future<int> register({
     required String phone,
@@ -176,6 +196,54 @@ class OdooApiClient {
     return result;
   }
 
+  /// F04/F05 — disponibilité stock, via un contrôleur étroit en `sudo()`
+  /// plutôt que le champ calculé `qty_available` exposé au portail via
+  /// `call_kw` (cascade d'`AccessError` sur `product.product` puis
+  /// `stock.warehouse`, voir status-V1.md § Points de vigilance).
+  Future<Map<int, double>> getStock({required List<int> productIds}) async {
+    if (productIds.isEmpty) return {};
+    final result =
+        await _rpc('/echango/catalog/stock', {'product_ids': productIds}) as Map<String, dynamic>;
+    final stock = result['stock'] as Map<String, dynamic>;
+    return stock.map((key, value) => MapEntry(int.parse(key), (value as num).toDouble()));
+  }
+
+  /// F07 — vérifie qu'une ville/code postal est dans une `x_delivery_zone`
+  /// configurée en back-office. Modèle non exposé au portail (voir
+  /// `controllers/checkout_controller.py`), d'où l'appel dédié plutôt
+  /// qu'un `search_read` standard.
+  Future<bool> checkDeliveryZone({required String city, required String zipCode}) async {
+    final result = await _rpc('/echango/checkout/check_zone', {
+      'city': city,
+      'zip_code': zipCode,
+    }) as Map<String, dynamic>;
+    return result['covered'] as bool? ?? false;
+  }
+
+  /// F07 — fixe le mode de réception/l'adresse/le créneau sur le devis en
+  /// cours et le confirme (`action_confirm`, `state` -> `sale`). Le panier
+  /// (F06) redevient vide juste après, puisqu'il n'y a alors plus de devis
+  /// à l'état brouillon pour ce client.
+  Future<Map<String, dynamic>> confirmOrder({
+    required String receptionMode,
+    required DateTime slotStart,
+    String? street,
+    String? city,
+    String? zipCode,
+    String? notes,
+  }) async {
+    final result = await _rpc('/echango/checkout/confirm', {
+      'reception_mode': receptionMode,
+      'slot_start': formatOdooDatetime(slotStart),
+      if (street != null) 'street': street,
+      if (city != null) 'city': city,
+      if (zipCode != null) 'zip_code': zipCode,
+      if (notes != null) 'notes': notes,
+    }) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom
   /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
   /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré
@@ -209,6 +277,7 @@ class OdooApiClient {
     final setCookie = response.headers['set-cookie'];
     if (setCookie != null) {
       _sessionCookie = setCookie.split(';').first;
+      await _secureStorage.write(key: _cookieStorageKey, value: _sessionCookie);
     }
 
     if (response.statusCode != 200) {
@@ -217,7 +286,11 @@ class OdooApiClient {
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (body['error'] != null) {
-      throw AppError(_mapRpcFault(body['error']), cause: body['error']);
+      final code = _mapRpcFault(body['error']);
+      if (code == AppError.authSessionExpired) {
+        onSessionExpired?.call();
+      }
+      throw AppError(code, cause: body['error']);
     }
     return body['result'];
   }
@@ -232,4 +305,14 @@ class OdooApiClient {
     }
     return AppError.serverUnknown;
   }
+}
+
+/// `DateTime` -> format attendu par les champs `Datetime` d'Odoo côté
+/// JSON-RPC (`YYYY-MM-DD HH:MM:SS`, pas de `T` ni de fuseau — `toIso8601String()`
+/// ne convient pas). Simplification MVP : pas de conversion UTC, on
+/// suppose serveur et client dans le même fuseau horaire (déploiement
+/// régional) — à revoir avant une release multi-fuseaux.
+String formatOdooDatetime(DateTime dt) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
 }
