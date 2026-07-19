@@ -8,6 +8,7 @@ import 'services/odoo_api_client.dart';
 import 'state/auth_state.dart';
 import 'state/cart_state.dart';
 import 'state/checkout_state.dart';
+import 'state/favorites_state.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -54,6 +55,7 @@ class EchangoOrderApp extends StatefulWidget {
 class _EchangoOrderAppState extends State<EchangoOrderApp> {
   late final CartState _cartState;
   late final CheckoutState _checkoutState;
+  late final FavoritesState _favoritesState;
   late final GoRouter _router;
 
   @override
@@ -61,6 +63,7 @@ class _EchangoOrderAppState extends State<EchangoOrderApp> {
     super.initState();
     _cartState = CartState(widget.apiClient);
     _checkoutState = CheckoutState();
+    _favoritesState = FavoritesState(widget.apiClient);
     _router = buildAppRouter(widget.authState);
   }
 
@@ -78,6 +81,7 @@ class _EchangoOrderAppState extends State<EchangoOrderApp> {
         Provider<OdooApiClient>.value(value: widget.apiClient),
         ChangeNotifierProvider<CartState>.value(value: _cartState),
         ChangeNotifierProvider<CheckoutState>.value(value: _checkoutState),
+        ChangeNotifierProvider<FavoritesState>.value(value: _favoritesState),
       ],
       child: MaterialApp.router(
         title: 'Echango Order',

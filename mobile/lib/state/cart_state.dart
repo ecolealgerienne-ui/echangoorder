@@ -64,6 +64,18 @@ class CartState extends ChangeNotifier {
   int get itemCount => _lines.length;
   bool get isEmpty => _lines.isEmpty;
 
+  CartLine? _lineForProduct(int productId) {
+    for (final line in _lines) {
+      if (line.productId == productId) return line;
+    }
+    return null;
+  }
+
+  /// Quantité déjà au panier pour ce produit (0 si absent) — utilisé par
+  /// `ProductGridTile` (Accueil/Catalogue/Recherche) pour savoir s'il faut
+  /// afficher le bouton "Acheter" ou le sélecteur de quantité.
+  num quantityFor(int productId) => _lineForProduct(productId)?.qty ?? 0;
+
   void _applyPayload(Map<String, dynamic> payload) {
     _lines = (payload['lines'] as List)
         .map((e) => CartLine.fromJson(e as Map<String, dynamic>))
@@ -88,6 +100,21 @@ class CartState extends ChangeNotifier {
 
   Future<void> removeLine({required int lineId}) async =>
       _applyPayload(await _api.removeCartLine(lineId: lineId));
+
+  /// Le contrôleur `/cart/add` incrémente déjà la ligne existante côté
+  /// serveur (voir `cart_controller.py.add()`) — pas besoin de connaître
+  /// le `lineId` pour ajouter une unité de plus.
+  Future<void> incrementProduct(int productId) async => add(productId: productId, qty: 1);
+
+  Future<void> decrementProduct(int productId) async {
+    final line = _lineForProduct(productId);
+    if (line == null) return;
+    if (line.qty <= 1) {
+      await removeLine(lineId: line.lineId);
+    } else {
+      await updateQuantity(lineId: line.lineId, qty: line.qty - 1);
+    }
+  }
 
   Future<void> applyPromoCode({required String code}) async =>
       _applyPayload(await _api.applyPromoCode(code: code));

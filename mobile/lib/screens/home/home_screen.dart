@@ -5,7 +5,11 @@ import 'package:provider/provider.dart';
 import '../../errors/app_error.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
+import '../../state/cart_state.dart';
+import '../../state/favorites_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/add_to_cart.dart';
+import '../../utils/toggle_favorite.dart';
 import '../../widgets/product_grid_tile.dart';
 
 /// F03 — Accueil : grille des produits vendables (`product.template`,
@@ -28,6 +32,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadProducts();
+    // Non bloquant et silencieux : un échec (invité sans session Odoo,
+    // réseau...) ne doit pas empêcher de parcourir l'Accueil, les cœurs
+    // restent juste tous "non favoris" dans ce cas.
+    context.read<FavoritesState>().refresh().catchError((_) {});
   }
 
   void _loadProducts() {
@@ -58,6 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cart = context.watch<CartState>();
+    final favorites = context.watch<FavoritesState>();
+
     return Scaffold(
       appBar: AppBar(title: Text('screens.Home.title'.tr())),
       body: SafeArea(
@@ -86,14 +97,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisCount: 2,
                 mainAxisSpacing: AppSpacing.md,
                 crossAxisSpacing: AppSpacing.md,
-                childAspectRatio: 0.72,
+                childAspectRatio: 0.62,
               ),
               itemCount: products.length,
               itemBuilder: (context, index) {
                 final product = products[index];
+                final productId = product['id'] as int;
                 return ProductGridTile(
                   product: product,
-                  onTap: () => context.push('/home/product/${product['id']}'),
+                  onTap: () => context.push('/home/product/$productId'),
+                  cartQty: cart.quantityFor(productId),
+                  onIncrement: () => addProductToCart(context, productId),
+                  onDecrement: () => decrementCartProduct(context, productId),
+                  isFavorite: favorites.isFavorite(productId),
+                  onToggleFavorite: () => toggleFavorite(context, productId),
                 );
               },
             );

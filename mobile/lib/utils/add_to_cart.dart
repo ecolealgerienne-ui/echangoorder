@@ -25,3 +25,17 @@ Future<void> addProductToCart(BuildContext context, int productId, {num qty = 1}
     }
   }
 }
+
+/// Diminue d'une unité la quantité déjà au panier pour ce produit (sans
+/// [requireAccount] : le sélecteur de quantité qui déclenche ceci n'est
+/// affiché que pour un produit déjà présent au panier, donc déjà pour un
+/// compte réel).
+Future<void> decrementCartProduct(BuildContext context, int productId) async {
+  try {
+    await context.read<CartState>().decrementProduct(productId);
+  } on AppError catch (error) {
+    if (context.mounted) {
+      AppMessenger.showError(context, error, onRetry: () => decrementCartProduct(context, productId));
+    }
+  }
+}
