@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +8,11 @@ import '../../errors/app_error.dart';
 import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
+import '../../state/cart_state.dart';
+import '../../state/favorites_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/add_to_cart.dart';
+import '../../utils/toggle_favorite.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/product_grid_tile.dart';
 
@@ -20,6 +23,13 @@ import '../../widgets/product_grid_tile.dart';
 /// dédié ci-dessous). Aucun équivalent standard sans le module
 /// `website_sale` (non installé) — modèle custom minimal
 /// (`x_product_favorite`), voir CLAUDE.md.
+///
+/// Même affichage que l'Accueil/Catalogue (`ProductGridTile` avec bouton
+/// "Acheter" ↔ sélecteur de quantité) : cet écran sert avant tout à
+/// recommander rapidement les produits habituels du client, pas juste à
+/// les consulter. Le cœur (toujours plein ici) retire des favoris — la
+/// tuile disparaît alors de la grille après un rechargement complet
+/// (`_toggleFavorite`), plus simple qu'un filtrage local en direct.
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
 
@@ -38,8 +48,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   void _load() {
     setState(() {
-      _favoritesFuture = context.read<OdooApiClient>().getFavorites();
+      _favoritesFuture = _fetchFavorites();
     });
+    context.read<FavoritesState>().refresh().catchError((_) {});
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchFavorites() async {
+    final api = context.read<OdooApiClient>();
+    final favorites = await api.getFavorites();
+    final stock = await api.getStock(productIds: favorites.map((p) => p['id'] as int).toList());
+    for (final product in favorites) {
+      final qty = stock[product['id'] as int];
+      if (qty != null) product['qty_available'] = qty;
+    }
+    return favorites;
   }
 
   Future<void> _openAddScreen() async {
@@ -49,19 +71,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     if (mounted) _load();
   }
 
-  Future<void> _remove(Map<String, dynamic> product) async {
-    try {
-      await context.read<OdooApiClient>().removeFavorite(productId: product['id'] as int);
-      if (!mounted) return;
-      AppMessenger.showInfo(context, 'favorites.removed');
-      _load();
-    } on AppError catch (e) {
-      if (mounted) AppMessenger.showError(context, e);
-    }
+  Future<void> _toggleFavorite(int productId) async {
+    await toggleFavorite(context, productId);
+    // Rechargement complet plutôt qu'un filtrage local en direct via
+    // `FavoritesState` : évite un flash "aucun favori" pendant que son
+    // premier chargement (asynchrone, indépendant de `_favoritesFuture`)
+    // n'est pas encore arrivé.
+    if (mounted) _load();
   }
 
   @override
   Widget build(BuildContext context) {
+    final cart = context.watch<CartState>();
+
     return Scaffold(
       appBar: AppBar(title: Text('screens.Favorites.title'.tr())),
       body: SafeArea(
@@ -92,14 +114,27 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                   titleKey: 'emptyStates.favoritesTitle',
                                   messageKey: 'emptyStates.favoritesMessage',
                                 )
-                              : ListView.separated(
-                                  itemCount: favorites.length,
-                                  separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-                                  itemBuilder: (context, index) => _FavoriteTile(
-                                    product: favorites[index],
-                                    onTap: () => context.push('/profile/product/${favorites[index]['id']}'),
-                                    onRemove: () => _remove(favorites[index]),
+                              : GridView.builder(
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: AppSpacing.md,
+                                    crossAxisSpacing: AppSpacing.md,
+                                    childAspectRatio: 0.62,
                                   ),
+                                  itemCount: favorites.length,
+                                  itemBuilder: (context, index) {
+                                    final product = favorites[index];
+                                    final productId = product['id'] as int;
+                                    return ProductGridTile(
+                                      product: product,
+                                      onTap: () => context.push('/profile/product/$productId'),
+                                      cartQty: cart.quantityFor(productId),
+                                      onIncrement: () => addProductToCart(context, productId),
+                                      onDecrement: () => decrementCartProduct(context, productId),
+                                      isFavorite: true,
+                                      onToggleFavorite: () => _toggleFavorite(productId),
+                                    );
+                                  },
                                 ),
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -109,44 +144,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   );
                 },
               ),
-      ),
-    );
-  }
-}
-
-class _FavoriteTile extends StatelessWidget {
-  final Map<String, dynamic> product;
-  final VoidCallback onTap;
-  final VoidCallback onRemove;
-
-  const _FavoriteTile({required this.product, required this.onTap, required this.onRemove});
-
-  @override
-  Widget build(BuildContext context) {
-    final name = product['name'] as String? ?? '';
-    final price = (product['list_price'] as num?)?.toDouble() ?? 0;
-    final imageBase64 = product['image_128'];
-
-    return Card(
-      child: ListTile(
-        onTap: onTap,
-        leading: SizedBox(
-          width: 48,
-          height: 48,
-          child: imageBase64 is String
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(AppLayout.radius / 2),
-                  child: Image.memory(base64Decode(imageBase64), fit: BoxFit.cover),
-                )
-              : const Icon(Icons.image_not_supported_outlined, color: AppColors.textMuted),
-        ),
-        title: Text(name),
-        subtitle: Text('${price.toStringAsFixed(2)} €'),
-        trailing: IconButton(
-          icon: const Icon(Icons.favorite, color: AppColors.danger),
-          tooltip: 'common.delete'.tr(),
-          onPressed: onRemove,
-        ),
       ),
     );
   }

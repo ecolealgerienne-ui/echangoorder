@@ -183,8 +183,7 @@
   },
   "favorites": {
     "addTitle": "Ajouter un produit",
-    "added": "Ajouté aux favoris.",
-    "removed": "Retiré des favoris."
+    "added": "Ajouté aux favoris."
   },
   "profile": {
     "pinChanged": "Code PIN modifié avec succès.",
