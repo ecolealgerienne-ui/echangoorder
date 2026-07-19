@@ -5,10 +5,13 @@
          les produits choisis dans "S'applique à > Produits spécifiques" —
          ni le badge Promo (catalog_controller.py), ni l'application réelle
          de la remise par Odoo sur la commande ne fonctionnent sans lui.
-         Forcé à chaque mise à jour du module (pas de noupdate) : purement
-         technique, aucune raison de vouloir "disabled" côté Echango Order. -->
-    <record id="param_loyalty_compute_all_discount_product_ids" model="ir.config_parameter">
-        <field name="key">loyalty.compute_all_discount_product_ids</field>
-        <field name="value">enabled</field>
-    </record>
+         `set_param` (et non un `<record>` direct) : la clé existe déjà en
+         base (créée par `loyalty`/`sale_loyalty` avec la valeur par défaut
+         "disabled"), un `<record>` en création provoquerait une violation
+         de contrainte d'unicité sur `key`. `set_param` crée ou met à jour
+         selon le cas, et est réappliqué à chaque mise à jour du module
+         (pas de noupdate) : purement technique, aucune raison de vouloir
+         "disabled" côté Echango Order. -->
+    <function model="ir.config_parameter" name="set_param"
+              eval="('loyalty.compute_all_discount_product_ids', 'enabled')"/>
 </odoo>
