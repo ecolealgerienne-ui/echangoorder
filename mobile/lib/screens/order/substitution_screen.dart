@@ -7,6 +7,7 @@ import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/currency.dart';
 import '../../widgets/app_button.dart';
 
 /// F17 — substitution produit. Le signalement de rupture + la suggestion
@@ -114,7 +115,7 @@ class _SubstitutionScreenState extends State<SubstitutionScreen> {
                   _ProductRow(
                     labelKey: 'substitution.suggested',
                     name: substitution['substitute_name'] as String? ?? '',
-                    price: '${((substitution['substitute_price'] as num?) ?? 0).toStringAsFixed(2)} €',
+                    price: formatPrice(context, (substitution['substitute_price'] as num?) ?? 0),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   AppButton(

@@ -11,6 +11,7 @@ import '../../state/auth_state.dart';
 import '../../state/cart_state.dart';
 import '../../state/checkout_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/currency.dart';
 import '../../widgets/app_button.dart';
 
 /// F06 — Panier : reflète le devis Odoo (`sale.order` brouillon) du
@@ -203,7 +204,7 @@ class _AmountRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: style),
-        Text('${amount.toStringAsFixed(2)} €', style: style),
+        Text(formatPrice(context, amount), style: style),
       ],
     );
   }
@@ -248,7 +249,7 @@ class _CartLineTile extends StatelessWidget {
             children: [
               Text(line.name, style: Theme.of(context).textTheme.bodyMedium),
               Text(
-                '${line.unitPrice.toStringAsFixed(2)} €${line.uom == null || line.uom!.isEmpty ? '' : ' / ${line.uom}'}',
+                '${formatPrice(context, line.unitPrice)}${line.uom == null || line.uom!.isEmpty ? '' : ' / ${line.uom}'}',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: AppSpacing.xs),

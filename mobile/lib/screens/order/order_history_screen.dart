@@ -9,6 +9,7 @@ import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
 import '../../state/cart_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/currency.dart';
 import '../../widgets/app_button.dart';
 
 /// F09 — historique des commandes du client connecté. `sale.order` est
@@ -158,7 +159,7 @@ class _OrderCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               const SizedBox(height: AppSpacing.xs),
-              Text('${amount.toStringAsFixed(2)} €  ${state == 'cancel' ? '❌' : '✅'} $statusLabel'),
+              Text('${formatPrice(context, amount)}  ${state == 'cancel' ? '❌' : '✅'} $statusLabel'),
               if (isConfirmed) ...[
                 const SizedBox(height: AppSpacing.xs),
                 AppButton(

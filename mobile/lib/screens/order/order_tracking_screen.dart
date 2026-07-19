@@ -7,6 +7,7 @@ import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/currency.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/screen_placeholder.dart';
 
@@ -162,7 +163,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     Text('🕐 ${creneau.hour.toString().padLeft(2, '0')}h${creneau.minute.toString().padLeft(2, '0')}'),
                   ],
                   const SizedBox(height: AppSpacing.xs),
-                  Text('${'cart.total'.tr()} : ${(order['amount_total'] as num).toStringAsFixed(2)} €'),
+                  Text('${'cart.total'.tr()} : ${formatPrice(context, order['amount_total'] as num)}'),
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     '${detail.lines.length} ${'checkout.itemsLabel'.tr()}',

@@ -239,6 +239,17 @@ class OdooApiClient {
     return promotions.map((key, value) => MapEntry(int.parse(key), (value as num?)?.toDouble()));
   }
 
+  /// Devise réellement configurée sur la société (`res.company.currency_id`)
+  /// — remplace le "€" auparavant en dur partout dans l'app. `auth="public"`
+  /// côté serveur : appelable avant connexion (F00 vitrine).
+  Future<Map<String, String>> getCurrency() async {
+    final result = await _rpc('/echango/currency', {}) as Map<String, dynamic>;
+    return {
+      'symbol': result['symbol'] as String? ?? '€',
+      'position': result['position'] as String? ?? 'after',
+    };
+  }
+
   /// F07 — vérifie qu'une ville/code postal est dans une `x_delivery_zone`
   /// configurée en back-office. Modèle non exposé au portail (voir
   /// `controllers/checkout_controller.py`), d'où l'appel dédié plutôt

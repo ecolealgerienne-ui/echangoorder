@@ -117,10 +117,20 @@ class EchangoCartController(http.Controller):
         if line:
             line.sudo().write({"product_uom_qty": line.product_uom_qty + qty})
         else:
+            # `price_unit` explicitement forcé au prix catalogue
+            # (`list_price`, le même champ que l'Accueil/Catalogue/Recherche
+            # affichent) plutôt que de laisser Odoo le calculer via la liste
+            # de prix du client (`_compute_price_unit`, standard) — décision
+            # utilisateur suite à un écart de prix constaté entre catalogue
+            # et panier, causé par une liste de prix/devise différente
+            # assignée à certains clients. Plus simple qu'une liste de prix
+            # unique à maintenir, et garantit que catalogue et panier
+            # affichent toujours exactement le même montant.
             request.env["sale.order.line"].sudo().create({
                 "order_id": order.id,
                 "product_id": variant.id,
                 "product_uom_qty": qty,
+                "price_unit": template.list_price,
             })
         return self._cart_payload(order)
 
@@ -166,10 +176,13 @@ class EchangoCartController(http.Controller):
             if existing:
                 existing.sudo().write({"product_uom_qty": existing.product_uom_qty + line.product_uom_qty})
             else:
+                # Même logique que add() : prix catalogue forcé, pas de
+                # recalcul via liste de prix.
                 request.env["sale.order.line"].sudo().create({
                     "order_id": cart.id,
                     "product_id": variant.id,
                     "product_uom_qty": line.product_uom_qty,
+                    "price_unit": template.list_price,
                 })
 
         payload = self._cart_payload(cart)

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/permission_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/currency.dart';
 import '../../widgets/screen_placeholder.dart';
 
 /// F08 — confirmation affichée juste après `CheckoutSummaryScreen` (données
@@ -74,7 +75,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             ],
             if (widget.amountTotal != null) ...[
               const SizedBox(height: AppSpacing.xs),
-              Text('${'checkout.paymentOnDelivery'.tr()} : ${widget.amountTotal!.toStringAsFixed(2)} €'),
+              Text('${'checkout.paymentOnDelivery'.tr()} : ${formatPrice(context, widget.amountTotal!)}'),
             ],
           ],
         ),

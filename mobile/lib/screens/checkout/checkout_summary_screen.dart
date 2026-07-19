@@ -8,6 +8,7 @@ import '../../services/odoo_api_client.dart';
 import '../../state/cart_state.dart';
 import '../../state/checkout_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/currency.dart';
 import '../../utils/timeslots.dart';
 import '../../widgets/app_button.dart';
 
@@ -148,7 +149,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('cart.subtotal'.tr()),
-                  Text('${cart.amountSubtotal.toStringAsFixed(2)} €'),
+                  Text(formatPrice(context, cart.amountSubtotal)),
                 ],
               ),
               if (cart.discount != 0) ...[
@@ -157,7 +158,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('checkout.discountLabel'.tr()),
-                    Text('${cart.discount.toStringAsFixed(2)} €', style: const TextStyle(color: AppColors.promo)),
+                    Text(formatPrice(context, cart.discount), style: const TextStyle(color: AppColors.promo)),
                   ],
                 ),
               ],
@@ -166,7 +167,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('cart.total'.tr(), style: Theme.of(context).textTheme.titleMedium),
-                  Text('${cart.amountTotal.toStringAsFixed(2)} €', style: Theme.of(context).textTheme.titleMedium),
+                  Text(formatPrice(context, cart.amountTotal), style: Theme.of(context).textTheme.titleMedium),
                 ],
               ),
               const Spacer(),

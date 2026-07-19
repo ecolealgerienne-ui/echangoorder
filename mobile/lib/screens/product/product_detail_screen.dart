@@ -9,6 +9,7 @@ import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/add_to_cart.dart';
+import '../../utils/currency.dart';
 import '../../widgets/app_button.dart';
 
 /// F05 — Fiche produit : `product.template` par id (`read` standard, pas
@@ -115,8 +116,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     uomName.isEmpty
-                        ? '${price.toStringAsFixed(2)} €'
-                        : '${price.toStringAsFixed(2)} € / $uomName',
+                        ? formatPrice(context, price)
+                        : '${formatPrice(context, price)} / $uomName',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   if (description.isNotEmpty) ...[

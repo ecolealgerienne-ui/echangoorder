@@ -11,6 +11,18 @@ class EchangoCatalogController(http.Controller):
     testant F04, voir status-V1.md § Points de vigilance).
     """
 
+    @http.route("/echango/currency", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def currency(self, **kw):
+        """Symbole/position de la devise réellement configurée sur la
+        société (`res.company.currency_id`, standard) — l'app affichait
+        auparavant un "€" en dur partout, incorrect dès que la société
+        n'est pas en EUR (constaté par l'utilisateur : société de test en
+        USD). `auth="public"` : la vitrine (F00) affiche aussi des prix
+        avant connexion.
+        """
+        currency = request.env.company.sudo().currency_id
+        return {"symbol": currency.symbol, "position": currency.position}
+
     @http.route("/echango/catalog/stock", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     def stock(self, product_ids=None, **kw):
         ids = [int(i) for i in (product_ids or [])]

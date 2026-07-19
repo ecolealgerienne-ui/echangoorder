@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/currency.dart';
 
 /// Tuile produit réutilisée par l'Accueil (F03), le Catalogue/Recherche
 /// (F04) et l'écran d'ajout de favoris.
@@ -127,7 +128,7 @@ class ProductGridTile extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
-          Text('${price.toStringAsFixed(2)} €', style: Theme.of(context).textTheme.bodySmall),
+          Text(formatPrice(context, price), style: Theme.of(context).textTheme.bodySmall),
           if (cartQty != null) ...[
             const SizedBox(height: AppSpacing.xs),
             _CartQuantityControl(
