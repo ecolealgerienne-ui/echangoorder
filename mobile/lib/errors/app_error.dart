@@ -31,6 +31,7 @@ class AppError implements Exception {
   // --- Serveur / Odoo ---
   static const serverUnavailable = 'server.unavailable';
   static const serverUnknown = 'server.unknown';
+  static const serverRateLimited = 'server.rate_limited';
   static const notFound = 'not_found';
 
   // --- Authentification (F02) ---

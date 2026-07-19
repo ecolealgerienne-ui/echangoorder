@@ -4,6 +4,8 @@ from odoo import fields, http
 from odoo.exceptions import AccessDenied
 from odoo.http import request
 
+from .rate_limit import rate_limited
+
 PIN_RE = re.compile(r"^\d{6,12}$")
 
 
@@ -17,6 +19,7 @@ class EchangoAuthController(http.Controller):
     """
 
     @http.route("/echango/auth/register", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    @rate_limited("auth.register", limit=5, window_minutes=60)
     def register(self, phone=None, pin=None, name=None, lang=None, **kw):
         phone = (phone or "").strip()
         pin = (pin or "").strip()
@@ -63,6 +66,7 @@ class EchangoAuthController(http.Controller):
         return {"success": True, "user_id": user.id}
 
     @http.route("/echango/auth/login", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    @rate_limited("auth.login", limit=10, window_minutes=5)
     def login(self, phone=None, pin=None, **kw):
         phone = (phone or "").strip()
         pin = (pin or "").strip()

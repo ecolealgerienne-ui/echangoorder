@@ -31,6 +31,9 @@ const _errorCodeMap = <String, String>{
   // traductions supplémentaires pour la même idée.
   'cart.product_unavailable': AppError.checkoutOutOfStock,
   'not_found': AppError.notFound,
+  // Renvoyé par rate_limited (controllers/rate_limit.py) sur les
+  // endpoints publics (auth/login, auth/register, currency, vitrine).
+  'rate_limited': AppError.serverRateLimited,
   'checkout.out_of_delivery_zone': AppError.checkoutOutOfDeliveryZone,
   'order.cannot_cancel': AppError.orderCannotCancel,
   'promo.invalid': AppError.promoInvalid,

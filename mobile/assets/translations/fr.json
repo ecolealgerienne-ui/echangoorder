@@ -81,7 +81,8 @@
     },
     "server": {
       "unavailable": "Service momentanément indisponible.",
-      "unknown": "Erreur serveur. Réessayez plus tard."
+      "unknown": "Erreur serveur. Réessayez plus tard.",
+      "rate_limited": "Trop de tentatives. Merci de patienter quelques instants avant de réessayer."
     },
     "auth": {
       "invalid_credentials": "Numéro de téléphone ou code PIN incorrect.",

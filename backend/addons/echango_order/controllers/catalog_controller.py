@@ -1,6 +1,7 @@
 from odoo import fields, http
 from odoo.http import request
 
+from .rate_limit import rate_limited
 from .session_utils import require_fresh_session
 
 
@@ -14,6 +15,7 @@ class EchangoCatalogController(http.Controller):
     """
 
     @http.route("/echango/currency", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    @rate_limited("currency", limit=60, window_minutes=1)
     def currency(self, **kw):
         """Symbole/position de la devise réellement configurée sur la
         société (`res.company.currency_id`, standard) — l'app affichait
