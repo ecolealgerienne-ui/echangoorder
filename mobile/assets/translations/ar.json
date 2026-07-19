@@ -42,6 +42,7 @@
     "deliveryHome": "🏠 التوصيل إلى المنزل",
     "pickupStore": "🏪 الاستلام من المتجر",
     "modifyAddress": "تعديل العنوان",
+    "newAddressOption": "عنوان جديد لهذا الطلب",
     "streetLabel": "الشارع",
     "cityLabel": "المدينة",
     "zipLabel": "الرمز البريدي",

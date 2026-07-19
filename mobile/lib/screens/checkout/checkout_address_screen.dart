@@ -218,7 +218,7 @@ class _CheckoutAddressScreenState extends State<CheckoutAddressScreen> {
                     children: [
                       for (final address in _addresses!) _addressChoice(address),
                       if (_addresses!.isNotEmpty)
-                        RadioListTile<int?>(value: null, title: Text('addresses.addTitle'.tr())),
+                        RadioListTile<int?>(value: null, title: Text('checkout.newAddressOption'.tr())),
                       if (_addresses!.isNotEmpty) const SizedBox(height: AppSpacing.md),
                       if (_selectedAddressId == null) _manualForm(),
                       const SizedBox(height: AppSpacing.md),

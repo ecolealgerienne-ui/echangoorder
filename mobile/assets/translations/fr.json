@@ -42,6 +42,7 @@
     "deliveryHome": "🏠 Livraison à domicile",
     "pickupStore": "🏪 Retrait en magasin",
     "modifyAddress": "Modifier l'adresse",
+    "newAddressOption": "Nouvelle adresse pour cette commande",
     "streetLabel": "Rue",
     "cityLabel": "Ville",
     "zipLabel": "Code postal",
