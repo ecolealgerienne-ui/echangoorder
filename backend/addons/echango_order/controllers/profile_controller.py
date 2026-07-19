@@ -1,4 +1,5 @@
 import re
+import secrets
 
 from odoo import http
 from odoo.exceptions import AccessDenied
@@ -59,7 +60,18 @@ class EchangoProfileController(http.Controller):
         # Les données (partner, commandes) sont conservées, seul le compte
         # est désactivé — la SMS de confirmation (specs QA) est hors scope,
         # aucun fournisseur SMS choisi (cf. status-V1.md).
-        user.sudo().write({"active": False})
+        #
+        # `active=False` seul n'invalide pas forcément une session déjà
+        # ouverte sur un autre appareil (le cookie de session reste valide
+        # tant que le token de sécurité calculé par Odoo ne change pas).
+        # On rend aussi le champ standard `password` inutilisable avec une
+        # valeur aléatoire : ce champ fait partie des champs de sécurité
+        # dont dépend le calcul du token de session côté Odoo (mécanisme
+        # standard documenté : changer le mot de passe invalide les autres
+        # sessions), donc l'écrire force l'expiration immédiate de toute
+        # session existante, même si l'app n'utilise jamais l'authentification
+        # par mot de passe (uniquement le PIN custom, cf. res_users.py).
+        user.sudo().write({"active": False, "password": secrets.token_urlsafe(32)})
         return {"success": True}
 
     def _address_payload(self, address):
