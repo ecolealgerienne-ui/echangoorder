@@ -26,8 +26,8 @@ import '../screens/order/substitution_screen.dart';
 import '../screens/product/product_detail_screen.dart';
 import '../screens/profile/addresses_screen.dart';
 import '../screens/profile/change_pin_screen.dart';
+import '../screens/profile/favorites_screen.dart';
 import '../screens/profile/language_settings_screen.dart';
-import '../screens/profile/my_location_screen.dart';
 import '../screens/profile/notification_settings_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/system/maintenance_screen.dart';
@@ -44,6 +44,10 @@ const _publicPaths = [
   '/register/step3',
   '/login',
   '/forgot-pin',
+  // F13 — accessible depuis l'inscription (utilisateur pas encore
+  // authentifié), en plus de `/profile/legal/:docType` (déjà accessible
+  // depuis "À propos" une fois connecté).
+  '/legal',
 ];
 
 GoRouter buildAppRouter(AuthState authState) {
@@ -65,10 +69,20 @@ GoRouter buildAppRouter(AuthState authState) {
       GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
       GoRoute(path: '/auth-welcome', builder: (context, state) => const AuthWelcomeScreen()),
       GoRoute(path: '/register/step1', builder: (context, state) => const RegisterStep1Screen()),
-      GoRoute(path: '/register/step2', builder: (context, state) => const RegisterStep2Screen()),
-      GoRoute(path: '/register/step3', builder: (context, state) => const RegisterStep3Screen()),
+      GoRoute(
+        path: '/register/step2',
+        builder: (context, state) => RegisterStep2Screen(phone: (state.extra as String?) ?? ''),
+      ),
+      GoRoute(
+        path: '/register/step3',
+        builder: (context, state) => RegisterStep3Screen(phone: (state.extra as String?) ?? ''),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/forgot-pin', builder: (context, state) => const ForgotPinScreen()),
+      GoRoute(
+        path: '/legal/:docType',
+        builder: (context, state) => LegalDocumentScreen(docType: state.pathParameters['docType']!),
+      ),
       // Affiché quand le health-check Odoo (GET /web/health) échoue, une fois branché.
       GoRoute(path: '/maintenance', builder: (context, state) => const MaintenanceScreen()),
       StatefulShellRoute.indexedStack(
@@ -94,8 +108,10 @@ GoRouter buildAppRouter(AuthState authState) {
               routes: [
                 GoRoute(
                   path: 'category/:categoryId',
-                  builder: (context, state) =>
-                      CategoryProductsScreen(categoryId: state.pathParameters['categoryId']!),
+                  builder: (context, state) => CategoryProductsScreen(
+                    categoryId: state.pathParameters['categoryId']!,
+                    categoryName: state.extra as String?,
+                  ),
                 ),
                 GoRoute(path: 'search', builder: (context, state) => const SearchScreen()),
                 GoRoute(
@@ -133,8 +149,15 @@ GoRouter buildAppRouter(AuthState authState) {
                 ),
                 GoRoute(
                   path: 'checkout/confirmation/:orderRef',
-                  builder: (context, state) =>
-                      OrderConfirmationScreen(orderRef: state.pathParameters['orderRef']!),
+                  builder: (context, state) {
+                    final extra = state.extra as Map<String, dynamic>?;
+                    return OrderConfirmationScreen(
+                      orderRef: state.pathParameters['orderRef']!,
+                      amountTotal: (extra?['amount_total'] as num?)?.toDouble(),
+                      receptionMode: extra?['reception_mode'] as String?,
+                      slotStart: extra?['slot_start'] as String?,
+                    );
+                  },
                 ),
               ],
             ),
@@ -145,7 +168,12 @@ GoRouter buildAppRouter(AuthState authState) {
               builder: (context, state) => const ProfileScreen(),
               routes: [
                 GoRoute(path: 'addresses', builder: (context, state) => const AddressesScreen()),
-                GoRoute(path: 'my-location', builder: (context, state) => const MyLocationScreen()),
+                GoRoute(path: 'favorites', builder: (context, state) => const FavoritesScreen()),
+                GoRoute(
+                  path: 'product/:productId',
+                  builder: (context, state) =>
+                      ProductDetailScreen(productId: state.pathParameters['productId']!),
+                ),
                 GoRoute(path: 'change-pin', builder: (context, state) => const ChangePinScreen()),
                 GoRoute(
                   path: 'notifications',

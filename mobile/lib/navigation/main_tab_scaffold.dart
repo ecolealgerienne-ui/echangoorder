@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../state/cart_state.dart';
 import '../theme/app_theme.dart';
 
 /// Coquille des 4 onglets (Accueil/Catalogue/Panier/Profil), chacun gardant
@@ -12,6 +14,8 @@ class MainTabScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final itemCount = context.watch<CartState>().itemCount;
+
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
@@ -24,7 +28,14 @@ class MainTabScaffold extends StatelessWidget {
         destinations: [
           NavigationDestination(icon: const Text('🏠'), label: 'nav.home'.tr()),
           NavigationDestination(icon: const Text('📋'), label: 'nav.catalog'.tr()),
-          NavigationDestination(icon: const Text('🛒'), label: 'nav.cart'.tr()),
+          NavigationDestination(
+            icon: Badge(
+              isLabelVisible: itemCount > 0,
+              label: Text('$itemCount'),
+              child: const Text('🛒'),
+            ),
+            label: 'nav.cart'.tr(),
+          ),
           NavigationDestination(icon: const Text('👤'), label: 'nav.profile'.tr()),
         ],
       ),

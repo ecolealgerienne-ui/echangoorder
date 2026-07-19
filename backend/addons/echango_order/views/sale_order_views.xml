@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- F17 — expose x_substitution_produit dans les lignes de commande du
+         formulaire standard Sales, pour que le préparateur puisse signaler
+         une rupture de stock et proposer un produit de remplacement
+         directement depuis le back-office (workflow manuel, Phase 1). -->
+    <record id="view_order_form_x_substitution" model="ir.ui.view">
+        <field name="name">sale.order.form.x.substitution</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/list/field[@name='product_uom_qty']" position="after">
+                <field name="x_substitution_produit" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

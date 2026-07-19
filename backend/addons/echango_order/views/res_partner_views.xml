@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Qualité clients — un modérateur valide/rejette manuellement chaque
+         nouveau compte client (statusbar + boutons sur la fiche contact
+         standard) avant qu'il puisse passer commande, voir
+         controllers/checkout_controller.py. -->
+    <record id="view_partner_form_x_verification" model="ir.ui.view">
+        <field name="name">res.partner.form.x.verification</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_verify_customer" type="object" string="Valider le client"
+                            class="oe_highlight" invisible="x_verification_state == 'verified'"/>
+                    <button name="action_reject_customer" type="object" string="Rejeter le client"
+                            invisible="x_verification_state == 'rejected'"/>
+                    <field name="x_verification_state" widget="statusbar" statusbar_visible="pending,verified"/>
+                </header>
+            </xpath>
+            <!-- Le formulaire contact standard rend l'email obligatoire dès
+                 qu'un compte utilisateur est lié (comportement Odoo connu,
+                 pensé pour l'invitation portail par email) — bloquant ici
+                 puisque l'app n'utilise jamais l'email (auth téléphone+PIN,
+                 F02). Neutralisé pour nos clients : le clic sur "Valider le
+                 client" déclenche une sauvegarde implicite du formulaire, que
+                 ce champ obligatoire-mais-vide empêchait. -->
+            <xpath expr="//field[@name='email']" position="attributes">
+                <attribute name="required">0</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Suivi clients — liste de tous les clients de l'app (comptes
+         portail créés via /echango/auth/register), avec les infos utiles
+         au premier coup d'oeil (téléphone, ville, statut de vérification).
+         Le détail des commandes d'un client reste sur le bouton
+         statistique "Ventes" standard de sa fiche (ajouté par le module
+         `sale`, déjà présent — pas de développement nécessaire). -->
+    <record id="view_partner_list_customers" model="ir.ui.view">
+        <field name="name">res.partner.list.customers</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <list string="Clients">
+                <field name="name"/>
+                <field name="phone"/>
+                <field name="city"/>
+                <field name="x_verification_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_partner_customers" model="ir.actions.act_window">
+        <field name="name">Clients</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_partner_list_customers"/>
+        <field name="domain">[('user_ids', '!=', False)]</field>
+    </record>
+
+    <menuitem id="menu_partner_customers" name="Clients"
+              parent="menu_echango_order_root" action="action_partner_customers" sequence="5"/>
+
+    <record id="action_partner_pending_verification" model="ir.actions.act_window">
+        <field name="name">Clients à valider</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_partner_list_customers"/>
+        <field name="domain">[('user_ids', '!=', False), ('x_verification_state', '!=', 'verified')]</field>
+    </record>
+
+    <menuitem id="menu_partner_pending_verification" name="Clients à valider"
+              parent="menu_echango_order_root" action="action_partner_pending_verification" sequence="10"/>
+</odoo>

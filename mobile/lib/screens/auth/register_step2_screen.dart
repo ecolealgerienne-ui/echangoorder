@@ -6,7 +6,9 @@ import '../../widgets/app_button.dart';
 import '../../widgets/screen_placeholder.dart';
 
 class RegisterStep2Screen extends StatelessWidget {
-  const RegisterStep2Screen({super.key});
+  final String phone;
+
+  const RegisterStep2Screen({super.key, required this.phone});
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +20,13 @@ class RegisterStep2Screen extends StatelessWidget {
           onPressed: () => requestLocationPermission(context),
           variant: AppButtonVariant.secondary,
         ),
-        PlaceholderAction(label: 'common.continue'.tr(), onPressed: () => context.push('/register/step3')),
+        PlaceholderAction(
+          label: 'common.continue'.tr(),
+          onPressed: () => context.push('/register/step3', extra: phone),
+        ),
         PlaceholderAction(
           label: 'common.skip'.tr(),
-          onPressed: () => context.push('/register/step3'),
+          onPressed: () => context.push('/register/step3', extra: phone),
           variant: AppButtonVariant.secondary,
         ),
       ],

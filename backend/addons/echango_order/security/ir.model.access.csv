@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_product_template_portal,product.template.portal,product.model_product_template,base.group_portal,1,0,0,0
+access_product_category_portal,product.category.portal,product.model_product_category,base.group_portal,1,0,0,0
+access_uom_uom_portal,uom.uom.portal,uom.model_uom_uom,base.group_portal,1,0,0,0
+access_x_delivery_zone_user,x_delivery_zone.user,model_x_delivery_zone,base.group_user,1,1,1,1
+access_x_product_favorite_user,x_product_favorite.user,model_x_product_favorite,base.group_user,1,1,1,1

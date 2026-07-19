@@ -6,6 +6,7 @@
     "continue": "Continuer",
     "confirm": "Confirmer",
     "cancel": "Annuler",
+    "delete": "Supprimer",
     "comingSoon": "Bientôt disponible — connexion Odoo requise",
     "reference": "Réf :"
   },
@@ -16,7 +17,8 @@
     "pinConfirmLabel": "Confirmez le code PIN",
     "currentPinLabel": "PIN actuel",
     "newPinLabel": "Nouveau PIN",
-    "smsCodeLabel": "Code reçu par SMS"
+    "smsCodeLabel": "Code reçu par SMS",
+    "termsNotice": "En créant un compte, vous acceptez :"
   },
   "nav": {
     "home": "Accueil",
@@ -27,11 +29,32 @@
   "checkout": {
     "deliveryHome": "🏠 Livraison à domicile",
     "pickupStore": "🏪 Retrait en magasin",
-    "modifyAddress": "Modifier l'adresse"
+    "modifyAddress": "Modifier l'adresse",
+    "streetLabel": "Rue",
+    "cityLabel": "Ville",
+    "zipLabel": "Code postal",
+    "notesLabel": "Notes (optionnel)",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "paymentOnDelivery": "💵 Paiement à la réception / au retrait",
+    "itemsLabel": "articles",
+    "promoCodeLabel": "Code promo",
+    "promoAppliedPrefix": "✅ Code appliqué :",
+    "discountLabel": "Réduction"
+  },
+  "cart": {
+    "subtotal": "Sous-total",
+    "total": "Total"
   },
   "order": {
     "confirmCancel": "Confirmer l'annulation",
-    "keepOrder": "Garder ma commande"
+    "keepOrder": "Garder ma commande",
+    "statusConfirmed": "Confirmée",
+    "statusCancelled": "Annulée",
+    "cancelled": "Votre commande a bien été annulée.",
+    "reorderTitle": "🛒 Commander à nouveau ?",
+    "reorderMessage": "Les articles de cette commande seront ajoutés à votre panier.",
+    "reorderUnavailableWarning": "⚠️ Certains produits ne sont plus disponibles et n'ont pas été ajoutés."
   },
   "substitution": {
     "original": "Produit original",
@@ -64,7 +87,9 @@
       "invalid_credentials": "Numéro de téléphone ou code PIN incorrect.",
       "phone_already_used": "Ce numéro de téléphone est déjà utilisé.",
       "session_expired": "Votre session a expiré. Merci de vous reconnecter.",
-      "pin_locked": "Trop de tentatives incorrectes. Compte bloqué temporairement."
+      "pin_locked": "Trop de tentatives incorrectes. Compte bloqué temporairement.",
+      "account_pending_verification": "Votre compte est en cours de vérification par notre équipe. Vous pourrez commander une fois validé.",
+      "account_rejected": "Votre compte n'a pas été validé. Contactez notre support pour plus d'informations."
     },
     "validation": {
       "required": "Ce champ est obligatoire.",
@@ -98,11 +123,24 @@
   "share": {
     "intro": "Découvre ce produit sur Echango Order :"
   },
+  "vitrine": {
+    "popupTitle": "🛒 Envie de commander ?",
+    "popupBody": "Créez votre compte gratuitement pour profiter de nos meilleurs prix !"
+  },
   "legal": {
     "cgu": "CGU",
     "privacy": "Confidentialité",
     "legal": "Mentions légales",
-    "cookies": "Cookies"
+    "cookies": "Cookies",
+    "version": "Version 1.0",
+    "updatedOn": "Mise à jour : 07/2026",
+    "draftNotice": "⚠️ Document provisoire fourni à titre indicatif — en attente de validation par un juriste avant toute publication sur les stores.",
+    "docs": {
+      "cgu": "1. Objet\nLes présentes Conditions Générales d'Utilisation (CGU) régissent l'utilisation de l'application mobile Echango Order, permettant de commander des produits alimentaires pour livraison à domicile ou retrait en magasin, avec paiement en espèces à la réception ou au retrait.\n\n2. Compte utilisateur\nL'accès aux fonctionnalités de commande nécessite la création d'un compte (numéro de téléphone + code PIN personnel). L'utilisateur est seul responsable de la confidentialité de son code PIN et de toute activité effectuée depuis son compte.\n\n3. Commandes\nLes prix sont indiqués en dinars algériens (DZD) et incluent les taxes applicables. La disponibilité des produits est indicative et peut évoluer entre la validation de la commande et sa préparation (voir § Substitution produit). Le paiement s'effectue exclusivement en espèces, à la livraison ou au retrait.\n\n4. Livraison et retrait\nLa livraison est proposée uniquement dans les zones géographiques couvertes, définies par Echango. Les créneaux horaires proposés sont indicatifs et peuvent varier selon la charge de préparation.\n\n5. Annulation et substitution\nUne commande peut être annulée par le client tant qu'elle n'est pas entrée en préparation. En cas de rupture de stock sur un produit commandé, une substitution peut être proposée ; le client est libre de l'accepter ou de la refuser.\n\n6. Responsabilité\nEchango met tout en œuvre pour assurer la disponibilité du service mais ne saurait être tenu responsable des retards ou indisponibilités liés à des causes qui lui sont extérieures.\n\n7. Résiliation\nL'utilisateur peut supprimer son compte à tout moment depuis son profil. Echango se réserve le droit de suspendre un compte en cas d'utilisation frauduleuse ou abusive.\n\n8. Droit applicable\nLes présentes CGU sont soumises au droit algérien. Tout litige relève des juridictions compétentes.",
+      "privacy": "1. Responsable du traitement\nEchango (raison sociale et coordonnées complètes à préciser) est responsable du traitement des données personnelles collectées via l'application Echango Order.\n\n2. Données collectées\nNom et prénom, numéro de téléphone, adresse(s) de livraison, localisation GPS (facultative, fournie par l'utilisateur), historique des commandes, préférence de langue.\n\n3. Finalités\nCes données sont utilisées pour traiter les commandes, assurer le suivi et la livraison, envoyer des notifications relatives aux commandes, et améliorer la qualité du service.\n\n4. Base légale\nLe traitement repose sur l'exécution du contrat (traitement des commandes) et, pour la localisation GPS, sur le consentement explicite de l'utilisateur.\n\n5. Durée de conservation\nLes données sont conservées pendant la durée d'utilisation du compte. En cas de suppression de compte, les données sont conservées 30 jours avant suppression définitive.\n\n6. Droits de l'utilisateur\nChaque utilisateur peut demander l'accès, la rectification ou la suppression de ses données personnelles en écrivant à l'adresse de contact indiquée dans les mentions légales.\n\n7. Sécurité\nLes échanges entre l'application et les serveurs sont chiffrés (HTTPS/TLS). Le code PIN n'est jamais stocké en clair, seule son empreinte cryptographique est conservée côté serveur.",
+      "legal": "1. Éditeur de l'application\nEchango Order est édité par Echango (raison sociale, adresse du siège social et numéro de registre de commerce à compléter).\n\n2. Contact\nPour toute question relative à l'application, un contact email/téléphone sera indiqué ici avant publication sur les stores.\n\n3. Directeur de publication\nÀ compléter.\n\n4. Hébergement\nL'application s'appuie sur une instance Odoo hébergée par Echango ou un prestataire d'hébergement à préciser.",
+      "cookies": "1. Traceurs utilisés\nL'application Echango Order utilise uniquement des traceurs techniques nécessaires à son fonctionnement (maintien de la session de connexion). Aucun traceur publicitaire n'est utilisé en Phase 1.\n\n2. Partage avec des tiers\nAucune donnée de navigation n'est partagée avec des tiers à des fins publicitaires.\n\n3. Gestion\nLes préférences de notifications et de localisation peuvent être gérées à tout moment depuis les réglages du téléphone et le profil de l'application."
+    }
   },
   "actions": {
     "signUp": "S'inscrire",
@@ -111,10 +149,10 @@
     "later": "Plus tard",
     "signUpToOrder": "S'inscrire pour commander",
     "addToCart": "Ajouter au panier",
+    "buy": "Acheter",
     "goToCheckout": "Valider mon panier",
     "confirmOrder": "Confirmer la commande",
     "trackOrder": "Suivre ma commande",
-    "backHome": "Retour accueil",
     "reorder": "Commander à nouveau",
     "cancelOrder": "Annuler la commande",
     "logout": "Se déconnecter",
@@ -123,7 +161,13 @@
     "useGpsLocation": "Utiliser ma position GPS",
     "retry": "Réessayer",
     "receiveSms": "Recevoir un SMS",
-    "browseCatalog": "Voir le catalogue"
+    "browseCatalog": "Voir le catalogue",
+    "loadMore": "Charger plus"
+  },
+  "catalog": {
+    "outOfStock": "Épuisé",
+    "onPromo": "Promo",
+    "onPromoPercent": "-{percent}%"
   },
   "emptyStates": {
     "cartTitle": "Votre panier est vide",
@@ -132,7 +176,39 @@
     "ordersMessage": "Vous n'avez pas encore passé de commande.",
     "ordersGuestMessage": "Créez un compte pour retrouver l'historique de vos commandes.",
     "searchTitle": "Aucun résultat",
-    "searchMessage": "Essayez avec un autre mot-clé."
+    "searchMessage": "Essayez avec un autre mot-clé.",
+    "productsTitle": "Aucun produit disponible",
+    "productsMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour.",
+    "categoriesTitle": "Aucune catégorie disponible",
+    "categoriesMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour.",
+    "favoritesTitle": "Aucun favori pour l'instant",
+    "favoritesMessage": "Vos produits commandés s'ajoutent ici automatiquement — vous pouvez aussi en ajouter vous-même."
+  },
+  "favorites": {
+    "addTitle": "Ajouter un produit",
+    "added": "Ajouté aux favoris."
+  },
+  "profile": {
+    "pinChanged": "Code PIN modifié avec succès.",
+    "editNameTitle": "Modifier mon nom",
+    "nameUpdated": "Nom mis à jour."
+  },
+  "notificationSettings": {
+    "enabled": "Notifications activées.",
+    "disabled": "Notifications désactivées.",
+    "openSettings": "Ouvrir les réglages du téléphone"
+  },
+  "addresses": {
+    "emptyTitle": "Aucune adresse enregistrée",
+    "emptyMessage": "Ajoutez une adresse pour accélérer vos prochaines commandes.",
+    "addTitle": "Ajouter une adresse",
+    "editTitle": "Modifier l'adresse",
+    "nameLabel": "Nom (ex : Maison, Bureau)",
+    "favoriteLabel": "Adresse favorite",
+    "deleteConfirmTitle": "Supprimer cette adresse ?",
+    "added": "Adresse ajoutée.",
+    "updated": "Adresse mise à jour.",
+    "removed": "Adresse supprimée."
   },
   "screens": {
     "Vitrine": { "title": "Nos meilleurs prix", "subtitle": "Vitrine publique — F00" },
@@ -160,7 +236,7 @@
     "Substitution": { "title": "Produit indisponible", "subtitle": "Substitution produit — F17" },
     "Profile": { "title": "Mon Profil", "subtitle": "Profil utilisateur — F10" },
     "Addresses": { "title": "Mes adresses", "subtitle": "Adresses sauvegardées — F10" },
-    "MyLocation": { "title": "Ma localisation", "subtitle": "Localisation GPS — F10" },
+    "Favorites": { "title": "Mes favoris", "subtitle": "Produits favoris" },
     "ChangePin": { "title": "Modifier PIN", "subtitle": "Modification du code PIN — F10" },
     "NotificationSettings": { "title": "Notifications", "subtitle": "Préférences notifications — F10 / F11" },
     "LanguageSettings": { "title": "Langue", "subtitle": "Français / Arabe — F10" },

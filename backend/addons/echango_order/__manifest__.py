@@ -15,8 +15,16 @@ mesure du branchement de chaque écran (F02 auth en premier).
     """,
     "author": "Echango",
     "license": "LGPL-3",
-    "depends": ["base", "sale", "stock"],
-    "data": [],
+    "depends": ["base", "portal", "sale", "stock", "sale_loyalty"],
+    "data": [
+        "security/ir.model.access.csv",
+        "security/ir_rule.xml",
+        "data/loyalty_config.xml",
+        "views/delivery_zone_views.xml",
+        "views/sale_order_views.xml",
+        "views/product_template_views.xml",
+        "views/res_partner_views.xml",
+    ],
     "installable": True,
     "application": True,
 }

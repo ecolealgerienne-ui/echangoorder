@@ -1,0 +1,80 @@
+from odoo import fields, http
+from odoo.http import request
+
+
+class EchangoCatalogController(http.Controller):
+    """Disponibilité stock (F04/F05) sans ouvrir tout le module stock au
+    portail. `qty_available` reste le champ calculé standard d'Odoo — seule
+    la façon de le lire change : en `sudo()` dans un contrôleur étroit,
+    plutôt qu'un `search_read`/`read` portail qui déclenche en cascade des
+    `AccessError` sur `product.product` puis `stock.warehouse` (constaté en
+    testant F04, voir status-V1.md § Points de vigilance).
+    """
+
+    @http.route("/echango/currency", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    def currency(self, **kw):
+        """Symbole/position de la devise réellement configurée sur la
+        société (`res.company.currency_id`, standard) — l'app affichait
+        auparavant un "€" en dur partout, incorrect dès que la société
+        n'est pas en EUR (constaté par l'utilisateur : société de test en
+        USD). `auth="public"` : la vitrine (F00) affiche aussi des prix
+        avant connexion.
+        """
+        currency = request.env.company.sudo().currency_id
+        return {"symbol": currency.symbol, "position": currency.position}
+
+    @http.route("/echango/catalog/stock", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    def stock(self, product_ids=None, **kw):
+        ids = [int(i) for i in (product_ids or [])]
+        templates = request.env["product.template"].sudo().search([
+            ("id", "in", ids), ("sale_ok", "=", True),
+        ])
+        return {"stock": {str(t.id): t.qty_available for t in templates}}
+
+    @http.route("/echango/catalog/promotions", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    def promotions(self, product_ids=None, **kw):
+        """Badge "Promo" sur le catalogue (Accueil/Catalogue/Recherche/
+        Favoris) — demande utilisateur suite à un wireframe de référence.
+        Module standard `loyalty` (déjà utilisé pour F15) : une promotion
+        automatique (`program_type` "promotion"/"buy_x_get_y", `trigger`
+        "auto" — pas de code, contrairement à F15) et une récompense de
+        type remise sur des produits précis. On ne s'occupe pas des cas
+        "remise sur toute la commande"/"produit le moins cher" (pas de sens
+        au niveau d'une tuile produit isolée) ni des codes promo (F15,
+        nécessitent une saisie, pas un badge passif).
+        `all_discount_product_ids` (champ calculé standard) résout déjà les
+        produits concernés qu'ils soient listés un par un ou via une
+        catégorie/étiquette/domaine — pas besoin de réimplémenter cette
+        logique.
+        Le pourcentage affiché sur le badge (demande utilisateur) n'a de
+        sens que pour une récompense en pourcentage (`discount_mode`
+        "percent" — vérifié contre le code source, pas "discount_type").
+        Une remise en montant fixe/par point reste badgée mais sans
+        pourcentage (`None`) plutôt que d'afficher un montant trompeur sur
+        une tuile qui n'affiche qu'un prix unitaire. Si plusieurs
+        récompenses actives visent le même produit, on garde le
+        pourcentage le plus avantageux.
+        """
+        ids = [int(i) for i in (product_ids or [])]
+        today = fields.Date.today()
+        programs = request.env["loyalty.program"].sudo().search([
+            ("active", "=", True),
+            ("program_type", "in", ("promotion", "buy_x_get_y")),
+            ("trigger", "=", "auto"),
+        ])
+        programs = programs.filtered(
+            lambda p: (not p.date_from or p.date_from <= today) and (not p.date_to or p.date_to >= today)
+        )
+        rewards = programs.reward_ids.filtered(
+            lambda r: r.reward_type == "discount" and r.discount_applicability == "specific"
+        )
+        promotions = {}
+        for reward in rewards:
+            percent = reward.discount if reward.discount_mode == "percent" else None
+            for tmpl_id in reward.all_discount_product_ids.product_tmpl_id.ids:
+                if tmpl_id not in ids:
+                    continue
+                current = promotions.get(tmpl_id)
+                if tmpl_id not in promotions or (percent or 0) > (current or 0):
+                    promotions[tmpl_id] = percent
+        return {"promotions": {str(tmpl_id): percent for tmpl_id, percent in promotions.items()}}

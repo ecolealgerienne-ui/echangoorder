@@ -8,7 +8,7 @@ import '../errors/app_messenger.dart';
 /// (specs F14 : "Explication affichée AVANT la demande de permission système"),
 /// puis déclenche la demande native seulement si l'utilisateur clique
 /// "Autoriser". Un refus n'empêche jamais l'utilisation de l'app.
-Future<void> requestPermissionWithExplanation(
+Future<bool> requestPermissionWithExplanation(
   BuildContext context, {
   required Permission permission,
   required String titleKey,
@@ -32,22 +32,23 @@ Future<void> requestPermissionWithExplanation(
     ),
   );
 
-  if (agreed != true || !context.mounted) return;
+  if (agreed != true || !context.mounted) return false;
 
   final status = await permission.request();
   if (!status.isGranted && context.mounted) {
     AppMessenger.showError(context, const AppError(AppError.permissionDenied));
   }
+  return status.isGranted;
 }
 
-Future<void> requestLocationPermission(BuildContext context) => requestPermissionWithExplanation(
+Future<bool> requestLocationPermission(BuildContext context) => requestPermissionWithExplanation(
       context,
       permission: Permission.location,
       titleKey: 'permissions.locationTitle',
       bodyKey: 'permissions.locationBody',
     );
 
-Future<void> requestNotificationPermission(BuildContext context) => requestPermissionWithExplanation(
+Future<bool> requestNotificationPermission(BuildContext context) => requestPermissionWithExplanation(
       context,
       permission: Permission.notification,
       titleKey: 'permissions.notificationTitle',
