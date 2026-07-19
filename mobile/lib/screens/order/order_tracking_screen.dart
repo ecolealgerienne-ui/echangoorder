@@ -60,7 +60,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       ],
       fields: const ['name', 'product_uom_qty'],
     );
-    return _OrderDetail(order: order, lines: lines);
+    final substitution = await api.getSubstitution(orderId: order['id'] as int);
+    return _OrderDetail(order: order, lines: lines, hasSubstitution: substitution['pending'] == true);
   }
 
   Future<void> _confirmCancel(BuildContext context, int orderId) async {
@@ -125,14 +126,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             return ScreenPlaceholder(
               screenKey: 'OrderTracking',
               actions: [
-                PlaceholderAction(
-                  // Point d'entrée démo : en réel, cet écran est ouvert depuis une
-                  // notification push envoyée quand le préparateur signale une
-                  // rupture de stock (F17), pas depuis un bouton du suivi.
-                  label: 'screens.Substitution.title'.tr(),
-                  onPressed: () => context.push('/profile/orders/${widget.orderRef}/substitution'),
-                  variant: AppButtonVariant.secondary,
-                ),
+                // F17 — visible seulement si le préparateur a signalé une
+                // rupture avec suggestion en back-office. En réel, cet écran
+                // serait plutôt ouvert depuis une notification push (F11,
+                // pas encore fait) ; ce bouton reste le point d'entrée en
+                // attendant.
+                if (detail.hasSubstitution)
+                  PlaceholderAction(
+                    label: 'screens.Substitution.title'.tr(),
+                    onPressed: () => context.push('/profile/orders/${widget.orderRef}/substitution'),
+                    variant: AppButtonVariant.secondary,
+                  ),
                 // F16 — visible uniquement tant que la commande est
                 // "Confirmée" (state == 'sale'), pas de suivi
                 // stock.picking pour distinguer "préparation commencée".
@@ -179,6 +183,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 class _OrderDetail {
   final Map<String, dynamic> order;
   final List<Map<String, dynamic>> lines;
+  final bool hasSubstitution;
 
-  const _OrderDetail({required this.order, required this.lines});
+  const _OrderDetail({required this.order, required this.lines, required this.hasSubstitution});
 }

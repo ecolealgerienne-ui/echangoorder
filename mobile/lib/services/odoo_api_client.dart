@@ -355,6 +355,28 @@ class OdooApiClient {
     _throwIfOwnError(result);
   }
 
+  /// F17 — la substitution est signalée manuellement par le préparateur en
+  /// back-office (`x_substitution_produit`, voir `models/sale_order.py`) ;
+  /// `pending: false` si aucune substitution n'est en attente pour cette
+  /// commande.
+  Future<Map<String, dynamic>> getSubstitution({required int orderId}) async {
+    final result = await _rpc('/echango/order/substitution', {'order_id': orderId}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
+  Future<void> acceptSubstitution({required int lineId}) async {
+    final result =
+        await _rpc('/echango/order/substitution/accept', {'line_id': lineId}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+  }
+
+  Future<void> refuseSubstitution({required int lineId}) async {
+    final result =
+        await _rpc('/echango/order/substitution/refuse', {'line_id': lineId}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+  }
+
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom
   /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
   /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré
