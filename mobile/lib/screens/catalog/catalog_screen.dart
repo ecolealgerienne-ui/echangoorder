@@ -103,7 +103,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       children: [
                         Text('$count', style: Theme.of(context).textTheme.bodySmall),
                         const SizedBox(width: 4),
-                        const Icon(Icons.chevron_right),
+                        const Icon(Icons.chevron_right, matchTextDirection: true),
                       ],
                     ),
                     onTap: () => context.push('/catalog/category/$categId', extra: categName),
