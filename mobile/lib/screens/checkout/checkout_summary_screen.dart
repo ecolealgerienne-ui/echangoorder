@@ -157,7 +157,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('checkout.discountLabel'.tr()),
-                    Text('${cart.discount.toStringAsFixed(2)} €', style: const TextStyle(color: AppColors.primary)),
+                    Text('${cart.discount.toStringAsFixed(2)} €', style: const TextStyle(color: AppColors.promo)),
                   ],
                 ),
               ],

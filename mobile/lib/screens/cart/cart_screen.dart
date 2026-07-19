@@ -140,6 +140,14 @@ class _CartScreenState extends State<CartScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _AmountRow(label: 'cart.subtotal'.tr(), amount: cart.amountSubtotal),
+              if (cart.discount != 0) ...[
+                const SizedBox(height: AppSpacing.xs),
+                _AmountRow(
+                  label: 'checkout.discountLabel'.tr(),
+                  amount: cart.discount,
+                  color: AppColors.promo,
+                ),
+              ],
               const SizedBox(height: AppSpacing.xs),
               _AmountRow(label: 'cart.total'.tr(), amount: cart.amountTotal, emphasize: true),
               // Qualité clients — compte pas encore validé par un
@@ -181,14 +189,16 @@ class _AmountRow extends StatelessWidget {
   final String label;
   final double amount;
   final bool emphasize;
+  final Color? color;
 
-  const _AmountRow({required this.label, required this.amount, this.emphasize = false});
+  const _AmountRow({required this.label, required this.amount, this.emphasize = false, this.color});
 
   @override
   Widget build(BuildContext context) {
-    final style = emphasize
-        ? Theme.of(context).textTheme.titleMedium
-        : Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted);
+    final style = (emphasize
+            ? Theme.of(context).textTheme.titleMedium
+            : Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted))
+        ?.copyWith(color: color);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
