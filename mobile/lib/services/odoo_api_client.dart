@@ -66,7 +66,13 @@ class OdooApiClient {
     this.onSessionExpired,
     this.onActivity,
   })  : _http = httpClient ?? http.Client(),
-        _secureStorage = secureStorage ?? const FlutterSecureStorage();
+        // `encryptedSharedPreferences: true` explicite sur Android (recommandé
+        // par le package pour garantir EncryptedSharedPreferences/Keystore
+        // plutôt qu'une configuration par défaut moins robuste selon la
+        // version — trouvé à l'audit sécurité du 2026-07-19). Sans effet sur
+        // iOS, qui utilise déjà le Keychain nativement.
+        _secureStorage = secureStorage ??
+            const FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
 
   static const _cookieStorageKey = 'echango_session_cookie';
 
