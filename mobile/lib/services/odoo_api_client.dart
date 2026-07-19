@@ -107,6 +107,31 @@ class OdooApiClient {
     return (result as List).cast<Map<String, dynamic>>();
   }
 
+  /// `read` standard : un seul enregistrement par id connu (fiche produit,
+  /// etc.) — plus direct qu'un `search_read` avec un domaine `[('id','=',..)]`.
+  /// Lève [AppError.notFound] si l'id n'existe pas ou n'est pas visible
+  /// (exclu par un `ir.rule`, ex : produit non vendable).
+  Future<Map<String, dynamic>> read({
+    required String model,
+    required int id,
+    required List<String> fields,
+  }) async {
+    final result = await _rpc('/web/dataset/call_kw', {
+      'model': model,
+      'method': 'read',
+      'args': [
+        [id],
+        fields,
+      ],
+      'kwargs': {},
+    });
+    final records = (result as List).cast<Map<String, dynamic>>();
+    if (records.isEmpty) {
+      throw const AppError(AppError.notFound);
+    }
+    return records.first;
+  }
+
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom
   /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
   /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré
