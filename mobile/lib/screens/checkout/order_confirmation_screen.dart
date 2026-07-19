@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/permission_service.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_button.dart';
 import '../../widgets/screen_placeholder.dart';
 
 /// F08 — confirmation affichée juste après `CheckoutSummaryScreen` (données
@@ -59,11 +58,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             // Navigation inter-onglets (Panier -> Profil), simple avec go_router :
             // pas besoin de passer par le navigator parent comme en React Native.
             onPressed: () => context.go('/profile/orders/${widget.orderRef}'),
-          ),
-          PlaceholderAction(
-            label: 'actions.backHome'.tr(),
-            onPressed: () => context.go('/home'),
-            variant: AppButtonVariant.secondary,
           ),
         ],
         child: Column(
