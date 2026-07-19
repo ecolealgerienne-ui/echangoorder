@@ -29,11 +29,21 @@ class EchangoAuthController(http.Controller):
         if users.search_count([("login", "=", phone)]):
             return {"error": "auth.phone_already_registered"}
 
+        # N'assigner que des codes de langue réellement installés/actifs :
+        # écrire un code non installé (ex: "fr_FR" si le pack de langue
+        # française n'a pas été chargé dans cette base) fait planter plus
+        # tard des mécanismes internes (notifications sur sale.order...)
+        # avec un "Invalid language code" peu explicite. Odoo se débrouille
+        # très bien avec lang=False (repli automatique, cf. odoo.tools.get_lang).
+        installed_langs = dict(request.env["res.lang"].sudo().get_installed())
+        requested_lang = lang or "fr_FR"
+        partner_lang = requested_lang if requested_lang in installed_langs else False
+
         portal_group = request.env.ref("base.group_portal")
         partner = request.env["res.partner"].sudo().create({
             "name": name or phone,
             "phone": phone,
-            "lang": lang or "fr_FR",
+            "lang": partner_lang,
         })
         user = users.create({
             "name": partner.name,
