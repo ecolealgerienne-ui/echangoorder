@@ -31,17 +31,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _loadProducts() {
-    final api = context.read<OdooApiClient>();
     setState(() {
-      _productsFuture = api.searchRead(
-        model: 'product.template',
-        domain: const [
-          ['sale_ok', '=', true],
-        ],
-        fields: const ['name', 'list_price', 'image_128'],
-        limit: 20,
-      );
+      _productsFuture = _fetchProducts();
     });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchProducts() async {
+    final api = context.read<OdooApiClient>();
+    final products = await api.searchRead(
+      model: 'product.template',
+      domain: const [
+        ['sale_ok', '=', true],
+      ],
+      fields: const ['name', 'list_price', 'image_128'],
+      limit: 20,
+    );
+    // Disponibilité stock récupérée à part (contrôleur dédié, sudo() côté
+    // serveur) — même logique que Catalogue/Recherche (F04), manquait ici.
+    final stock = await api.getStock(productIds: products.map((p) => p['id'] as int).toList());
+    for (final product in products) {
+      final qty = stock[product['id'] as int];
+      if (qty != null) product['qty_available'] = qty;
+    }
+    return products;
   }
 
   @override
