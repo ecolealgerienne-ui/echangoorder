@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -20,8 +21,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _phoneController = TextEditingController();
-  final _pinController = TextEditingController();
+  // Valeurs par défaut pratiques pour les tests locaux — uniquement en
+  // mode debug, jamais dans un build de release.
+  final _phoneController = TextEditingController(text: kDebugMode ? '+213555545352' : null);
+  final _pinController = TextEditingController(text: kDebugMode ? '010203' : null);
   bool _isSubmitting = false;
 
   @override
