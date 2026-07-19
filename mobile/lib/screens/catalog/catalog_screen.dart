@@ -1,3 +1,9 @@
+// Import explicite (préfixé) de dart:ui pour TextDirection : easy_localization
+// exporte aussi un symbole TextDirection (utilisé pour le sens de la locale),
+// qui entre en conflit avec dart:ui.TextDirection (celui de Directionality)
+// dans les fichiers qui importent les deux — cf. RTL du chevron ci-dessous.
+import 'dart:ui' as ui;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -104,7 +110,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                         Text('$count', style: Theme.of(context).textTheme.bodySmall),
                         const SizedBox(width: 4),
                         Icon(
-                          Directionality.of(context) == TextDirection.rtl
+                          Directionality.of(context) == ui.TextDirection.rtl
                               ? Icons.chevron_left
                               : Icons.chevron_right,
                         ),
