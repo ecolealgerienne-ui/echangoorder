@@ -62,6 +62,21 @@ class EchangoProfileController(http.Controller):
         user._set_pin(new_pin)
         return {"success": True}
 
+    @http.route("/echango/profile/delete_account", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    def delete_account(self, pin=None, **kw):
+        user = request.env.user
+        try:
+            user._check_pin(pin or "")
+        except AccessDenied:
+            return {"error": "auth.invalid_credentials"}
+        # Suppression logique standard Odoo (spec Expert Odoo) : `active`
+        # existe déjà sur res.users (mixin standard), pas de champ custom.
+        # Les données (partner, commandes) sont conservées, seul le compte
+        # est désactivé — la SMS de confirmation (specs QA) est hors scope,
+        # aucun fournisseur SMS choisi (cf. status-V1.md).
+        user.sudo().write({"active": False})
+        return {"success": True}
+
     def _address_payload(self, address):
         return {
             "id": address.id,

@@ -342,6 +342,11 @@ class OdooApiClient {
     _throwIfOwnError(result);
   }
 
+  Future<void> deleteAccount({required String pin}) async {
+    final result = await _rpc('/echango/profile/delete_account', {'pin': pin}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+  }
+
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom
   /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
   /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré

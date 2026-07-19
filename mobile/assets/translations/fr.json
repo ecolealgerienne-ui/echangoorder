@@ -164,6 +164,11 @@
     "editNameTitle": "Modifier mon nom",
     "nameUpdated": "Nom mis à jour."
   },
+  "notificationSettings": {
+    "enabled": "Notifications activées.",
+    "disabled": "Notifications désactivées.",
+    "openSettings": "Ouvrir les réglages du téléphone"
+  },
   "myLocation": {
     "currentLabel": "Position enregistrée :",
     "none": "Aucune position enregistrée pour l'instant.",

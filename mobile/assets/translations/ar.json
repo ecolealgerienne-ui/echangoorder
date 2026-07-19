@@ -164,6 +164,11 @@
     "editNameTitle": "تعديل اسمي",
     "nameUpdated": "تم تحديث الاسم."
   },
+  "notificationSettings": {
+    "enabled": "الإشعارات مفعّلة.",
+    "disabled": "الإشعارات معطّلة.",
+    "openSettings": "فتح إعدادات الهاتف"
+  },
   "myLocation": {
     "currentLabel": "الموقع المسجّل:",
     "none": "لا يوجد موقع مسجّل حاليًا.",
