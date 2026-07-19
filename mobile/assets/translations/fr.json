@@ -11,6 +11,8 @@
     "reference": "Réf :"
   },
   "auth": {
+    "nameLabel": "Nom et prénom",
+    "languageLabel": "Langue",
     "phoneLabel": "Téléphone",
     "pinLabel": "Code PIN",
     "pinHint": "6 à 12 chiffres",

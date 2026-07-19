@@ -11,6 +11,8 @@
     "reference": "المرجع:"
   },
   "auth": {
+    "nameLabel": "الاسم الكامل",
+    "languageLabel": "اللغة",
     "phoneLabel": "رقم الهاتف",
     "pinLabel": "الرمز السري",
     "pinHint": "من 6 إلى 12 رقمًا",

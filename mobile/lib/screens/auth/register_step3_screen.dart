@@ -13,8 +13,10 @@ import '../../widgets/screen_placeholder.dart';
 
 class RegisterStep3Screen extends StatefulWidget {
   final String phone;
+  final String name;
+  final String lang;
 
-  const RegisterStep3Screen({super.key, required this.phone});
+  const RegisterStep3Screen({super.key, required this.phone, required this.name, required this.lang});
 
   @override
   State<RegisterStep3Screen> createState() => _RegisterStep3ScreenState();
@@ -48,7 +50,12 @@ class _RegisterStep3ScreenState extends State<RegisterStep3Screen> {
     setState(() => _isSubmitting = true);
     try {
       final pin = _pinController.text.trim();
-      await api.register(phone: widget.phone, pin: pin);
+      await api.register(
+        phone: widget.phone,
+        pin: pin,
+        name: widget.name.isEmpty ? null : widget.name,
+        lang: widget.lang.isEmpty ? null : widget.lang,
+      );
       await api.login(phone: widget.phone, pin: pin);
       authState.loginAsUser(phone: widget.phone);
     } on AppError catch (error) {

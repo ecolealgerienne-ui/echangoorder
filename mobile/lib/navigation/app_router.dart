@@ -79,11 +79,25 @@ GoRouter buildAppRouter(AuthState authState) {
       GoRoute(path: '/register/step1', builder: (context, state) => const RegisterStep1Screen()),
       GoRoute(
         path: '/register/step2',
-        builder: (context, state) => RegisterStep2Screen(phone: (state.extra as String?) ?? ''),
+        builder: (context, state) {
+          final draft = (state.extra as Map<String, dynamic>?) ?? const {};
+          return RegisterStep2Screen(
+            phone: draft['phone'] as String? ?? '',
+            name: draft['name'] as String? ?? '',
+            lang: draft['lang'] as String? ?? '',
+          );
+        },
       ),
       GoRoute(
         path: '/register/step3',
-        builder: (context, state) => RegisterStep3Screen(phone: (state.extra as String?) ?? ''),
+        builder: (context, state) {
+          final draft = (state.extra as Map<String, dynamic>?) ?? const {};
+          return RegisterStep3Screen(
+            phone: draft['phone'] as String? ?? '',
+            name: draft['name'] as String? ?? '',
+            lang: draft['lang'] as String? ?? '',
+          );
+        },
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/forgot-pin', builder: (context, state) => const ForgotPinScreen()),
