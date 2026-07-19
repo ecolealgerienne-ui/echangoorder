@@ -158,6 +158,11 @@
     "categoriesTitle": "لا توجد فئات متاحة",
     "categoriesMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا."
   },
+  "profile": {
+    "pinChanged": "تم تغيير رمز PIN بنجاح.",
+    "editNameTitle": "تعديل اسمي",
+    "nameUpdated": "تم تحديث الاسم."
+  },
   "screens": {
     "Vitrine": { "title": "أفضل أسعارنا", "subtitle": "واجهة عامة — F00" },
     "Onboarding": { "title": "اطلب منتجاتك المحلية", "subtitle": "التعريف بالتطبيق — F01" },

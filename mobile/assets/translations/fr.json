@@ -158,6 +158,11 @@
     "categoriesTitle": "Aucune catégorie disponible",
     "categoriesMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour."
   },
+  "profile": {
+    "pinChanged": "Code PIN modifié avec succès.",
+    "editNameTitle": "Modifier mon nom",
+    "nameUpdated": "Nom mis à jour."
+  },
   "screens": {
     "Vitrine": { "title": "Nos meilleurs prix", "subtitle": "Vitrine publique — F00" },
     "Onboarding": { "title": "Commandez vos produits locaux", "subtitle": "Onboarding — F01" },

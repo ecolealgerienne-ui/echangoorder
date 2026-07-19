@@ -257,6 +257,28 @@ class OdooApiClient {
     return result;
   }
 
+  /// F10 — profil utilisateur. `res.partner`/`res.users` en lecture seule
+  /// pour le portail (vérifié contre le code source de `base`), toute
+  /// écriture passe par `controllers/profile_controller.py` en `sudo()`.
+  Future<Map<String, dynamic>> getProfile() async {
+    final result = await _rpc('/echango/profile', {}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
+  Future<void> updateProfileName({required String name}) async {
+    final result = await _rpc('/echango/profile/update_name', {'name': name}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+  }
+
+  Future<void> changePin({required String currentPin, required String newPin}) async {
+    final result = await _rpc('/echango/profile/change_pin', {
+      'current_pin': currentPin,
+      'new_pin': newPin,
+    }) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+  }
+
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom
   /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
   /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré

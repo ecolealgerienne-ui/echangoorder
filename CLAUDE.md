@@ -186,7 +186,7 @@ Conséquences déjà actées pour Echango Order :
   - Téléphone → `res.partner.phone` — pas de champ custom dédié. **Odoo 19 a fusionné `mobile` dans `phone`** (le champ `mobile` n'existe plus sur `res.partner` depuis cette version, confirmé en testant contre une instance réelle) : ne pas utiliser `mobile`, il n'existe plus.
   - Adresse de livraison → adresses enfants standards de `res.partner` (mécanisme multi-adresses natif) plutôt qu'un champ texte libre — `x_adresse_favorite` reste dans la liste mais sera réduit au strict nécessaire (probablement un simple booléen "favorite" sur l'adresse) au moment de F07/F10, pas une réécriture de l'adresse.
   - Commandes → `sale.order` standard (statuts, lignes, `partner_id`) plutôt qu'un modèle de commande custom.
-  - Coordonnées GPS → à vérifier au moment de F07 si le module standard `base_geolocalize` (`partner_latitude`/`partner_longitude` sur `res.partner`) est disponible en Odoo 19 CE avant de garder `x_latitude`/`x_longitude` en custom.
+  - Coordonnées GPS → `res.partner.partner_latitude`/`partner_longitude` — **champs standards du module `base` lui-même** (pas besoin du module `base_geolocalize`, qui ne fait qu'ajouter un bouton de géocodage automatique ; les champs existent nativement, confirmé contre le code source Odoo 19). **Remplace `x_latitude`/`x_longitude`**, retirés de la liste ci-dessous.
 - **Champs sans équivalent standard, donc custom, restent justifiés** : `x_pin` (hashé, sur `res.users` — aucune notion de PIN dans Odoo, l'auth standard est login/mot de passe), `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_substitution_produit`, modèle `x_delivery_zone` (pas de notion de zone de livraison simple nativement en Odoo 19 CE).
 
 ## Custom fields Odoo attendus (Expert Odoo)
@@ -195,7 +195,7 @@ Conséquences déjà actées pour Echango Order :
 
 ~~`x_langue`~~ : supprimé, remplacé par le champ standard `res.partner.lang` (voir § Principe architecture Odoo ci-dessus).
 
-~~`x_latitude`/`x_longitude`~~ : à confirmer au moment de F07 s'ils restent nécessaires ou si `base_geolocalize` (standard) suffit (voir ci-dessus).
+~~`x_latitude`/`x_longitude`~~ : supprimés, remplacés par les champs standards `res.partner.partner_latitude`/`partner_longitude` (voir § Principe architecture Odoo ci-dessus).
 
 ## Documentation
 
