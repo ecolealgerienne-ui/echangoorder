@@ -38,7 +38,7 @@
             <xpath expr="//sheet" position="before">
                 <header>
                     <button name="%(action_x_pin_reset_wizard)d" type="action" string="Réinitialiser le PIN"
-                            context="{'default_user_id': active_id}"/>
+                            context="{'default_user_id': id}"/>
                 </header>
             </xpath>
         </field>
