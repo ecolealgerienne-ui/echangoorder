@@ -29,6 +29,10 @@
     "pickupStore": "🏪 الاستلام من المتجر",
     "modifyAddress": "تعديل العنوان"
   },
+  "cart": {
+    "subtotal": "المجموع الفرعي",
+    "total": "الإجمالي"
+  },
   "order": {
     "confirmCancel": "تأكيد الإلغاء",
     "keepOrder": "الاحتفاظ بطلبي"

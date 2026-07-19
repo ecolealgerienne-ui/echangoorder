@@ -8,7 +8,7 @@ import '../../errors/app_error.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/coming_soon.dart';
+import '../../utils/add_to_cart.dart';
 import '../../widgets/product_grid_tile.dart';
 
 /// F04 — Recherche par nom (`name ilike`), avec un léger anti-rebond pour
@@ -126,7 +126,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       return ProductGridTile(
                         product: product,
                         onTap: () => context.push('/catalog/product/${product['id']}'),
-                        onAdd: () => showComingSoon(context),
+                        onAdd: () => addProductToCart(context, product['id'] as int),
                       );
                     },
                   );

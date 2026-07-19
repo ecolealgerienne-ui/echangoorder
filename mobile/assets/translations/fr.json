@@ -29,6 +29,10 @@
     "pickupStore": "🏪 Retrait en magasin",
     "modifyAddress": "Modifier l'adresse"
   },
+  "cart": {
+    "subtotal": "Sous-total",
+    "total": "Total"
+  },
   "order": {
     "confirmCancel": "Confirmer l'annulation",
     "keepOrder": "Garder ma commande"

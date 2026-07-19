@@ -8,7 +8,7 @@ import '../../errors/app_error.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/coming_soon.dart';
+import '../../utils/add_to_cart.dart';
 import '../../widgets/app_button.dart';
 
 /// F05 — Fiche produit : `product.template` par id (`read` standard, pas
@@ -141,8 +141,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  // Ajout réel au panier : F06 (pas encore implémenté).
-                  AppButton(label: 'actions.addToCart'.tr(), onPressed: () => showComingSoon(context)),
+                  AppButton(
+                    label: 'actions.addToCart'.tr(),
+                    onPressed: () => addProductToCart(context, product['id'] as int, qty: _quantity),
+                  ),
                 ],
               ),
             );

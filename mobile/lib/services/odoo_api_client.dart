@@ -19,6 +19,11 @@ const _errorCodeMap = <String, String>{
   'auth.phone_already_registered': AppError.authPhoneAlreadyUsed,
   'auth.invalid_credentials': AppError.authInvalidCredentials,
   'auth.account_locked': AppError.authPinLocked,
+  // Réutilise le code checkout existant : même message ("produit non
+  // disponible") que le cas F07, pas la peine d'un nouveau domaine/2
+  // traductions supplémentaires pour la même idée.
+  'cart.product_unavailable': AppError.checkoutOutOfStock,
+  'not_found': AppError.notFound,
 };
 
 /// Client JSON-RPC Odoo : les endpoints custom d'auth d'`echango_order`
@@ -130,6 +135,38 @@ class OdooApiClient {
       throw const AppError(AppError.notFound);
     }
     return records.first;
+  }
+
+  /// F06 — Panier = devis (`sale.order` brouillon) du client connecté.
+  /// Contrôleurs custom (`controllers/cart_controller.py`) : Odoo réserve
+  /// volontairement un accès lecture seule à `sale.order`/`sale.order.line`
+  /// pour le groupe portail (vérifié contre le code source du module
+  /// `sale`), donc pas de `call_kw` standard possible ici pour les
+  /// mutations, contrairement au catalogue (F03-F05).
+  Future<Map<String, dynamic>> getCart() async {
+    final result = await _rpc('/echango/cart', {}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
+  Future<Map<String, dynamic>> addToCart({required int productId, num qty = 1}) async {
+    final result =
+        await _rpc('/echango/cart/add', {'product_id': productId, 'qty': qty}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
+  Future<Map<String, dynamic>> updateCartLine({required int lineId, required num qty}) async {
+    final result =
+        await _rpc('/echango/cart/update', {'line_id': lineId, 'qty': qty}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
+  Future<Map<String, dynamic>> removeCartLine({required int lineId}) async {
+    final result = await _rpc('/echango/cart/remove', {'line_id': lineId}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
   }
 
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom

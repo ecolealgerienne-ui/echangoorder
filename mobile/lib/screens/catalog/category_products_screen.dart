@@ -6,7 +6,7 @@ import '../../errors/app_error.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/coming_soon.dart';
+import '../../utils/add_to_cart.dart';
 import '../../widgets/product_grid_tile.dart';
 
 /// F04 — Grille de produits filtrée par catégorie (`categ_id`). La
@@ -92,8 +92,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 return ProductGridTile(
                   product: product,
                   onTap: () => context.push('/catalog/product/${product['id']}'),
-                  // Ajout réel au panier : F06 (pas encore implémenté).
-                  onAdd: () => showComingSoon(context),
+                  onAdd: () => addProductToCart(context, product['id'] as int),
                 );
               },
             );
