@@ -514,11 +514,27 @@ class OdooApiClient {
 }
 
 /// `DateTime` -> format attendu par les champs `Datetime` d'Odoo côté
-/// JSON-RPC (`YYYY-MM-DD HH:MM:SS`, pas de `T` ni de fuseau — `toIso8601String()`
-/// ne convient pas). Simplification MVP : pas de conversion UTC, on
-/// suppose serveur et client dans le même fuseau horaire (déploiement
-/// régional) — à revoir avant une release multi-fuseaux.
+/// JSON-RPC (`YYYY-MM-DD HH:MM:SS`, pas de `T` ni de fuseau). Les champs
+/// `Datetime` d'Odoo sont toujours stockés en UTC côté serveur : on
+/// convertit donc explicitement `dt` (heure locale de l'appareil, ex.
+/// créneau choisi par l'utilisateur) en UTC avant de le formater, sinon
+/// Odoo stocke l'heure locale telle quelle en la traitant comme de l'UTC
+/// (décalage silencieux égal au fuseau du serveur/appareil). Symétrique de
+/// [parseOdooDatetime].
 String formatOdooDatetime(DateTime dt) {
+  final utc = dt.toUtc();
   String two(int n) => n.toString().padLeft(2, '0');
-  return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
+  return '${utc.year}-${two(utc.month)}-${two(utc.day)} ${two(utc.hour)}:${two(utc.minute)}:${two(utc.second)}';
+}
+
+/// Inverse de [formatOdooDatetime] : parse une chaîne `Datetime` renvoyée
+/// par Odoo (toujours en UTC, sans suffixe de fuseau — format serveur
+/// `YYYY-MM-DD HH:MM:SS` ou `isoformat()` avec `T`) et renvoie l'heure
+/// locale de l'appareil. `DateTime.parse`/`tryParse` traiterait une chaîne
+/// sans fuseau comme déjà locale, d'où le suffixe `Z` ajouté explicitement
+/// avant parsing.
+DateTime? parseOdooDatetime(String? value) {
+  if (value == null || value.isEmpty) return null;
+  final normalized = value.contains('T') ? value : value.replaceFirst(' ', 'T');
+  return DateTime.tryParse('${normalized}Z')?.toLocal();
 }

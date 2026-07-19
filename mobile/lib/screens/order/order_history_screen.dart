@@ -176,7 +176,7 @@ class _OrderCard extends StatelessWidget {
     final name = order['name'] as String? ?? '';
     final amount = (order['amount_total'] as num?)?.toDouble() ?? 0;
     final state = order['state'] as String?;
-    final date = DateTime.tryParse(order['date_order'] as String? ?? '');
+    final date = parseOdooDatetime(order['date_order'] as String?);
     final isConfirmed = state == 'sale';
     final statusLabel = state == 'cancel' ? 'order.statusCancelled'.tr() : 'order.statusConfirmed'.tr();
 

@@ -116,7 +116,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             final order = detail.order;
             final state = order['state'] as String?;
             final receptionMode = order['x_reception_mode'] as String?;
-            final creneau = DateTime.tryParse(order['x_creneau'] as String? ?? '');
+            final creneau = parseOdooDatetime(order['x_creneau'] as String?);
             final modeLabel = receptionMode == 'home_delivery'
                 ? 'checkout.deliveryHome'.tr()
                 : receptionMode == 'pickup'
