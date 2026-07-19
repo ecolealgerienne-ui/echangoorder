@@ -56,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-    );
+    ).whenComplete(controller.dispose);
     if (newName == null || newName.isEmpty || newName == currentName || !mounted) return;
 
     try {

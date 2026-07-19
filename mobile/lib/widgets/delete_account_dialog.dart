@@ -22,6 +22,10 @@ Future<void> showDeleteAccountDialog(BuildContext context) {
   final api = context.read<OdooApiClient>();
   final authState = context.read<AuthState>();
 
+  // pinController n'est géré par aucun State.dispose() ici (fonction
+  // top-level, pas un widget) — nettoyé explicitement à la fermeture du
+  // dialog via whenComplete (fuite trouvée à l'audit technique du
+  // 2026-07-19).
   return showDialog<void>(
     context: context,
     builder: (dialogContext) {
@@ -77,5 +81,5 @@ Future<void> showDeleteAccountDialog(BuildContext context) {
         },
       );
     },
-  );
+  ).whenComplete(pinController.dispose);
 }

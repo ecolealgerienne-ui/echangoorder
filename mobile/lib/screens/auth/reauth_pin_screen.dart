@@ -26,11 +26,18 @@ class ReauthPinScreen extends StatefulWidget {
 
 class _ReauthPinScreenState extends State<ReauthPinScreen> {
   final _pinController = TextEditingController();
+  // Champ téléphone en lecture seule (juste affiché, jamais modifié) :
+  // remonté en champ de State plutôt que recréé à chaque build() — un
+  // TextEditingController instancié directement dans build() n'est jamais
+  // disposé (fuite trouvée à l'audit technique du 2026-07-19, aggravée
+  // ici par les tentatives de PIN échouées qui redéclenchent un build).
+  late final _phoneDisplayController = TextEditingController(text: context.read<AuthState>().phone ?? '');
   bool _isSubmitting = false;
 
   @override
   void dispose() {
     _pinController.dispose();
+    _phoneDisplayController.dispose();
     super.dispose();
   }
 
@@ -83,7 +90,7 @@ class _ReauthPinScreenState extends State<ReauthPinScreen> {
             const SizedBox(height: AppSpacing.md),
             TextField(
               enabled: false,
-              controller: TextEditingController(text: authState.phone ?? ''),
+              controller: _phoneDisplayController,
               decoration: InputDecoration(labelText: 'auth.phoneLabel'.tr(), border: const OutlineInputBorder()),
             ),
             const SizedBox(height: AppSpacing.md),
