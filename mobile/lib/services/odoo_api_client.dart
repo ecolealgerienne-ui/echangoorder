@@ -279,6 +279,61 @@ class OdooApiClient {
     _throwIfOwnError(result);
   }
 
+  Future<List<Map<String, dynamic>>> listAddresses() async {
+    final result = await _rpc('/echango/profile/addresses', {}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return (result['addresses'] as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> addAddress({
+    String? name,
+    required String street,
+    required String city,
+    String? zipCode,
+    String? comment,
+    bool favorite = false,
+  }) async {
+    final result = await _rpc('/echango/profile/addresses/add', {
+      'name': name,
+      'street': street,
+      'city': city,
+      'zip_code': zipCode,
+      'comment': comment,
+      'favorite': favorite,
+    }) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
+  Future<Map<String, dynamic>> updateAddress({
+    required int addressId,
+    String? name,
+    required String street,
+    required String city,
+    String? zipCode,
+    String? comment,
+    bool? favorite,
+  }) async {
+    final result = await _rpc('/echango/profile/addresses/update', {
+      'address_id': addressId,
+      'name': name,
+      'street': street,
+      'city': city,
+      'zip_code': zipCode,
+      'comment': comment,
+      'favorite': favorite,
+    }) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
+  Future<void> removeAddress({required int addressId}) async {
+    final result = await _rpc('/echango/profile/addresses/remove', {
+      'address_id': addressId,
+    }) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+  }
+
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom
   /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
   /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré

@@ -6,6 +6,7 @@
     "continue": "متابعة",
     "confirm": "تأكيد",
     "cancel": "إلغاء",
+    "delete": "حذف",
     "comingSoon": "قريبًا — يتطلب الاتصال بـ Odoo",
     "reference": "المرجع:"
   },
@@ -162,6 +163,18 @@
     "pinChanged": "تم تغيير رمز PIN بنجاح.",
     "editNameTitle": "تعديل اسمي",
     "nameUpdated": "تم تحديث الاسم."
+  },
+  "addresses": {
+    "emptyTitle": "لا يوجد عنوان محفوظ",
+    "emptyMessage": "أضف عنوانًا لتسريع طلباتك القادمة.",
+    "addTitle": "إضافة عنوان",
+    "editTitle": "تعديل العنوان",
+    "nameLabel": "الاسم (مثال: المنزل، المكتب)",
+    "favoriteLabel": "عنوان مفضل",
+    "deleteConfirmTitle": "حذف هذا العنوان؟",
+    "added": "تمت إضافة العنوان.",
+    "updated": "تم تحديث العنوان.",
+    "removed": "تم حذف العنوان."
   },
   "screens": {
     "Vitrine": { "title": "أفضل أسعارنا", "subtitle": "واجهة عامة — F00" },

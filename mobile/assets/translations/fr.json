@@ -6,6 +6,7 @@
     "continue": "Continuer",
     "confirm": "Confirmer",
     "cancel": "Annuler",
+    "delete": "Supprimer",
     "comingSoon": "Bientôt disponible — connexion Odoo requise",
     "reference": "Réf :"
   },
@@ -162,6 +163,18 @@
     "pinChanged": "Code PIN modifié avec succès.",
     "editNameTitle": "Modifier mon nom",
     "nameUpdated": "Nom mis à jour."
+  },
+  "addresses": {
+    "emptyTitle": "Aucune adresse enregistrée",
+    "emptyMessage": "Ajoutez une adresse pour accélérer vos prochaines commandes.",
+    "addTitle": "Ajouter une adresse",
+    "editTitle": "Modifier l'adresse",
+    "nameLabel": "Nom (ex : Maison, Bureau)",
+    "favoriteLabel": "Adresse favorite",
+    "deleteConfirmTitle": "Supprimer cette adresse ?",
+    "added": "Adresse ajoutée.",
+    "updated": "Adresse mise à jour.",
+    "removed": "Adresse supprimée."
   },
   "screens": {
     "Vitrine": { "title": "Nos meilleurs prix", "subtitle": "Vitrine publique — F00" },
