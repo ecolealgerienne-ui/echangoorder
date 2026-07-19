@@ -24,6 +24,14 @@
     "pinResetRequestSentTitle": "تم إرسال الطلب",
     "pinResetRequestSentMessage": "إذا كان هذا الرقم مرتبطًا بحساب، سيتواصل معك فريقنا قريبًا عبر الهاتف لإعادة تعيين رمزك السري."
   },
+  "onboarding": {
+    "slide1Title": "اطلب منتجاتك المحلية",
+    "slide1Subtitle": "تصفح الكتالوج واطلب في نقرات قليلة.",
+    "slide2Title": "توصيل أو استلام، كما تفضل",
+    "slide2Subtitle": "اختر التوصيل إلى المنزل أو استلام طلبك من المتجر.",
+    "slide3Title": "تتبع طلبك في الوقت الفعلي",
+    "slide3Subtitle": "ابقَ على اطلاع في كل مرحلة، من التأكيد إلى الاستلام."
+  },
   "nav": {
     "home": "الرئيسية",
     "catalog": "الكتالوج",
@@ -217,7 +225,6 @@
   },
   "screens": {
     "Vitrine": { "title": "أفضل أسعارنا", "subtitle": "واجهة عامة — F00" },
-    "Onboarding": { "title": "اطلب منتجاتك المحلية", "subtitle": "التعريف بالتطبيق — F01" },
     "AuthWelcome": { "title": "مرحبًا", "subtitle": "المصادقة — F02" },
     "RegisterStep1": { "title": "إنشاء حساب — المعلومات", "subtitle": "التسجيل خطوة 1 — F02" },
     "RegisterStep2": { "title": "عنوان التوصيل", "subtitle": "التسجيل خطوة 2 — F02" },

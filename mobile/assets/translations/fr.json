@@ -24,6 +24,14 @@
     "pinResetRequestSentTitle": "Demande envoyée",
     "pinResetRequestSentMessage": "Si ce numéro correspond à un compte, notre équipe vous recontactera prochainement par téléphone pour réinitialiser votre code PIN."
   },
+  "onboarding": {
+    "slide1Title": "Commandez vos produits locaux",
+    "slide1Subtitle": "Parcourez le catalogue et commandez en quelques clics.",
+    "slide2Title": "Livraison ou retrait, comme vous voulez",
+    "slide2Subtitle": "Choisissez de vous faire livrer à domicile ou de retirer votre commande en magasin.",
+    "slide3Title": "Suivez votre commande en temps réel",
+    "slide3Subtitle": "Restez informé à chaque étape, de la confirmation à la réception."
+  },
   "nav": {
     "home": "Accueil",
     "catalog": "Catalogue",
@@ -217,7 +225,6 @@
   },
   "screens": {
     "Vitrine": { "title": "Nos meilleurs prix", "subtitle": "Vitrine publique — F00" },
-    "Onboarding": { "title": "Commandez vos produits locaux", "subtitle": "Onboarding — F01" },
     "AuthWelcome": { "title": "Bienvenue", "subtitle": "Authentification — F02" },
     "RegisterStep1": { "title": "Créer un compte — Infos", "subtitle": "Inscription étape 1 — F02" },
     "RegisterStep2": { "title": "Adresse de livraison", "subtitle": "Inscription étape 2 — F02" },
