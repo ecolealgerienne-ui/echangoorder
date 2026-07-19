@@ -193,8 +193,6 @@ class _CheckoutAddressScreenState extends State<CheckoutAddressScreen> {
     final isFavorite = address['favorite'] as bool? ?? false;
     return RadioListTile<int?>(
       value: id,
-      groupValue: _selectedAddressId,
-      onChanged: (value) => setState(() => _selectedAddressId = value),
       title: Text(isFavorite ? '⭐ $name' : name),
       subtitle: Text('$street, $zip $city'.trim()),
     );
@@ -209,25 +207,27 @@ class _CheckoutAddressScreenState extends State<CheckoutAddressScreen> {
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final address in _addresses!) _addressChoice(address),
-                    if (_addresses!.isNotEmpty)
-                      RadioListTile<int?>(
-                        value: null,
-                        groupValue: _selectedAddressId,
-                        onChanged: (value) => setState(() => _selectedAddressId = value),
-                        title: Text('addresses.addTitle'.tr()),
+                // RadioGroup centralise groupValue/onChanged pour tous les
+                // Radio descendants (individuels dépréciés depuis Flutter
+                // 3.32, cf. CheckoutTimeslotScreen).
+                child: RadioGroup<int?>(
+                  groupValue: _selectedAddressId,
+                  onChanged: (value) => setState(() => _selectedAddressId = value),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final address in _addresses!) _addressChoice(address),
+                      if (_addresses!.isNotEmpty)
+                        RadioListTile<int?>(value: null, title: Text('addresses.addTitle'.tr())),
+                      if (_addresses!.isNotEmpty) const SizedBox(height: AppSpacing.md),
+                      if (_selectedAddressId == null) _manualForm(),
+                      const SizedBox(height: AppSpacing.md),
+                      AppButton(
+                        label: 'common.continue'.tr(),
+                        onPressed: _isChecking ? null : () => _continue(_addresses!),
                       ),
-                    if (_addresses!.isNotEmpty) const SizedBox(height: AppSpacing.md),
-                    if (_selectedAddressId == null) _manualForm(),
-                    const SizedBox(height: AppSpacing.md),
-                    AppButton(
-                      label: 'common.continue'.tr(),
-                      onPressed: _isChecking ? null : () => _continue(_addresses!),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
       ),
