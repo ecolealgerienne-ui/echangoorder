@@ -42,21 +42,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _editName(String currentName) async {
-    final controller = TextEditingController(text: currentName);
     final newName = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('profile.editNameTitle'.tr()),
-        content: TextField(controller: controller, autofocus: true),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text('common.cancel'.tr())),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
-            child: Text('common.confirm'.tr()),
-          ),
-        ],
-      ),
-    ).whenComplete(controller.dispose);
+      builder: (dialogContext) => _EditNameDialog(currentName: currentName),
+    );
     if (newName == null || newName.isEmpty || newName == currentName || !mounted) return;
 
     try {
@@ -177,6 +166,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Contenu du dialog d'édition du nom, extrait en `StatefulWidget` dédié
+/// plutôt qu'un `TextEditingController` créé directement dans `_editName`
+/// (crash trouvé côté utilisateur : `.whenComplete(controller.dispose)`
+/// dispose trop tôt, pendant que le `TextField` est encore dans l'arbre le
+/// temps de l'animation de fermeture du dialog — "A TextEditingController
+/// was used after being disposed"). Un vrai `State.dispose()` est appelé
+/// par Flutter au bon moment, une fois le widget réellement retiré.
+class _EditNameDialog extends StatefulWidget {
+  final String currentName;
+
+  const _EditNameDialog({required this.currentName});
+
+  @override
+  State<_EditNameDialog> createState() => _EditNameDialogState();
+}
+
+class _EditNameDialogState extends State<_EditNameDialog> {
+  late final _controller = TextEditingController(text: widget.currentName);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('profile.editNameTitle'.tr()),
+      content: TextField(controller: _controller, autofocus: true),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('common.cancel'.tr())),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: Text('common.confirm'.tr()),
+        ),
+      ],
     );
   }
 }

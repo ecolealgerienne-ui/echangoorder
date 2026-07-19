@@ -18,68 +18,89 @@ import 'pin_input_field.dart';
 /// **Confirmation par SMS après suppression (specs QA) hors scope** —
 /// aucun fournisseur SMS choisi, voir status-V1.md.
 Future<void> showDeleteAccountDialog(BuildContext context) {
-  final pinController = TextEditingController();
   final api = context.read<OdooApiClient>();
   final authState = context.read<AuthState>();
 
-  // pinController n'est géré par aucun State.dispose() ici (fonction
-  // top-level, pas un widget) — nettoyé explicitement à la fermeture du
-  // dialog via whenComplete (fuite trouvée à l'audit technique du
-  // 2026-07-19).
   return showDialog<void>(
     context: context,
-    builder: (dialogContext) {
-      var isSubmitting = false;
+    builder: (dialogContext) => _DeleteAccountDialogContent(api: api, authState: authState),
+  );
+}
 
-      return StatefulBuilder(
-        builder: (dialogContext, setState) {
-          Future<void> submit() async {
-            setState(() => isSubmitting = true);
-            try {
-              await api.deleteAccount(pin: pinController.text.trim());
-              api.clearSession();
-              authState.logout();
-              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-            } on AppError catch (e) {
-              setState(() => isSubmitting = false);
-              if (dialogContext.mounted) AppMessenger.showError(dialogContext, e);
-            }
-          }
+/// Contenu du dialog, extrait en `StatefulWidget` dédié plutôt qu'un
+/// `TextEditingController` créé dans la fonction top-level `showDeleteAccountDialog`
+/// et disposé via `.whenComplete()` (même bug que `profile_screen.dart._editName` :
+/// dispose trop tôt, pendant que le `TextField` est encore dans l'arbre le temps
+/// de l'animation de fermeture du dialog — "A TextEditingController was used
+/// after being disposed"). Un vrai `State.dispose()` est appelé par Flutter au
+/// bon moment, une fois le widget réellement retiré.
+class _DeleteAccountDialogContent extends StatefulWidget {
+  final OdooApiClient api;
+  final AuthState authState;
 
-          return AlertDialog(
-            title: Text('deleteAccount.title'.tr()),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'deleteAccount.body'.tr(),
-                  style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                PinInputField(
-                  controller: pinController,
-                  labelKey: 'deleteAccount.pinLabel',
-                  onChanged: (_) => setState(() {}),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: isSubmitting ? null : () => Navigator.of(dialogContext).pop(),
-                child: Text('common.cancel'.tr()),
-              ),
-              TextButton(
-                onPressed: isSubmitting || validatePin(pinController.text) != null ? null : submit,
-                child: Text(
-                  'deleteAccount.confirm'.tr(),
-                  style: const TextStyle(color: AppColors.danger),
-                ),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  ).whenComplete(pinController.dispose);
+  const _DeleteAccountDialogContent({required this.api, required this.authState});
+
+  @override
+  State<_DeleteAccountDialogContent> createState() => _DeleteAccountDialogContentState();
+}
+
+class _DeleteAccountDialogContentState extends State<_DeleteAccountDialogContent> {
+  final _pinController = TextEditingController();
+  var _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    setState(() => _isSubmitting = true);
+    try {
+      await widget.api.deleteAccount(pin: _pinController.text.trim());
+      widget.api.clearSession();
+      widget.authState.logout();
+      if (mounted) Navigator.of(context).pop();
+    } on AppError catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      AppMessenger.showError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('deleteAccount.title'.tr()),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'deleteAccount.body'.tr(),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          PinInputField(
+            controller: _pinController,
+            labelKey: 'deleteAccount.pinLabel',
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
+          child: Text('common.cancel'.tr()),
+        ),
+        TextButton(
+          onPressed: _isSubmitting || validatePin(_pinController.text) != null ? null : _submit,
+          child: Text(
+            'deleteAccount.confirm'.tr(),
+            style: const TextStyle(color: AppColors.danger),
+          ),
+        ),
+      ],
+    );
+  }
 }
