@@ -44,6 +44,10 @@ const _publicPaths = [
   '/register/step3',
   '/login',
   '/forgot-pin',
+  // F13 — accessible depuis l'inscription (utilisateur pas encore
+  // authentifié), en plus de `/profile/legal/:docType` (déjà accessible
+  // depuis "À propos" une fois connecté).
+  '/legal',
 ];
 
 GoRouter buildAppRouter(AuthState authState) {
@@ -75,6 +79,10 @@ GoRouter buildAppRouter(AuthState authState) {
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/forgot-pin', builder: (context, state) => const ForgotPinScreen()),
+      GoRoute(
+        path: '/legal/:docType',
+        builder: (context, state) => LegalDocumentScreen(docType: state.pathParameters['docType']!),
+      ),
       // Affiché quand le health-check Odoo (GET /web/health) échoue, une fois branché.
       GoRoute(path: '/maintenance', builder: (context, state) => const MaintenanceScreen()),
       StatefulShellRoute.indexedStack(

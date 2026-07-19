@@ -44,6 +44,11 @@ class _AboutScreenState extends State<AboutScreen> {
           onPressed: () => context.push('/profile/legal/legal'),
           variant: AppButtonVariant.secondary,
         ),
+        PlaceholderAction(
+          label: 'legal.cookies'.tr(),
+          onPressed: () => context.push('/profile/legal/cookies'),
+          variant: AppButtonVariant.secondary,
+        ),
       ],
       child: Text(
         'Version : ${_version ?? '…'}',

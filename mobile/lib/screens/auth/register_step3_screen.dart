@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../errors/app_error.dart';
 import '../../errors/app_messenger.dart';
@@ -74,6 +75,17 @@ class _RegisterStep3ScreenState extends State<RegisterStep3Screen> {
           PinInputField(controller: _pinController, labelKey: 'auth.pinLabel'),
           const SizedBox(height: AppSpacing.md),
           PinInputField(controller: _confirmController, labelKey: 'auth.pinConfirmLabel'),
+          const SizedBox(height: AppSpacing.md),
+          // F13 — CGU/confidentialité accessibles depuis l'inscription
+          // (specs QA), sans bloquer la création de compte sur une case à
+          // cocher (non demandé explicitement par les specs).
+          Text('auth.termsNotice'.tr(), style: Theme.of(context).textTheme.bodySmall),
+          Wrap(
+            children: [
+              TextButton(onPressed: () => context.push('/legal/cgu'), child: Text('legal.cgu'.tr())),
+              TextButton(onPressed: () => context.push('/legal/privacy'), child: Text('legal.privacy'.tr())),
+            ],
+          ),
         ],
       ),
     );
