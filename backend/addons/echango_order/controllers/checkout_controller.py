@@ -143,6 +143,7 @@ class EchangoCheckoutController(http.Controller):
 
         order.sudo().write(vals)
         order.sudo().action_confirm()
+        self._seed_favorites(partner, order)
 
         return {
             "order_ref": order.name,
@@ -150,3 +151,16 @@ class EchangoCheckoutController(http.Controller):
             "reception_mode": order.x_reception_mode,
             "slot_start": order.x_creneau.isoformat() if order.x_creneau else None,
         }
+
+    def _seed_favorites(self, partner, order):
+        """Liste de favoris (`x_product_favorite`) initialisée
+        automatiquement par les produits achetés — dédupliqué, le client
+        peut ensuite en retirer/ajouter manuellement
+        (`controllers/favorites_controller.py`)."""
+        favorite = request.env["x_product_favorite"].sudo()
+        existing = set(favorite.search([("partner_id", "=", partner.id)]).product_tmpl_id.ids)
+        for line in order.order_line.filtered(lambda l: not l.is_reward_line):
+            tmpl_id = line.product_id.product_tmpl_id.id
+            if tmpl_id not in existing:
+                favorite.create({"partner_id": partner.id, "product_tmpl_id": tmpl_id})
+                existing.add(tmpl_id)

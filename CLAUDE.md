@@ -187,7 +187,15 @@ Conséquences déjà actées pour Echango Order :
   - Adresse de livraison → adresses enfants standards de `res.partner` (mécanisme multi-adresses natif, `type='delivery'`) plutôt qu'un champ texte libre. `x_adresse_favorite` implémenté (F10) exactement comme prévu ici : un simple booléen sur `res.partner` (`models/res_partner.py`), une seule adresse favorite à la fois par client (contrôleur `sudo()` qui désactive les autres favoris du même parent à l'écriture) — pas de réécriture de l'adresse.
   - Commandes → `sale.order` standard (statuts, lignes, `partner_id`) plutôt qu'un modèle de commande custom.
   - Coordonnées GPS → `res.partner.partner_latitude`/`partner_longitude` — **champs standards du module `base` lui-même** (pas besoin du module `base_geolocalize`, qui ne fait qu'ajouter un bouton de géocodage automatique ; les champs existent nativement, confirmé contre le code source Odoo 19). **Remplace `x_latitude`/`x_longitude`**, retirés de la liste ci-dessous.
-- **Champs sans équivalent standard, donc custom, restent justifiés** : `x_pin` (hashé, sur `res.users` — aucune notion de PIN dans Odoo, l'auth standard est login/mot de passe), `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_substitution_produit`, `x_verification_state` (voir § Qualité clients ci-dessous), modèle `x_delivery_zone` (pas de notion de zone de livraison simple nativement en Odoo 19 CE).
+- **Champs sans équivalent standard, donc custom, restent justifiés** : `x_pin` (hashé, sur `res.users` — aucune notion de PIN dans Odoo, l'auth standard est login/mot de passe), `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_substitution_produit`, `x_verification_state` (voir § Qualité clients ci-dessous), modèle `x_delivery_zone` (pas de notion de zone de livraison simple nativement en Odoo 19 CE), modèle `x_product_favorite` (voir § Favoris ci-dessous).
+
+## Favoris (décision produit, hors périmètre specs initiales)
+
+**Décision produit (2026-07, suite à échange avec l'utilisateur)** : liste de produits favoris par client, initialisée automatiquement par l'historique de commandes (dédupliqué) puis modifiable manuellement (ajout/retrait) — contrairement à "favoris" listé comme hors périmètre Phase 1 dans les specs (§5), cette version simplifiée (pas de filtres avancés, pas de partage) a été explicitement demandée et implémentée.
+
+- Modèle `x_product_favorite` (`partner_id`, `product_tmpl_id`, contrainte unique) — aucun équivalent standard sans le module `website_sale` (non installé), qui a son propre modèle `product.wishlist` mais nécessite l'app eCommerce entière.
+- Initialisation automatique dans `checkout_controller.py.confirm()` (`_seed_favorites`) : chaque produit d'une commande confirmée est ajouté aux favoris s'il n'y est pas déjà (lignes de récompense/réduction exclues).
+- Gestion manuelle via `controllers/favorites_controller.py` (`/echango/favorites`, `/add`, `/remove`) — écran dédié `FavoritesScreen` (Profil), avec un écran de recherche pour ajouter d'autres produits.
 
 ## Qualité clients — vérification manuelle des nouveaux comptes
 

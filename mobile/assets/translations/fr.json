@@ -176,7 +176,14 @@
     "productsTitle": "Aucun produit disponible",
     "productsMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour.",
     "categoriesTitle": "Aucune catégorie disponible",
-    "categoriesMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour."
+    "categoriesMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour.",
+    "favoritesTitle": "Aucun favori pour l'instant",
+    "favoritesMessage": "Vos produits commandés s'ajoutent ici automatiquement — vous pouvez aussi en ajouter vous-même."
+  },
+  "favorites": {
+    "addTitle": "Ajouter un produit",
+    "added": "Ajouté aux favoris.",
+    "removed": "Retiré des favoris."
   },
   "profile": {
     "pinChanged": "Code PIN modifié avec succès.",
@@ -226,6 +233,7 @@
     "Substitution": { "title": "Produit indisponible", "subtitle": "Substitution produit — F17" },
     "Profile": { "title": "Mon Profil", "subtitle": "Profil utilisateur — F10" },
     "Addresses": { "title": "Mes adresses", "subtitle": "Adresses sauvegardées — F10" },
+    "Favorites": { "title": "Mes favoris", "subtitle": "Produits favoris" },
     "ChangePin": { "title": "Modifier PIN", "subtitle": "Modification du code PIN — F10" },
     "NotificationSettings": { "title": "Notifications", "subtitle": "Préférences notifications — F10 / F11" },
     "LanguageSettings": { "title": "Langue", "subtitle": "Français / Arabe — F10" },

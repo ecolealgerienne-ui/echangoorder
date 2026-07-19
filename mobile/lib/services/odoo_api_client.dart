@@ -402,6 +402,25 @@ class OdooApiClient {
     return (result['products'] as List).cast<Map<String, dynamic>>();
   }
 
+  /// Liste de favoris — initialisée automatiquement à chaque commande
+  /// confirmée (produits achetés, dédupliqués), modifiable manuellement
+  /// ensuite (voir `controllers/favorites_controller.py`).
+  Future<List<Map<String, dynamic>>> getFavorites() async {
+    final result = await _rpc('/echango/favorites', {}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return (result['products'] as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> addFavorite({required int productId}) async {
+    final result = await _rpc('/echango/favorites/add', {'product_id': productId}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+  }
+
+  Future<void> removeFavorite({required int productId}) async {
+    final result = await _rpc('/echango/favorites/remove', {'product_id': productId}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+  }
+
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom
   /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
   /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré

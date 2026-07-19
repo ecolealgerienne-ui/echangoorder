@@ -176,7 +176,14 @@
     "productsTitle": "لا توجد منتجات متاحة",
     "productsMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا.",
     "categoriesTitle": "لا توجد فئات متاحة",
-    "categoriesMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا."
+    "categoriesMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا.",
+    "favoritesTitle": "لا توجد منتجات مفضلة بعد",
+    "favoritesMessage": "تُضاف منتجاتك المطلوبة هنا تلقائيًا — ويمكنك أيضًا إضافة منتجات بنفسك."
+  },
+  "favorites": {
+    "addTitle": "إضافة منتج",
+    "added": "أُضيف إلى المفضلة.",
+    "removed": "أُزيل من المفضلة."
   },
   "profile": {
     "pinChanged": "تم تغيير رمز PIN بنجاح.",
@@ -226,6 +233,7 @@
     "Substitution": { "title": "منتج غير متوفر", "subtitle": "استبدال المنتج — F17" },
     "Profile": { "title": "ملفي الشخصي", "subtitle": "الملف الشخصي — F10" },
     "Addresses": { "title": "عناويني", "subtitle": "العناوين المحفوظة — F10" },
+    "Favorites": { "title": "المفضلة", "subtitle": "المنتجات المفضلة" },
     "ChangePin": { "title": "تغيير الرمز السري", "subtitle": "تعديل الرمز السري — F10" },
     "NotificationSettings": { "title": "الإشعارات", "subtitle": "تفضيلات الإشعارات — F10 / F11" },
     "LanguageSettings": { "title": "اللغة", "subtitle": "الفرنسية / العربية — F10" },
