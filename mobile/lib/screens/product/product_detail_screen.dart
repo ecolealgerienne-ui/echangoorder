@@ -65,6 +65,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // Titre alimenté par le même Future que le corps de l'écran (pas
+        // de titre du tout auparavant — oubli trouvé à l'audit technique
+        // du 2026-07-19, contrairement à tous les autres écrans qui ont
+        // au moins un titre statique). Vide pendant le chargement/en cas
+        // d'erreur plutôt que de dupliquer la gestion d'erreur ici, déjà
+        // affichée dans le corps.
+        title: FutureBuilder<Map<String, dynamic>>(
+          future: _productFuture,
+          builder: (context, snapshot) => Text(snapshot.data?['name'] as String? ?? ''),
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.ios_share), onPressed: _share),
         ],
