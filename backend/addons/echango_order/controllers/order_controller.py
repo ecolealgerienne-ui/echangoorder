@@ -12,11 +12,72 @@ class EchangoOrderController(http.Controller):
     avec vérification explicite de propriété (`partner_id`).
     """
 
-    def _owned_order(self, order_id):
+    def _owned_order(self, order_id=None, order_ref=None):
         partner = request.env.user.partner_id
-        return request.env["sale.order"].sudo().search([
-            ("id", "=", order_id), ("partner_id", "=", partner.id),
-        ], limit=1)
+        domain = [("partner_id", "=", partner.id)]
+        if order_id:
+            domain.append(("id", "=", order_id))
+        elif order_ref:
+            domain.append(("name", "=", order_ref))
+        else:
+            return request.env["sale.order"]
+        return request.env["sale.order"].sudo().search(domain, limit=1)
+
+    @http.route("/echango/order/list", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
+    def list_orders(self, offset=0, limit=None, **kw):
+        """F09 — historique des commandes. `sale.order` est lisible par le
+        portail via `/web/dataset/call_kw` (règle standard restreinte au
+        partenaire propriétaire), mais ce chemin échappe à la politique
+        "session expirée après 24h d'inactivité" (`require_fresh_session`
+        ne s'applique qu'aux contrôleurs `/echango/*`, cf. status-V1.md §
+        Sécurité — trouvé à l'audit du 2026-07-19) : endpoint custom pour
+        que l'historique de commandes (données personnelles) soit couvert
+        lui aussi, pas seulement les mutations panier/checkout/profil.
+        """
+        partner = request.env.user.partner_id
+        orders = request.env["sale.order"].sudo().search(
+            [("partner_id", "=", partner.id), ("state", "!=", "draft")],
+            order="date_order desc", offset=offset, limit=limit,
+        )
+        return {
+            "orders": [
+                {
+                    "id": o.id,
+                    "name": o.name,
+                    "date_order": o.date_order.isoformat() if o.date_order else None,
+                    "amount_total": o.amount_total,
+                    "state": o.state,
+                }
+                for o in orders
+            ]
+        }
+
+    @http.route("/echango/order/detail", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
+    def detail(self, order_ref=None, **kw):
+        """F08/F09 — suivi détaillé d'une commande. Même raison que
+        `list_orders` ci-dessus : remplace un `search_read` direct
+        (`sale.order` + `sale.order.line`) pour rester couvert par la
+        politique de fraîcheur de session.
+        """
+        order = self._owned_order(order_ref=order_ref)
+        if not order:
+            return {"error": "not_found"}
+        return {
+            "order": {
+                "id": order.id,
+                "name": order.name,
+                "amount_total": order.amount_total,
+                "state": order.state,
+                "x_reception_mode": order.x_reception_mode,
+                "x_creneau": order.x_creneau.isoformat() if order.x_creneau else None,
+            },
+            "lines": [
+                {"name": line.name, "product_uom_qty": line.product_uom_qty}
+                for line in order.order_line
+            ],
+        }
 
     @http.route("/echango/order/cancel", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     @require_fresh_session
@@ -46,7 +107,7 @@ class EchangoOrderController(http.Controller):
 
     @http.route("/echango/order/substitution", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     @require_fresh_session
-    def get_substitution(self, order_id=None, **kw):
+    def get_substitution(self, order_id=None, order_ref=None, **kw):
         # F17 — le signalement de rupture + la suggestion sont saisis
         # manuellement par le préparateur en back-office (`x_substitution_
         # produit` sur la ligne, voir `views/sale_order_views.xml`) : côté
@@ -54,7 +115,11 @@ class EchangoOrderController(http.Controller):
         # commande. `product.product` n'étant pas exposé au portail (voir
         # CLAUDE.md § Sécurité / F04), la résolution du nom/prix se fait ici
         # en `sudo()`, pas via un `search_read` direct côté client.
-        order = self._owned_order(order_id)
+        # `order_ref` (nom de commande) accepté en plus de `order_id` :
+        # évite à `SubstitutionScreen` de devoir d'abord résoudre l'id via
+        # un `search_read` séparé (non couvert par `require_fresh_session`,
+        # voir `list_orders` ci-dessus).
+        order = self._owned_order(order_id=order_id, order_ref=order_ref)
         if not order:
             return {"error": "not_found"}
         line = order.order_line.filtered(lambda l: l.x_substitution_produit)[:1]

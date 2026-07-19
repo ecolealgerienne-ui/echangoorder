@@ -42,25 +42,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Future<_OrderDetail> _fetchDetail() async {
     final api = context.read<OdooApiClient>();
-    final orders = await api.searchRead(
-      model: 'sale.order',
-      domain: [
-        ['name', '=', widget.orderRef],
-      ],
-      fields: const ['name', 'amount_total', 'state', 'x_reception_mode', 'x_creneau'],
-      limit: 1,
-    );
-    if (orders.isEmpty) {
-      throw const AppError(AppError.notFound);
-    }
-    final order = orders.first;
-    final lines = await api.searchRead(
-      model: 'sale.order.line',
-      domain: [
-        ['order_id', '=', order['id']],
-      ],
-      fields: const ['name', 'product_uom_qty'],
-    );
+    final detail = await api.getOrderDetail(orderRef: widget.orderRef);
+    final order = detail['order'] as Map<String, dynamic>;
+    final lines = (detail['lines'] as List).cast<Map<String, dynamic>>();
     final substitution = await api.getSubstitution(orderId: order['id'] as int);
     return _OrderDetail(order: order, lines: lines, hasSubstitution: substitution['pending'] == true);
   }

@@ -449,6 +449,28 @@ class OdooApiClient {
     _throwIfOwnError(result);
   }
 
+  /// F09 — historique des commandes du client connecté. Endpoint custom
+  /// plutôt qu'un `search_read` direct sur `sale.order` : ce dernier
+  /// échappe à la politique "session expirée après 24h d'inactivité"
+  /// (`require_fresh_session` ne couvre que les contrôleurs `/echango/*`,
+  /// trouvé à l'audit sécurité du 2026-07-19 — voir status-V1.md), alors
+  /// que l'historique de commandes reste une donnée personnelle.
+  Future<List<Map<String, dynamic>>> listOrders({int offset = 0, int? limit}) async {
+    final result = await _rpc('/echango/order/list', {
+      'offset': offset,
+      if (limit != null) 'limit': limit,
+    }) as Map<String, dynamic>;
+    return (result['orders'] as List).cast<Map<String, dynamic>>();
+  }
+
+  /// F08/F09 — détail + lignes d'une commande (suivi). Même raison que
+  /// [listOrders] ci-dessus.
+  Future<Map<String, dynamic>> getOrderDetail({required String orderRef}) async {
+    final result = await _rpc('/echango/order/detail', {'order_ref': orderRef}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
   /// F16 — annulation, uniquement tant que la commande est "Confirmée"
   /// (voir `controllers/order_controller.py` pour la règle exacte).
   Future<void> cancelOrder({required int orderId}) async {
@@ -459,9 +481,15 @@ class OdooApiClient {
   /// F17 — la substitution est signalée manuellement par le préparateur en
   /// back-office (`x_substitution_produit`, voir `models/sale_order.py`) ;
   /// `pending: false` si aucune substitution n'est en attente pour cette
-  /// commande.
-  Future<Map<String, dynamic>> getSubstitution({required int orderId}) async {
-    final result = await _rpc('/echango/order/substitution', {'order_id': orderId}) as Map<String, dynamic>;
+  /// commande. `orderRef` (nom, ex. "S00042") accepté en plus de `orderId`
+  /// — évite un `search_read` séparé juste pour résoudre l'id (voir
+  /// [listOrders]).
+  Future<Map<String, dynamic>> getSubstitution({int? orderId, String? orderRef}) async {
+    assert(orderId != null || orderRef != null);
+    final result = await _rpc('/echango/order/substitution', {
+      if (orderId != null) 'order_id': orderId,
+      if (orderRef != null) 'order_ref': orderRef,
+    }) as Map<String, dynamic>;
     _throwIfOwnError(result);
     return result;
   }

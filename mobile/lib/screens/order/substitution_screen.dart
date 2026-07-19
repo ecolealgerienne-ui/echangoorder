@@ -44,18 +44,7 @@ class _SubstitutionScreenState extends State<SubstitutionScreen> {
 
   Future<Map<String, dynamic>> _fetchSubstitution() async {
     final api = context.read<OdooApiClient>();
-    final orders = await api.searchRead(
-      model: 'sale.order',
-      domain: [
-        ['name', '=', widget.orderRef],
-      ],
-      fields: const ['name'],
-      limit: 1,
-    );
-    if (orders.isEmpty) {
-      throw const AppError(AppError.notFound);
-    }
-    final substitution = await api.getSubstitution(orderId: orders.first['id'] as int);
+    final substitution = await api.getSubstitution(orderRef: widget.orderRef);
     if (substitution['pending'] != true) {
       throw const AppError(AppError.notFound);
     }

@@ -55,16 +55,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchOrders({required int offset}) async {
-    final orders = await context.read<OdooApiClient>().searchRead(
-          model: 'sale.order',
-          domain: const [
-            ['state', '!=', 'draft'],
-          ],
-          fields: const ['name', 'date_order', 'amount_total', 'state'],
-          order: 'date_order desc',
-          limit: kListPageSize,
-          offset: offset,
-        );
+    final orders = await context.read<OdooApiClient>().listOrders(offset: offset, limit: kListPageSize);
     _hasMore = orders.length == kListPageSize;
     _offset = offset + orders.length;
     return orders;
