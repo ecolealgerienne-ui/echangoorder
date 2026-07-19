@@ -43,9 +43,14 @@ class EchangoCartController(http.Controller):
 
     def _cart_payload(self, order):
         if not order:
-            return {"order_id": None, "lines": [], "amount_subtotal": 0.0, "amount_total": 0.0}
+            return {"order_id": None, "lines": [], "amount_subtotal": 0.0, "amount_total": 0.0, "discount": 0.0}
         lines = []
-        for line in order.order_line:
+        # F15 — les lignes de récompense (code promo appliqué, module
+        # standard `loyalty`/`sale_loyalty`) sont exclues de la liste
+        # produit : elles n'ont pas de +/- quantité ni de bouton supprimer
+        # côté app, la réduction est affichée séparément (`discount`,
+        # `order.reward_amount` — champ standard, déjà négatif).
+        for line in order.order_line.filtered(lambda l: not l.is_reward_line):
             product = line.product_id
             image = product.image_128
             lines.append({
@@ -63,6 +68,7 @@ class EchangoCartController(http.Controller):
             "lines": lines,
             "amount_subtotal": order.amount_untaxed,
             "amount_total": order.amount_total,
+            "discount": order.reward_amount,
         }
 
     @http.route("/echango/cart", type="jsonrpc", auth="user", methods=["POST"], csrf=False)

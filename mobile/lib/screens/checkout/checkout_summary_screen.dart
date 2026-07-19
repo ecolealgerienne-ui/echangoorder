@@ -21,11 +21,37 @@ class CheckoutSummaryScreen extends StatefulWidget {
 }
 
 class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
+  final _promoController = TextEditingController();
   bool _isConfirming = false;
+  bool _isApplyingPromo = false;
+  String? _appliedPromoCode;
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
 
   bool _isToday(DateTime dt) {
     final now = DateTime.now();
     return dt.year == now.year && dt.month == now.month && dt.day == now.day;
+  }
+
+  Future<void> _applyPromo() async {
+    if (_isApplyingPromo) return;
+    final code = _promoController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() => _isApplyingPromo = true);
+    try {
+      await context.read<CartState>().applyPromoCode(code: code);
+      if (!mounted) return;
+      setState(() => _appliedPromoCode = code);
+    } on AppError catch (e) {
+      if (mounted) AppMessenger.showError(context, e);
+    } finally {
+      if (mounted) setState(() => _isApplyingPromo = false);
+    }
   }
 
   Future<void> _confirm() async {
@@ -73,7 +99,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                '📦 ${cart.itemCount} ${'checkout.itemsLabel'.tr()} — ${cart.amountTotal.toStringAsFixed(2)} €',
+                '📦 ${cart.itemCount} ${'checkout.itemsLabel'.tr()}',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -91,6 +117,58 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
               ],
               const SizedBox(height: AppSpacing.sm),
               Text('checkout.paymentOnDelivery'.tr()),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _promoController,
+                      decoration: InputDecoration(
+                        labelText: 'checkout.promoCodeLabel'.tr(),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  TextButton(
+                    onPressed: _isApplyingPromo ? null : _applyPromo,
+                    child: Text('common.confirm'.tr()),
+                  ),
+                ],
+              ),
+              if (_appliedPromoCode != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '${'checkout.promoAppliedPrefix'.tr()} $_appliedPromoCode',
+                  style: const TextStyle(color: AppColors.primary),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('cart.subtotal'.tr()),
+                  Text('${cart.amountSubtotal.toStringAsFixed(2)} €'),
+                ],
+              ),
+              if (cart.discount != 0) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('checkout.discountLabel'.tr()),
+                    Text('${cart.discount.toStringAsFixed(2)} €', style: const TextStyle(color: AppColors.primary)),
+                  ],
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xs),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('cart.total'.tr(), style: Theme.of(context).textTheme.titleMedium),
+                  Text('${cart.amountTotal.toStringAsFixed(2)} €', style: Theme.of(context).textTheme.titleMedium),
+                ],
+              ),
               const Spacer(),
               AppButton(
                 label: 'actions.confirmOrder'.tr(),

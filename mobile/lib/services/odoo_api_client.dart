@@ -28,6 +28,9 @@ const _errorCodeMap = <String, String>{
   'not_found': AppError.notFound,
   'checkout.out_of_delivery_zone': AppError.checkoutOutOfDeliveryZone,
   'order.cannot_cancel': AppError.orderCannotCancel,
+  'promo.invalid': AppError.promoInvalid,
+  'promo.expired': AppError.promoExpired,
+  'promo.already_used': AppError.promoAlreadyUsed,
 };
 
 /// Client JSON-RPC Odoo : les endpoints custom d'auth d'`echango_order`
@@ -254,6 +257,17 @@ class OdooApiClient {
       if (zipCode != null) 'zip_code': zipCode,
       if (notes != null) 'notes': notes,
     }) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
+  /// F15 — applique un code promo au panier en cours (module standard
+  /// `sale_loyalty`/`loyalty`, voir `controllers/checkout_controller.py`).
+  /// Retourne le panier mis à jour (réduction déjà reflétée dans
+  /// `amount_total`/`discount`) — un seul code actif par commande, un
+  /// nouvel appel remplace le précédent plutôt que de les cumuler.
+  Future<Map<String, dynamic>> applyPromoCode({required String code}) async {
+    final result = await _rpc('/echango/checkout/apply_promo', {'code': code}) as Map<String, dynamic>;
     _throwIfOwnError(result);
     return result;
   }

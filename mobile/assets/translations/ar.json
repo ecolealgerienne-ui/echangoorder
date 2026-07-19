@@ -37,7 +37,10 @@
     "today": "اليوم",
     "tomorrow": "غدًا",
     "paymentOnDelivery": "💵 الدفع عند الاستلام",
-    "itemsLabel": "منتجات"
+    "itemsLabel": "منتجات",
+    "promoCodeLabel": "كود الخصم",
+    "promoAppliedPrefix": "✅ تم تطبيق الكود:",
+    "discountLabel": "الخصم"
   },
   "cart": {
     "subtotal": "المجموع الفرعي",

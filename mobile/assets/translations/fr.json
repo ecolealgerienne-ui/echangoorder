@@ -37,7 +37,10 @@
     "today": "Aujourd'hui",
     "tomorrow": "Demain",
     "paymentOnDelivery": "💵 Paiement à la réception / au retrait",
-    "itemsLabel": "articles"
+    "itemsLabel": "articles",
+    "promoCodeLabel": "Code promo",
+    "promoAppliedPrefix": "✅ Code appliqué :",
+    "discountLabel": "Réduction"
   },
   "cart": {
     "subtotal": "Sous-total",

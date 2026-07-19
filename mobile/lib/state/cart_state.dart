@@ -47,10 +47,14 @@ class CartState extends ChangeNotifier {
   List<CartLine> _lines = [];
   double _amountSubtotal = 0;
   double _amountTotal = 0;
+  double _discount = 0;
 
   List<CartLine> get lines => _lines;
   double get amountSubtotal => _amountSubtotal;
   double get amountTotal => _amountTotal;
+  // F15 — négatif quand un code promo est appliqué (`order.reward_amount`
+  // standard, module `sale_loyalty`), 0 sinon.
+  double get discount => _discount;
   int get itemCount => _lines.length;
   bool get isEmpty => _lines.isEmpty;
 
@@ -60,6 +64,7 @@ class CartState extends ChangeNotifier {
         .toList();
     _amountSubtotal = (payload['amount_subtotal'] as num?)?.toDouble() ?? 0;
     _amountTotal = (payload['amount_total'] as num?)?.toDouble() ?? 0;
+    _discount = (payload['discount'] as num?)?.toDouble() ?? 0;
     notifyListeners();
   }
 
@@ -76,6 +81,9 @@ class CartState extends ChangeNotifier {
 
   Future<void> removeLine({required int lineId}) async =>
       _applyPayload(await _api.removeCartLine(lineId: lineId));
+
+  Future<void> applyPromoCode({required String code}) async =>
+      _applyPayload(await _api.applyPromoCode(code: code));
 
   /// F09 — retourne les noms des lignes exclues (produits non vendables ou
   /// en rupture) pour que l'écran affiche l'avertissement.
