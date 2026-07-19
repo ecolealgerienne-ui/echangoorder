@@ -141,6 +141,9 @@
     "popupTitle": "🛒 Envie de commander ?",
     "popupBody": "Créez votre compte gratuitement pour profiter de nos meilleurs prix !"
   },
+  "about": {
+    "versionLabel": "Version : {version}"
+  },
   "legal": {
     "cgu": "CGU",
     "privacy": "Confidentialité",
