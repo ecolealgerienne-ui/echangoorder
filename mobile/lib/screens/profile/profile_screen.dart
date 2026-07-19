@@ -7,6 +7,7 @@ import '../../errors/app_messenger.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/require_account.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/delete_account_dialog.dart';
 import '../../widgets/screen_placeholder.dart';
@@ -72,6 +73,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     context.read<AuthState>().logout();
   }
 
+  /// Un invité (mode "Continuer sans compte", F02) n'a pas de session Odoo
+  /// réelle : ces écrans/actions appellent tous des endpoints `auth="user"`
+  /// qui échoueraient silencieusement en session expirée puis
+  /// déconnecteraient l'invité de son propre parcours (bug trouvé à l'audit
+  /// du 2026-07-19, cf. status-V1.md). Même garde que pour le panier
+  /// ([requireAccount]) plutôt que de laisser chaque écran découvrir
+  /// l'absence de session à ses dépens.
+  Future<void> _requireAccountThen(BuildContext context, VoidCallback action) async {
+    if (!await requireAccount(context)) return;
+    if (!context.mounted) return;
+    action();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAuthenticated = context.watch<AuthState>().status == SessionStatus.authenticated;
@@ -81,17 +95,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       actions: [
         PlaceholderAction(
           label: 'screens.Addresses.title'.tr(),
-          onPressed: () => context.push('/profile/addresses'),
+          onPressed: () => _requireAccountThen(context, () => context.push('/profile/addresses')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
           label: 'screens.Favorites.title'.tr(),
-          onPressed: () => context.push('/profile/favorites'),
+          onPressed: () => _requireAccountThen(context, () => context.push('/profile/favorites')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
           label: 'screens.ChangePin.title'.tr(),
-          onPressed: () => context.push('/profile/change-pin'),
+          onPressed: () => _requireAccountThen(context, () => context.push('/profile/change-pin')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
@@ -120,7 +134,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         PlaceholderAction(
           label: 'actions.deleteAccount'.tr(),
-          onPressed: () => showDeleteAccountDialog(context),
+          onPressed: () => _requireAccountThen(context, () => showDeleteAccountDialog(context)),
           variant: AppButtonVariant.danger,
         ),
       ],
