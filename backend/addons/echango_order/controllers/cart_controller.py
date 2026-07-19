@@ -1,6 +1,8 @@
 from odoo import http
 from odoo.http import request
 
+from .session_utils import require_fresh_session
+
 
 class EchangoCartController(http.Controller):
     """Panier (F06) = devis (`sale.order` à l'état brouillon) du client
@@ -103,10 +105,12 @@ class EchangoCartController(http.Controller):
         }
 
     @http.route("/echango/cart", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def get_cart(self, **kw):
         return self._cart_payload(self._cart_order())
 
     @http.route("/echango/cart/add", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def add(self, product_id=None, qty=1, **kw):
         template = request.env["product.template"].sudo().search(
             [("id", "=", product_id), ("sale_ok", "=", True)], limit=1,
@@ -142,6 +146,7 @@ class EchangoCartController(http.Controller):
         return self._cart_payload(order)
 
     @http.route("/echango/cart/update", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def update(self, line_id=None, qty=1, **kw):
         line = self._owned_line(line_id)
         if not line:
@@ -150,6 +155,7 @@ class EchangoCartController(http.Controller):
         return self._cart_payload(line.order_id)
 
     @http.route("/echango/cart/remove", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def remove(self, line_id=None, **kw):
         line = self._owned_line(line_id)
         if not line:
@@ -159,6 +165,7 @@ class EchangoCartController(http.Controller):
         return self._cart_payload(order)
 
     @http.route("/echango/cart/reorder", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def reorder(self, order_id=None, **kw):
         """F09 — recopie les lignes d'une commande passée dans le panier en
         cours, en excluant les produits qui ne sont plus vendables/en stock

@@ -219,6 +219,7 @@
     "RegisterStep3": { "title": "Créez votre code PIN", "subtitle": "Inscription étape 3 — F02" },
     "Login": { "title": "Se connecter", "subtitle": "Connexion — F02" },
     "ForgotPin": { "title": "PIN oublié", "subtitle": "Réinitialisation PIN — F02" },
+    "Reauth": { "title": "Session expirée", "subtitle": "Ré-authentification par PIN — sécurité" },
     "Home": { "title": "Accueil", "subtitle": "Accueil — F03" },
     "Catalog": { "title": "Catalogue", "subtitle": "Catégories — F04" },
     "CategoryProducts": { "title": "Produits", "subtitle": "Produits par catégorie — F04" },

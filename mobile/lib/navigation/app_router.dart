@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/auth/auth_welcome_screen.dart';
 import '../screens/auth/forgot_pin_screen.dart';
 import '../screens/auth/login_screen.dart';
+import '../screens/auth/reauth_pin_screen.dart';
 import '../screens/auth/register_step1_screen.dart';
 import '../screens/auth/register_step2_screen.dart';
 import '../screens/auth/register_step3_screen.dart';
@@ -55,11 +56,18 @@ GoRouter buildAppRouter(AuthState authState) {
     initialLocation: '/vitrine',
     refreshListenable: authState,
     redirect: (context, state) {
-      final isPublicRoute = _publicPaths.any((p) => state.matchedLocation.startsWith(p));
-      if (!authState.isAuthenticated && !isPublicRoute && state.matchedLocation != '/maintenance') {
+      final loc = state.matchedLocation;
+      // Session expirée (24h d'inactivité ou rejet serveur) : imposé avant
+      // tout le reste, quelle que soit la route visée, jusqu'à ce que
+      // ReauthPinScreen fasse repasser AuthState en `authenticated`.
+      if (authState.isSessionExpired) {
+        return loc == '/reauth' ? null : '/reauth';
+      }
+      final isPublicRoute = _publicPaths.any((p) => loc.startsWith(p));
+      if (!authState.isAuthenticated && !isPublicRoute && loc != '/maintenance') {
         return '/vitrine';
       }
-      if (authState.isAuthenticated && isPublicRoute) {
+      if (authState.isAuthenticated && (isPublicRoute || loc == '/reauth')) {
         return '/home';
       }
       return null;
@@ -79,6 +87,7 @@ GoRouter buildAppRouter(AuthState authState) {
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/forgot-pin', builder: (context, state) => const ForgotPinScreen()),
+      GoRoute(path: '/reauth', builder: (context, state) => const ReauthPinScreen()),
       GoRoute(
         path: '/legal/:docType',
         builder: (context, state) => LegalDocumentScreen(docType: state.pathParameters['docType']!),

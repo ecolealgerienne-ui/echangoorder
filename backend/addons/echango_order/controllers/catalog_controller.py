@@ -1,6 +1,8 @@
 from odoo import fields, http
 from odoo.http import request
 
+from .session_utils import require_fresh_session
+
 
 class EchangoCatalogController(http.Controller):
     """Disponibilité stock (F04/F05) sans ouvrir tout le module stock au
@@ -24,6 +26,7 @@ class EchangoCatalogController(http.Controller):
         return {"symbol": currency.symbol, "position": currency.position}
 
     @http.route("/echango/catalog/stock", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def stock(self, product_ids=None, **kw):
         ids = [int(i) for i in (product_ids or [])]
         templates = request.env["product.template"].sudo().search([
@@ -32,6 +35,7 @@ class EchangoCatalogController(http.Controller):
         return {"stock": {str(t.id): t.qty_available for t in templates}}
 
     @http.route("/echango/catalog/promotions", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def promotions(self, product_ids=None, **kw):
         """Badge "Promo" sur le catalogue (Accueil/Catalogue/Recherche/
         Favoris) — demande utilisateur suite à un wireframe de référence.

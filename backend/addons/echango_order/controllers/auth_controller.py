@@ -84,4 +84,9 @@ class EchangoAuthController(http.Controller):
             return {"error": "auth.invalid_credentials"}
 
         uid = auth_info.get("uid") if isinstance(auth_info, dict) else request.session.uid
+        # Point de départ de la politique "24h d'inactivité" (voir
+        # controllers/session_utils.py) : sans ça, x_last_activity reste
+        # vide jusqu'au premier appel à un endpoint /echango/* décoré,
+        # laissant une fenêtre où l'expiration n'est pas encore vérifiée.
+        request.env["res.users"].sudo().browse(uid).write({"x_last_activity": fields.Datetime.now()})
         return {"success": True, "uid": uid}

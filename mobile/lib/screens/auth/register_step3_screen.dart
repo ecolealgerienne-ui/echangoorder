@@ -50,7 +50,7 @@ class _RegisterStep3ScreenState extends State<RegisterStep3Screen> {
       final pin = _pinController.text.trim();
       await api.register(phone: widget.phone, pin: pin);
       await api.login(phone: widget.phone, pin: pin);
-      authState.loginAsUser();
+      authState.loginAsUser(phone: widget.phone);
     } on AppError catch (error) {
       if (!mounted) return;
       AppMessenger.showError(context, error, onRetry: () => _submit(authState, api));

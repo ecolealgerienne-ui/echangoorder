@@ -2,6 +2,8 @@ from odoo import http
 from odoo.exceptions import UserError
 from odoo.http import request
 
+from .session_utils import require_fresh_session
+
 
 class EchangoOrderController(http.Controller):
     """F16/F17 — actions sur une commande déjà confirmée (annulation,
@@ -17,6 +19,7 @@ class EchangoOrderController(http.Controller):
         ], limit=1)
 
     @http.route("/echango/order/cancel", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def cancel(self, order_id=None, **kw):
         order = self._owned_order(order_id)
         if not order:
@@ -42,6 +45,7 @@ class EchangoOrderController(http.Controller):
         ], limit=1)
 
     @http.route("/echango/order/substitution", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def get_substitution(self, order_id=None, **kw):
         # F17 — le signalement de rupture + la suggestion sont saisis
         # manuellement par le préparateur en back-office (`x_substitution_
@@ -66,6 +70,7 @@ class EchangoOrderController(http.Controller):
         }
 
     @http.route("/echango/order/substitution/accept", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def accept_substitution(self, line_id=None, **kw):
         line = self._owned_line(line_id)
         if not line or not line.x_substitution_produit:
@@ -80,6 +85,7 @@ class EchangoOrderController(http.Controller):
         return {"success": True}
 
     @http.route("/echango/order/substitution/refuse", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def refuse_substitution(self, line_id=None, **kw):
         line = self._owned_line(line_id)
         if not line or not line.x_substitution_produit:

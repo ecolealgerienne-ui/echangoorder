@@ -219,6 +219,7 @@
     "RegisterStep3": { "title": "أنشئ رمزك السري", "subtitle": "التسجيل خطوة 3 — F02" },
     "Login": { "title": "تسجيل الدخول", "subtitle": "تسجيل الدخول — F02" },
     "ForgotPin": { "title": "نسيت الرمز السري", "subtitle": "إعادة تعيين الرمز السري — F02" },
+    "Reauth": { "title": "انتهت صلاحية الجلسة", "subtitle": "إعادة المصادقة بالرمز السري — الأمان" },
     "Home": { "title": "الرئيسية", "subtitle": "الرئيسية — F03" },
     "Catalog": { "title": "الكتالوج", "subtitle": "الفئات — F04" },
     "CategoryProducts": { "title": "المنتجات", "subtitle": "منتجات حسب الفئة — F04" },

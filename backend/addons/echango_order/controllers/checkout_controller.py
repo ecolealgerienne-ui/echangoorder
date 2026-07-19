@@ -2,6 +2,7 @@ from odoo import fields, http
 from odoo.http import request
 
 from .cart_controller import EchangoCartController
+from .session_utils import require_fresh_session
 
 
 def _resolve_promo_error(order, code):
@@ -46,6 +47,7 @@ class EchangoCheckoutController(http.Controller):
     """
 
     @http.route("/echango/checkout/check_zone", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def check_zone(self, city=None, zip_code=None, **kw):
         city = (city or "").strip()
         zip_code = (zip_code or "").strip()
@@ -57,6 +59,7 @@ class EchangoCheckoutController(http.Controller):
         return {"covered": bool(zone)}
 
     @http.route("/echango/checkout/apply_promo", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def apply_promo(self, code=None, **kw):
         code = (code or "").strip()
         if not code:
@@ -98,6 +101,7 @@ class EchangoCheckoutController(http.Controller):
         return EchangoCartController()._cart_payload(order)
 
     @http.route("/echango/checkout/confirm", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def confirm(self, reception_mode=None, slot_start=None, street=None, city=None,
                 zip_code=None, notes=None, **kw):
         if reception_mode not in ("home_delivery", "pickup"):

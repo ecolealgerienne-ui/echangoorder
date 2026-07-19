@@ -20,6 +20,13 @@ class ResUsers(models.Model):
     x_pin = fields.Char(string="PIN (haché)", copy=False, groups="base.group_system")
     x_pin_fail_count = fields.Integer(string="Échecs PIN", default=0, copy=False, groups="base.group_system")
     x_pin_locked_until = fields.Datetime(string="PIN bloqué jusqu'à", copy=False, groups="base.group_system")
+    # Session expirée après 24h d'inactivité (CLAUDE.md § Exigences
+    # transversales) : `login_date` (standard) n'est mis à jour qu'à la
+    # connexion, pas à chaque appel — aucun équivalent standard pour un
+    # horodatage de dernière activité API, champ custom justifié. Mis à
+    # jour par require_fresh_session (controllers/session_utils.py) sur
+    # chaque appel réussi aux endpoints /echango/*.
+    x_last_activity = fields.Datetime(string="Dernière activité", copy=False)
 
     def _set_pin(self, pin):
         self.ensure_one()

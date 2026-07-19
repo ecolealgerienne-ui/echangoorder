@@ -5,6 +5,8 @@ from odoo import http
 from odoo.exceptions import AccessDenied
 from odoo.http import request
 
+from .session_utils import require_fresh_session
+
 PIN_RE = re.compile(r"^\d{6,12}$")
 
 
@@ -17,6 +19,7 @@ class EchangoProfileController(http.Controller):
     """
 
     @http.route("/echango/profile", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def get_profile(self, **kw):
         partner = request.env.user.partner_id
         return {
@@ -26,6 +29,7 @@ class EchangoProfileController(http.Controller):
         }
 
     @http.route("/echango/profile/update_name", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def update_name(self, name=None, **kw):
         name = (name or "").strip()
         if not name:
@@ -34,6 +38,7 @@ class EchangoProfileController(http.Controller):
         return {"success": True}
 
     @http.route("/echango/profile/change_pin", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def change_pin(self, current_pin=None, new_pin=None, **kw):
         if not new_pin or not PIN_RE.match(new_pin):
             return {"error": "validation.pin_format"}
@@ -49,6 +54,7 @@ class EchangoProfileController(http.Controller):
         return {"success": True}
 
     @http.route("/echango/profile/delete_account", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def delete_account(self, pin=None, **kw):
         user = request.env.user
         try:
@@ -105,6 +111,7 @@ class EchangoProfileController(http.Controller):
         request.env["res.partner"].sudo().search(domain).write({"x_adresse_favorite": False})
 
     @http.route("/echango/profile/addresses", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def list_addresses(self, **kw):
         partner = request.env.user.partner_id
         addresses = request.env["res.partner"].sudo().search([
@@ -125,6 +132,7 @@ class EchangoProfileController(http.Controller):
             return {}
 
     @http.route("/echango/profile/addresses/add", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def add_address(self, name=None, street=None, city=None, zip_code=None, comment=None, favorite=False,
                      latitude=None, longitude=None, **kw):
         partner = request.env.user.partner_id
@@ -146,6 +154,7 @@ class EchangoProfileController(http.Controller):
         return self._address_payload(address)
 
     @http.route("/echango/profile/addresses/update", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def update_address(self, address_id=None, name=None, street=None, city=None, zip_code=None, comment=None,
                         favorite=None, latitude=None, longitude=None, **kw):
         address = self._owned_address(address_id)
@@ -169,6 +178,7 @@ class EchangoProfileController(http.Controller):
         return self._address_payload(address)
 
     @http.route("/echango/profile/addresses/remove", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def remove_address(self, address_id=None, **kw):
         address = self._owned_address(address_id)
         if not address:

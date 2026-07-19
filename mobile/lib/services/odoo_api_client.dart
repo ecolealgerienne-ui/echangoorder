@@ -21,6 +21,11 @@ const _errorCodeMap = <String, String>{
   'auth.phone_already_registered': AppError.authPhoneAlreadyUsed,
   'auth.invalid_credentials': AppError.authInvalidCredentials,
   'auth.account_locked': AppError.authPinLocked,
+  // Renvoyé par require_fresh_session (controllers/session_utils.py) sur
+  // les endpoints /echango/* — même code que l'expiration détectée au
+  // niveau JSON-RPC (_mapRpcFault), doit déclencher la même bascule vers
+  // ReauthPinScreen (voir _throwIfOwnError ci-dessous).
+  'auth.session_expired': AppError.authSessionExpired,
   // Réutilise le code checkout existant : même message ("produit non
   // disponible") que le cas F07, pas la peine d'un nouveau domaine/2
   // traductions supplémentaires pour la même idée.
@@ -51,8 +56,12 @@ const _errorCodeMap = <String, String>{
 /// premier appel réel échoue avec [AppError.authSessionExpired], ce qui
 /// déclenche [onSessionExpired].
 class OdooApiClient {
-  OdooApiClient({http.Client? httpClient, FlutterSecureStorage? secureStorage, this.onSessionExpired})
-      : _http = httpClient ?? http.Client(),
+  OdooApiClient({
+    http.Client? httpClient,
+    FlutterSecureStorage? secureStorage,
+    this.onSessionExpired,
+    this.onActivity,
+  })  : _http = httpClient ?? http.Client(),
         _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   static const _cookieStorageKey = 'echango_session_cookie';
@@ -60,6 +69,11 @@ class OdooApiClient {
   final http.Client _http;
   final FlutterSecureStorage _secureStorage;
   final VoidCallback? onSessionExpired;
+  // Session expirée après 24h d'inactivité (CLAUDE.md § Exigences
+  // transversales) : appelé après chaque appel réussi pour que
+  // `AuthState.checkInactivity()` (vérifiée au lancement/retour au premier
+  // plan) dispose d'un horodatage fiable de dernière activité.
+  final VoidCallback? onActivity;
   String? _sessionCookie;
 
   Future<void> restoreSession() async {
@@ -457,7 +471,11 @@ class OdooApiClient {
   void _throwIfOwnError(Map<String, dynamic> result) {
     final errorCode = result['error'] as String?;
     if (errorCode != null) {
-      throw AppError(_errorCodeMap[errorCode] ?? AppError.unknown, cause: errorCode);
+      final mapped = _errorCodeMap[errorCode] ?? AppError.unknown;
+      if (mapped == AppError.authSessionExpired) {
+        onSessionExpired?.call();
+      }
+      throw AppError(mapped, cause: errorCode);
     }
   }
 
@@ -498,6 +516,7 @@ class OdooApiClient {
       }
       throw AppError(code, cause: body['error']);
     }
+    onActivity?.call();
     return body['result'];
   }
 
