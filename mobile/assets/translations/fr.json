@@ -17,8 +17,10 @@
     "pinConfirmLabel": "Confirmez le code PIN",
     "currentPinLabel": "PIN actuel",
     "newPinLabel": "Nouveau PIN",
-    "smsCodeLabel": "Code reçu par SMS",
-    "termsNotice": "En créant un compte, vous acceptez :"
+    "termsNotice": "En créant un compte, vous acceptez :",
+    "pinResetExplanation": "Indiquez votre numéro de téléphone. Notre équipe vous recontactera pour réinitialiser votre code PIN.",
+    "pinResetRequestSentTitle": "Demande envoyée",
+    "pinResetRequestSentMessage": "Si ce numéro correspond à un compte, notre équipe vous recontactera prochainement par téléphone pour réinitialiser votre code PIN."
   },
   "nav": {
     "home": "Accueil",
@@ -161,7 +163,7 @@
     "forgotPin": "PIN oublié ?",
     "useGpsLocation": "Utiliser ma position GPS",
     "retry": "Réessayer",
-    "receiveSms": "Recevoir un SMS",
+    "sendPinResetRequest": "Envoyer la demande",
     "browseCatalog": "Voir le catalogue",
     "loadMore": "Charger plus"
   },

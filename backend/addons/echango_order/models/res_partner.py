@@ -65,3 +65,21 @@ class ResPartner(models.Model):
             "et attend une validation manuelle (menu Echango Order > Clients à valider).",
             user_id=moderator.id,
         )
+
+    def _notify_pin_reset_requested(self):
+        """F02 — "PIN oublié" : aucun fournisseur SMS choisi (cf.
+        status-V1.md), donc pas de réinitialisation en libre-service pour
+        l'instant. Même mécanisme que `_notify_verification_pending` :
+        une activité "à faire" plutôt qu'un flux custom, un modérateur
+        recontacte le client par téléphone et réinitialise son PIN depuis
+        la fiche utilisateur (bouton "Réinitialiser le PIN",
+        `models/pin_reset_wizard.py`)."""
+        self.ensure_one()
+        moderator = self._get_verification_moderator()
+        self.activity_schedule(
+            "mail.mail_activity_data_todo",
+            summary="Demande de réinitialisation de PIN",
+            note=f"{self.name} ({self.phone or 'téléphone non renseigné'}) a demandé la "
+            "réinitialisation de son code PIN depuis l'app — à recontacter par téléphone.",
+            user_id=moderator.id,
+        )

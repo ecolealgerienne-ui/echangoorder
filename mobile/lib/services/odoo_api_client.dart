@@ -112,6 +112,17 @@ class OdooApiClient {
     return result['uid'] as int;
   }
 
+  /// F02 — "PIN oublié" : pas de fournisseur SMS choisi (voir
+  /// status-V1.md), donc pas de réinitialisation en libre-service. La
+  /// demande crée une activité pour un modérateur back-office (même
+  /// mécanisme que la validation de compte), qui recontacte le client par
+  /// téléphone et réinitialise son PIN depuis Odoo. Réponse toujours
+  /// générique côté serveur, que le numéro existe ou non — évite de
+  /// pouvoir vérifier si un numéro est inscrit (énumération de comptes).
+  Future<void> requestPinReset({required String phone}) async {
+    await _rpc('/echango/auth/request_pin_reset', {'phone': phone});
+  }
+
   /// `search_read` standard via `/web/dataset/call_kw` — pas de contrôleur
   /// custom pour la lecture de modèles Odoo standards (catalogue, etc.),
   /// seuls les droits d'accès portail sont accordés côté module

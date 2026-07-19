@@ -17,8 +17,10 @@
     "pinConfirmLabel": "تأكيد الرمز السري",
     "currentPinLabel": "الرمز السري الحالي",
     "newPinLabel": "الرمز السري الجديد",
-    "smsCodeLabel": "الرمز المستلم عبر الرسائل القصيرة",
-    "termsNotice": "بإنشاء حساب، فإنك توافق على:"
+    "termsNotice": "بإنشاء حساب، فإنك توافق على:",
+    "pinResetExplanation": "أدخل رقم هاتفك. سيتواصل معك فريقنا لإعادة تعيين رمزك السري.",
+    "pinResetRequestSentTitle": "تم إرسال الطلب",
+    "pinResetRequestSentMessage": "إذا كان هذا الرقم مرتبطًا بحساب، سيتواصل معك فريقنا قريبًا عبر الهاتف لإعادة تعيين رمزك السري."
   },
   "nav": {
     "home": "الرئيسية",
@@ -161,7 +163,7 @@
     "forgotPin": "نسيت الرمز السري؟",
     "useGpsLocation": "استخدام موقعي الحالي",
     "retry": "إعادة المحاولة",
-    "receiveSms": "استلام رمز عبر الرسائل القصيرة",
+    "sendPinResetRequest": "إرسال الطلب",
     "browseCatalog": "تصفح الكتالوج",
     "loadMore": "عرض المزيد"
   },

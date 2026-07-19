@@ -6,3 +6,4 @@ access_x_delivery_zone_user,x_delivery_zone.user,model_x_delivery_zone,base.grou
 access_x_product_favorite_user,x_product_favorite.user,model_x_product_favorite,base.group_user,1,1,1,1
 access_x_rate_limit_user,x_rate_limit.user,model_x_rate_limit,base.group_user,1,1,1,1
 access_x_timeslot_capacity_user,x_timeslot_capacity.user,model_x_timeslot_capacity,base.group_user,1,1,1,1
+access_x_pin_reset_wizard_system,x_pin_reset_wizard.system,model_x_pin_reset_wizard,base.group_system,1,1,1,1

@@ -94,3 +94,21 @@ class EchangoAuthController(http.Controller):
         # laissant une fenêtre où l'expiration n'est pas encore vérifiée.
         request.env["res.users"].sudo().browse(uid).write({"x_last_activity": fields.Datetime.now()})
         return {"success": True, "uid": uid}
+
+    @http.route("/echango/auth/request_pin_reset", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    @rate_limited("auth.request_pin_reset", limit=5, window_minutes=60)
+    def request_pin_reset(self, phone=None, **kw):
+        """F02 — "PIN oublié" : aucun fournisseur SMS choisi (cf.
+        status-V1.md), la demande crée une activité pour un modérateur
+        back-office (voir res_partner._notify_pin_reset_requested), qui
+        recontacte le client par téléphone. Réponse toujours générique
+        (`{"success": True}`), que le numéro existe ou non — sinon cet
+        endpoint deviendrait un oracle pour savoir si un numéro de
+        téléphone est inscrit (énumération de comptes).
+        """
+        phone = (phone or "").strip()
+        if phone:
+            user = request.env["res.users"].sudo().search([("login", "=", phone)], limit=1)
+            if user:
+                user.partner_id._notify_pin_reset_requested()
+        return {"success": True}
