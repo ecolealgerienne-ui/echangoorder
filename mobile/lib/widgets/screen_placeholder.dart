@@ -49,17 +49,10 @@ class ScreenPlaceholder extends StatelessWidget {
             children: [
               if (!showAppBar)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                   child: Text('screens.$screenKey.title'.tr(), style: Theme.of(context).textTheme.titleLarge),
                 ),
-              Text(
-                'screens.$screenKey.subtitle'.tr(),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
-              ),
-              if (child != null) ...[
-                const SizedBox(height: AppSpacing.lg),
-                child!,
-              ],
+              if (child != null) child!,
               if (actions.isNotEmpty) const SizedBox(height: AppSpacing.lg),
               for (final action in actions)
                 AppButton(label: action.label, onPressed: action.onPressed, variant: action.variant),
