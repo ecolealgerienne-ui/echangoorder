@@ -35,6 +35,7 @@ const _errorCodeMap = <String, String>{
   // endpoints publics (auth/login, auth/register, currency, vitrine).
   'rate_limited': AppError.serverRateLimited,
   'checkout.out_of_delivery_zone': AppError.checkoutOutOfDeliveryZone,
+  'checkout.slot_full': AppError.checkoutSlotFull,
   'order.cannot_cancel': AppError.orderCannotCancel,
   'promo.invalid': AppError.promoInvalid,
   'promo.expired': AppError.promoExpired,
@@ -279,6 +280,27 @@ class OdooApiClient {
     return result['covered'] as bool? ?? false;
   }
 
+  /// F07 — capacité des créneaux ("créneau complet grisé", specs QA).
+  /// `slots` = créneaux candidats déjà générés côté client
+  /// (`utils/timeslots.dart`, seule source de vérité pour les horaires
+  /// proposés) — l'heure locale (`slot.hour`) est transmise séparément du
+  /// datetime déjà converti en UTC (`formatOdooDatetime`), la capacité
+  /// back-office étant exprimée en heure locale (voir
+  /// `checkout_controller.py.timeslots`). Renvoie le sous-ensemble complet.
+  Future<Set<DateTime>> fetchFullTimeslots({
+    required String receptionMode,
+    required List<DateTime> slots,
+  }) async {
+    final result = await _rpc('/echango/checkout/timeslots', {
+      'reception_mode': receptionMode,
+      'slots': [
+        for (final slot in slots) {'start': formatOdooDatetime(slot), 'hour': slot.hour},
+      ],
+    }) as Map<String, dynamic>;
+    final fullStarts = (result['full'] as List).cast<String>().toSet();
+    return slots.where((s) => fullStarts.contains(formatOdooDatetime(s))).toSet();
+  }
+
   /// F07 — fixe le mode de réception/l'adresse/le créneau sur le devis en
   /// cours et le confirme (`action_confirm`, `state` -> `sale`). Le panier
   /// (F06) redevient vide juste après, puisqu'il n'y a alors plus de devis
@@ -295,6 +317,11 @@ class OdooApiClient {
     final result = await _rpc('/echango/checkout/confirm', {
       'reception_mode': receptionMode,
       'slot_start': formatOdooDatetime(slotStart),
+      // Heure locale du créneau (voir fetchFullTimeslots) : nécessaire
+      // pour que la vérification de capacité côté serveur regarde la
+      // bonne configuration (`x_timeslot_capacity.hour`, exprimée en
+      // heure locale, pas en UTC).
+      'slot_hour': slotStart.hour,
       // Adresse sauvegardée (F10) : addressId prioritaire côté serveur,
       // street/city/zipCode/notes ignorés dans ce cas (voir
       // checkout_controller.py.confirm) mais transmis quand même, sans

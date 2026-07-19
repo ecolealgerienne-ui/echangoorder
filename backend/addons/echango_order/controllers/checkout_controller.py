@@ -58,6 +58,49 @@ class EchangoCheckoutController(http.Controller):
         ], limit=1)
         return {"covered": bool(zone)}
 
+    @http.route("/echango/checkout/timeslots", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
+    def timeslots(self, reception_mode=None, slots=None, **kw):
+        """F07 — capacité des créneaux ("créneau complet grisé", specs QA).
+        `slots` = créneaux candidats déjà générés côté client
+        (`utils/timeslots.dart`, seule source de vérité pour les horaires
+        proposés) : une liste de `{"start": <datetime Odoo, déjà en UTC via
+        formatOdooDatetime>, "hour": <heure locale affichée, 0-23>}`. La
+        capacité (`x_timeslot_capacity.hour`) est exprimée en heure locale
+        (celle que voit un utilisateur back-office, "10h"/"14h"/"16h"...),
+        pas en UTC — d'où l'heure locale transmise séparément plutôt que
+        déduite de `start`, qui a pu changer de fuseau à la conversion
+        (cf. status-V1.md § fuseau horaire x_creneau). Pas de capacité
+        configurée pour une heure donnée -> jamais complet (comportement
+        par défaut inchangé).
+        """
+        if reception_mode not in ("home_delivery", "pickup") or not slots:
+            return {"full": []}
+        full = [
+            item["start"] for item in slots
+            if item.get("start") and self._slot_is_full(reception_mode, item.get("hour"), item["start"])
+        ]
+        return {"full": full}
+
+    @staticmethod
+    def _slot_is_full(reception_mode, hour, start):
+        """Partagé entre `timeslots()` (grisage côté app) et `confirm()`
+        (vérification qui compte réellement, côté serveur — même logique
+        que `x_verification_state` ci-dessous). `hour` = heure locale
+        (voir docstring de `timeslots`), `start` = valeur de `x_creneau`
+        au format Odoo (déjà en UTC)."""
+        capacity = request.env["x_timeslot_capacity"].sudo().search([
+            ("reception_mode", "=", reception_mode), ("hour", "=", hour),
+        ], limit=1)
+        if not capacity:
+            return False
+        count = request.env["sale.order"].sudo().search_count([
+            ("x_reception_mode", "=", reception_mode),
+            ("x_creneau", "=", start),
+            ("state", "!=", "cancel"),
+        ])
+        return count >= capacity.max_orders
+
     @http.route("/echango/checkout/apply_promo", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     @require_fresh_session
     def apply_promo(self, code=None, **kw):
@@ -108,10 +151,15 @@ class EchangoCheckoutController(http.Controller):
 
     @http.route("/echango/checkout/confirm", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     @require_fresh_session
-    def confirm(self, reception_mode=None, slot_start=None, address_id=None, street=None, city=None,
-                zip_code=None, notes=None, **kw):
+    def confirm(self, reception_mode=None, slot_start=None, slot_hour=None, address_id=None, street=None,
+                city=None, zip_code=None, notes=None, **kw):
         if reception_mode not in ("home_delivery", "pickup"):
             return {"error": "validation.required"}
+        # Capacité des créneaux — la vérification qui compte réellement
+        # est ici, pas seulement le grisage côté app (`timeslots()`) qu'un
+        # appel direct à cet endpoint contournerait sinon.
+        if slot_start and self._slot_is_full(reception_mode, slot_hour, slot_start):
+            return {"error": "checkout.slot_full"}
 
         partner = request.env.user.partner_id
         # Qualité clients — un compte pas encore validé par un modérateur

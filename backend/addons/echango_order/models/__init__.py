@@ -5,3 +5,4 @@ from . import product_template
 from . import product_favorite
 from . import delivery_zone
 from . import rate_limit
+from . import timeslot_capacity
