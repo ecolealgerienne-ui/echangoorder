@@ -164,6 +164,11 @@
     "editNameTitle": "Modifier mon nom",
     "nameUpdated": "Nom mis à jour."
   },
+  "myLocation": {
+    "currentLabel": "Position enregistrée :",
+    "none": "Aucune position enregistrée pour l'instant.",
+    "updated": "Position mise à jour."
+  },
   "addresses": {
     "emptyTitle": "Aucune adresse enregistrée",
     "emptyMessage": "Ajoutez une adresse pour accélérer vos prochaines commandes.",

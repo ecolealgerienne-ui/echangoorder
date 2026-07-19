@@ -34,6 +34,19 @@ class EchangoProfileController(http.Controller):
         request.env.user.partner_id.sudo().write({"name": name})
         return {"success": True}
 
+    @http.route("/echango/profile/update_location", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    def update_location(self, latitude=None, longitude=None, **kw):
+        try:
+            lat = float(latitude)
+            lng = float(longitude)
+        except (TypeError, ValueError):
+            return {"error": "validation.required"}
+        request.env.user.partner_id.sudo().write({
+            "partner_latitude": lat,
+            "partner_longitude": lng,
+        })
+        return {"success": True}
+
     @http.route("/echango/profile/change_pin", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     def change_pin(self, current_pin=None, new_pin=None, **kw):
         if not new_pin or not PIN_RE.match(new_pin):

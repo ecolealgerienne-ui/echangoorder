@@ -164,6 +164,11 @@
     "editNameTitle": "تعديل اسمي",
     "nameUpdated": "تم تحديث الاسم."
   },
+  "myLocation": {
+    "currentLabel": "الموقع المسجّل:",
+    "none": "لا يوجد موقع مسجّل حاليًا.",
+    "updated": "تم تحديث الموقع."
+  },
   "addresses": {
     "emptyTitle": "لا يوجد عنوان محفوظ",
     "emptyMessage": "أضف عنوانًا لتسريع طلباتك القادمة.",
