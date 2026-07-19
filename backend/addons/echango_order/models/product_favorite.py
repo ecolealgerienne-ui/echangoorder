@@ -14,6 +14,7 @@ class ProductFavorite(models.Model):
     partner_id = fields.Many2one("res.partner", required=True, ondelete="cascade")
     product_tmpl_id = fields.Many2one("product.template", required=True, ondelete="cascade")
 
-    _sql_constraints = [
-        ("partner_product_uniq", "unique(partner_id, product_tmpl_id)", "Ce produit est déjà dans les favoris."),
-    ]
+    _partner_product_uniq = models.Constraint(
+        "unique(partner_id, product_tmpl_id)",
+        "Ce produit est déjà dans les favoris.",
+    )
