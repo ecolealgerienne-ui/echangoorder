@@ -38,6 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
   int _offset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
+  // Incrémenté à chaque _loadProducts() (init, tirer-pour-rafraîchir) :
+  // permet à _loadMore() de détecter qu'une nouvelle page 1 a démarré
+  // pendant son propre appel réseau et d'ignorer son résultat devenu
+  // obsolète, plutôt que de mélanger les deux listes (race condition
+  // trouvée à l'audit technique du 2026-07-19).
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -50,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _loadProducts() {
+    _loadGeneration++;
     _extraProducts.clear();
     _offset = 0;
     _hasMore = true;
@@ -88,14 +95,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
+    final generation = _loadGeneration;
     setState(() => _isLoadingMore = true);
     try {
       final more = await _fetchProducts(offset: _offset);
+      if (!mounted || generation != _loadGeneration) return;
       setState(() => _extraProducts.addAll(more));
     } on AppError catch (e) {
-      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+      if (mounted && generation == _loadGeneration) AppMessenger.showError(context, e, onRetry: _loadMore);
     } finally {
-      if (mounted) setState(() => _isLoadingMore = false);
+      if (mounted && generation == _loadGeneration) setState(() => _isLoadingMore = false);
     }
   }
 

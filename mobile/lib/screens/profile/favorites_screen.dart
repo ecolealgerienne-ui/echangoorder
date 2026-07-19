@@ -48,6 +48,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   int _offset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
+  // Cf. home_screen.dart : détecte qu'un rechargement complet a démarré
+  // pendant l'appel réseau de _loadMore() (race condition trouvée à
+  // l'audit technique du 2026-07-19).
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -56,6 +60,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   void _load() {
+    _loadGeneration++;
     _extraFavorites.clear();
     _offset = 0;
     _hasMore = true;
@@ -85,14 +90,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
+    final generation = _loadGeneration;
     setState(() => _isLoadingMore = true);
     try {
       final more = await _fetchFavorites(offset: _offset);
+      if (!mounted || generation != _loadGeneration) return;
       setState(() => _extraFavorites.addAll(more));
     } on AppError catch (e) {
-      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+      if (mounted && generation == _loadGeneration) AppMessenger.showError(context, e, onRetry: _loadMore);
     } finally {
-      if (mounted) setState(() => _isLoadingMore = false);
+      if (mounted && generation == _loadGeneration) setState(() => _isLoadingMore = false);
     }
   }
 
@@ -210,6 +217,10 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
   int _offset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
+  // Cf. home_screen.dart / SearchScreen : détecte qu'une nouvelle
+  // recherche a démarré pendant l'appel réseau de _loadMore() (race
+  // condition trouvée à l'audit technique du 2026-07-19).
+  int _loadGeneration = 0;
 
   @override
   void dispose() {
@@ -221,6 +232,7 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
   void _onQueryChanged(String query) {
     _debounce?.cancel();
     if (query.trim().isEmpty) {
+      _loadGeneration++;
       setState(() => _resultsFuture = null);
       return;
     }
@@ -228,6 +240,7 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
   }
 
   void _search(String query) {
+    _loadGeneration++;
     _currentQuery = query;
     _extraResults.clear();
     _offset = 0;
@@ -254,14 +267,16 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
+    final generation = _loadGeneration;
     setState(() => _isLoadingMore = true);
     try {
       final more = await _fetchResults(_currentQuery, offset: _offset);
+      if (!mounted || generation != _loadGeneration) return;
       setState(() => _extraResults.addAll(more));
     } on AppError catch (e) {
-      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+      if (mounted && generation == _loadGeneration) AppMessenger.showError(context, e, onRetry: _loadMore);
     } finally {
-      if (mounted) setState(() => _isLoadingMore = false);
+      if (mounted && generation == _loadGeneration) setState(() => _isLoadingMore = false);
     }
   }
 

@@ -38,6 +38,11 @@ class _SearchScreenState extends State<SearchScreen> {
   int _offset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
+  // Cf. home_screen.dart : détecte qu'une nouvelle recherche a démarré
+  // pendant l'appel réseau de _loadMore() (race condition trouvée à
+  // l'audit technique du 2026-07-19 — cas explicitement cité : taper une
+  // nouvelle recherche juste après avoir appuyé sur "Charger plus").
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -55,6 +60,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _onQueryChanged(String query) {
     _debounce?.cancel();
     if (query.trim().isEmpty) {
+      _loadGeneration++;
       setState(() => _resultsFuture = null);
       return;
     }
@@ -62,6 +68,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _search(String query) {
+    _loadGeneration++;
     _currentQuery = query;
     _extraResults.clear();
     _offset = 0;
@@ -100,19 +107,22 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
+    final generation = _loadGeneration;
     setState(() => _isLoadingMore = true);
     try {
       final more = await _fetchResults(_currentQuery, offset: _offset);
+      if (!mounted || generation != _loadGeneration) return;
       setState(() => _extraResults.addAll(more));
     } on AppError catch (e) {
-      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+      if (mounted && generation == _loadGeneration) AppMessenger.showError(context, e, onRetry: _loadMore);
     } finally {
-      if (mounted) setState(() => _isLoadingMore = false);
+      if (mounted && generation == _loadGeneration) setState(() => _isLoadingMore = false);
     }
   }
 
   void _clear() {
     _debounce?.cancel();
+    _loadGeneration++;
     _queryController.clear();
     setState(() => _resultsFuture = null);
   }
