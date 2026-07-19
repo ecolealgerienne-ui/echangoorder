@@ -10,7 +10,9 @@ import '../../state/auth_state.dart';
 import '../../state/cart_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
+import '../../utils/pagination.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/load_more_button.dart';
 
 /// F09 — historique des commandes du client connecté. `sale.order` est
 /// déjà lisible par le portail (règle standard, restreinte à ses propres
@@ -30,6 +32,10 @@ class OrderHistoryScreen extends StatefulWidget {
 
 class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   Future<List<Map<String, dynamic>>>? _ordersFuture;
+  final List<Map<String, dynamic>> _extraOrders = [];
+  int _offset = 0;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
 
   @override
   void initState() {
@@ -40,16 +46,41 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   void _load() {
+    _extraOrders.clear();
+    _offset = 0;
+    _hasMore = true;
     setState(() {
-      _ordersFuture = context.read<OdooApiClient>().searchRead(
-            model: 'sale.order',
-            domain: const [
-              ['state', '!=', 'draft'],
-            ],
-            fields: const ['name', 'date_order', 'amount_total', 'state'],
-            order: 'date_order desc',
-          );
+      _ordersFuture = _fetchOrders(offset: 0);
     });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchOrders({required int offset}) async {
+    final orders = await context.read<OdooApiClient>().searchRead(
+          model: 'sale.order',
+          domain: const [
+            ['state', '!=', 'draft'],
+          ],
+          fields: const ['name', 'date_order', 'amount_total', 'state'],
+          order: 'date_order desc',
+          limit: kListPageSize,
+          offset: offset,
+        );
+    _hasMore = orders.length == kListPageSize;
+    _offset = offset + orders.length;
+    return orders;
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      final more = await _fetchOrders(offset: _offset);
+      setState(() => _extraOrders.addAll(more));
+    } on AppError catch (e) {
+      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+    } finally {
+      if (mounted) setState(() => _isLoadingMore = false);
+    }
   }
 
   Future<void> _reorder(Map<String, dynamic> order) async {
@@ -99,19 +130,24 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         : const AppError(AppError.unknown);
                     return ErrorStateView.forError(error, onRetry: _load);
                   }
-                  final orders = snapshot.data!;
+                  final orders = [...snapshot.data!, ..._extraOrders];
                   if (orders.isEmpty) {
                     return _emptyState(context, isGuest: false);
                   }
                   return ListView.separated(
                     padding: const EdgeInsets.all(AppSpacing.lg),
-                    itemCount: orders.length,
+                    itemCount: orders.length + (_hasMore ? 1 : 0),
                     separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (context, index) => _OrderCard(
-                      order: orders[index],
-                      onTap: () => context.push('/profile/orders/${orders[index]['name']}'),
-                      onReorder: () => _reorder(orders[index]),
-                    ),
+                    itemBuilder: (context, index) {
+                      if (index == orders.length) {
+                        return LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore);
+                      }
+                      return _OrderCard(
+                        order: orders[index],
+                        onTap: () => context.push('/profile/orders/${orders[index]['name']}'),
+                        onReorder: () => _reorder(orders[index]),
+                      );
+                    },
                   );
                 },
               ),

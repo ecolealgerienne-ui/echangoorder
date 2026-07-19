@@ -161,7 +161,8 @@
     "useGpsLocation": "Utiliser ma position GPS",
     "retry": "Réessayer",
     "receiveSms": "Recevoir un SMS",
-    "browseCatalog": "Voir le catalogue"
+    "browseCatalog": "Voir le catalogue",
+    "loadMore": "Charger plus"
   },
   "catalog": {
     "outOfStock": "Épuisé",

@@ -12,8 +12,10 @@ import '../../state/cart_state.dart';
 import '../../state/favorites_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/add_to_cart.dart';
+import '../../utils/pagination.dart';
 import '../../utils/toggle_favorite.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/load_more_button.dart';
 import '../../widgets/product_grid_tile.dart';
 
 /// Liste de produits favoris : initialisée automatiquement à chaque
@@ -30,6 +32,9 @@ import '../../widgets/product_grid_tile.dart';
 /// les consulter. Le cœur (toujours plein ici) retire des favoris — la
 /// tuile disparaît alors de la grille après un rechargement complet
 /// (`_toggleFavorite`), plus simple qu'un filtrage local en direct.
+///
+/// Pagination (demande utilisateur) : voir `utils/pagination.dart`. Le
+/// rechargement complet ci-dessus repart donc aussi de la 1re page.
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
 
@@ -39,6 +44,10 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   Future<List<Map<String, dynamic>>>? _favoritesFuture;
+  final List<Map<String, dynamic>> _extraFavorites = [];
+  int _offset = 0;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
 
   @override
   void initState() {
@@ -47,15 +56,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   void _load() {
+    _extraFavorites.clear();
+    _offset = 0;
+    _hasMore = true;
     setState(() {
-      _favoritesFuture = _fetchFavorites();
+      _favoritesFuture = _fetchFavorites(offset: 0);
     });
     context.read<FavoritesState>().refresh().catchError((_) {});
   }
 
-  Future<List<Map<String, dynamic>>> _fetchFavorites() async {
+  Future<List<Map<String, dynamic>>> _fetchFavorites({required int offset}) async {
     final api = context.read<OdooApiClient>();
-    final favorites = await api.getFavorites();
+    final favorites = await api.getFavorites(limit: kListPageSize, offset: offset);
+    _hasMore = favorites.length == kListPageSize;
+    _offset = offset + favorites.length;
     final ids = favorites.map((p) => p['id'] as int).toList();
     final stock = await api.getStock(productIds: ids);
     final promotions = await api.getPromotions(productIds: ids);
@@ -67,6 +81,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       product['promo_percent'] = promotions[id];
     }
     return favorites;
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      final more = await _fetchFavorites(offset: _offset);
+      setState(() => _extraFavorites.addAll(more));
+    } on AppError catch (e) {
+      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+    } finally {
+      if (mounted) setState(() => _isLoadingMore = false);
+    }
   }
 
   Future<void> _openAddScreen() async {
@@ -106,7 +133,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         : const AppError(AppError.unknown);
                     return ErrorStateView.forError(error, onRetry: _load);
                   }
-                  final favorites = snapshot.data!;
+                  final favorites = [...snapshot.data!, ..._extraFavorites];
                   return Padding(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     child: Column(
@@ -119,27 +146,37 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                   titleKey: 'emptyStates.favoritesTitle',
                                   messageKey: 'emptyStates.favoritesMessage',
                                 )
-                              : GridView.builder(
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    mainAxisSpacing: AppSpacing.md,
-                                    crossAxisSpacing: AppSpacing.md,
-                                    childAspectRatio: 0.62,
-                                  ),
-                                  itemCount: favorites.length,
-                                  itemBuilder: (context, index) {
-                                    final product = favorites[index];
-                                    final productId = product['id'] as int;
-                                    return ProductGridTile(
-                                      product: product,
-                                      onTap: () => context.push('/profile/product/$productId'),
-                                      cartQty: cart.quantityFor(productId),
-                                      onIncrement: () => addProductToCart(context, productId),
-                                      onDecrement: () => decrementCartProduct(context, productId),
-                                      isFavorite: true,
-                                      onToggleFavorite: () => _toggleFavorite(productId),
-                                    );
-                                  },
+                              : CustomScrollView(
+                                  slivers: [
+                                    SliverGrid(
+                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        mainAxisSpacing: AppSpacing.md,
+                                        crossAxisSpacing: AppSpacing.md,
+                                        childAspectRatio: 0.62,
+                                      ),
+                                      delegate: SliverChildBuilderDelegate(
+                                        (context, index) {
+                                          final product = favorites[index];
+                                          final productId = product['id'] as int;
+                                          return ProductGridTile(
+                                            product: product,
+                                            onTap: () => context.push('/profile/product/$productId'),
+                                            cartQty: cart.quantityFor(productId),
+                                            onIncrement: () => addProductToCart(context, productId),
+                                            onDecrement: () => decrementCartProduct(context, productId),
+                                            isFavorite: true,
+                                            onToggleFavorite: () => _toggleFavorite(productId),
+                                          );
+                                        },
+                                        childCount: favorites.length,
+                                      ),
+                                    ),
+                                    if (_hasMore)
+                                      SliverToBoxAdapter(
+                                        child: LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore),
+                                      ),
+                                  ],
                                 ),
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -168,6 +205,11 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
   final _queryController = TextEditingController();
   Timer? _debounce;
   Future<List<Map<String, dynamic>>>? _resultsFuture;
+  final List<Map<String, dynamic>> _extraResults = [];
+  String _currentQuery = '';
+  int _offset = 0;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
 
   @override
   void dispose() {
@@ -186,20 +228,41 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
   }
 
   void _search(String query) {
+    _currentQuery = query;
+    _extraResults.clear();
+    _offset = 0;
+    _hasMore = true;
     setState(() {
-      _resultsFuture = _fetchResults(query);
+      _resultsFuture = _fetchResults(query, offset: 0);
     });
   }
 
-  Future<List<Map<String, dynamic>>> _fetchResults(String query) {
-    return context.read<OdooApiClient>().searchRead(
+  Future<List<Map<String, dynamic>>> _fetchResults(String query, {required int offset}) async {
+    final results = await context.read<OdooApiClient>().searchRead(
           model: 'product.template',
           domain: [
             ['name', 'ilike', query],
           ],
           fields: const ['name', 'list_price', 'image_128'],
-          limit: 30,
+          limit: kListPageSize,
+          offset: offset,
         );
+    _hasMore = results.length == kListPageSize;
+    _offset = offset + results.length;
+    return results;
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      final more = await _fetchResults(_currentQuery, offset: _offset);
+      setState(() => _extraResults.addAll(more));
+    } on AppError catch (e) {
+      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+    } finally {
+      if (mounted) setState(() => _isLoadingMore = false);
+    }
   }
 
   Future<void> _add(Map<String, dynamic> product) async {
@@ -244,7 +307,7 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
                         : const AppError(AppError.unknown);
                     return ErrorStateView.forError(error, onRetry: () => _search(_queryController.text.trim()));
                   }
-                  final results = snapshot.data!;
+                  final results = [...snapshot.data!, ..._extraResults];
                   if (results.isEmpty) {
                     return const ErrorStateView(
                       icon: Icons.search_off,
@@ -252,20 +315,32 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
                       messageKey: 'emptyStates.searchMessage',
                     );
                   }
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: AppSpacing.md,
-                      crossAxisSpacing: AppSpacing.md,
-                      childAspectRatio: 0.62,
-                    ),
-                    itemCount: results.length,
-                    itemBuilder: (context, index) => ProductGridTile(
-                      product: results[index],
-                      onTap: () => context.push('/profile/product/${results[index]['id']}'),
-                      onAdd: () => _add(results[index]),
-                    ),
+                  return CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        sliver: SliverGrid(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: AppSpacing.md,
+                            crossAxisSpacing: AppSpacing.md,
+                            childAspectRatio: 0.62,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => ProductGridTile(
+                              product: results[index],
+                              onTap: () => context.push('/profile/product/${results[index]['id']}'),
+                              onAdd: () => _add(results[index]),
+                            ),
+                            childCount: results.length,
+                          ),
+                        ),
+                      ),
+                      if (_hasMore)
+                        SliverToBoxAdapter(
+                          child: LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore),
+                        ),
+                    ],
                   );
                 },
               ),

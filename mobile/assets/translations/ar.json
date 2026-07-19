@@ -161,7 +161,8 @@
     "useGpsLocation": "استخدام موقعي الحالي",
     "retry": "إعادة المحاولة",
     "receiveSms": "استلام رمز عبر الرسائل القصيرة",
-    "browseCatalog": "تصفح الكتالوج"
+    "browseCatalog": "تصفح الكتالوج",
+    "loadMore": "عرض المزيد"
   },
   "catalog": {
     "outOfStock": "غير متوفر",

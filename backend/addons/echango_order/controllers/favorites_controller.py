@@ -11,10 +11,23 @@ class EchangoFavoritesController(http.Controller):
     """
 
     @http.route("/echango/favorites", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
-    def list_favorites(self, **kw):
+    def list_favorites(self, offset=0, limit=None, **kw):
+        # `limit=None` (défaut) : comportement inchangé pour `FavoritesState`
+        # (a besoin de l'ensemble complet des ids favoris, pas d'une page,
+        # pour savoir quels cœurs remplir sur tout le catalogue). La
+        # pagination (demande utilisateur) est utilisée uniquement par
+        # l'écran "Mes favoris" lui-même, qui passe explicitement `limit`.
         partner = request.env.user.partner_id
-        favorites = request.env["x_product_favorite"].sudo().search([("partner_id", "=", partner.id)])
-        templates = favorites.product_tmpl_id.filtered("sale_ok")
+        # `sale_ok` filtré directement dans le domaine (pas un `.filtered()`
+        # après coup) : sinon `offset`/`limit` porteraient sur un ensemble
+        # incluant des favoris devenus non-vendables, faussant la
+        # pagination (une page pourrait sembler incomplète alors qu'il en
+        # reste d'autres).
+        favorites = request.env["x_product_favorite"].sudo().search(
+            [("partner_id", "=", partner.id), ("product_tmpl_id.sale_ok", "=", True)],
+            offset=offset, limit=limit,
+        )
+        templates = favorites.product_tmpl_id
         return {
             "products": [
                 {

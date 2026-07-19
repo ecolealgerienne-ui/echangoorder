@@ -5,17 +5,23 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../errors/app_error.dart';
+import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/cart_state.dart';
 import '../../state/favorites_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/add_to_cart.dart';
+import '../../utils/pagination.dart';
 import '../../utils/toggle_favorite.dart';
+import '../../widgets/load_more_button.dart';
 import '../../widgets/product_grid_tile.dart';
 
 /// F04 — Recherche par nom (`name ilike`), avec un léger anti-rebond pour
 /// éviter un appel réseau à chaque frappe.
+///
+/// Pagination (demande utilisateur) : voir `utils/pagination.dart` —
+/// réinitialisée à chaque nouvelle recherche.
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -27,6 +33,11 @@ class _SearchScreenState extends State<SearchScreen> {
   final _queryController = TextEditingController();
   Timer? _debounce;
   Future<List<Map<String, dynamic>>>? _resultsFuture;
+  final List<Map<String, dynamic>> _extraResults = [];
+  String _currentQuery = '';
+  int _offset = 0;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
 
   @override
   void initState() {
@@ -51,12 +62,16 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _search(String query) {
+    _currentQuery = query;
+    _extraResults.clear();
+    _offset = 0;
+    _hasMore = true;
     setState(() {
-      _resultsFuture = _fetchResults(query);
+      _resultsFuture = _fetchResults(query, offset: 0);
     });
   }
 
-  Future<List<Map<String, dynamic>>> _fetchResults(String query) async {
+  Future<List<Map<String, dynamic>>> _fetchResults(String query, {required int offset}) async {
     final api = context.read<OdooApiClient>();
     final results = await api.searchRead(
       model: 'product.template',
@@ -64,8 +79,11 @@ class _SearchScreenState extends State<SearchScreen> {
         ['name', 'ilike', query],
       ],
       fields: const ['name', 'list_price', 'image_128'],
-      limit: 30,
+      limit: kListPageSize,
+      offset: offset,
     );
+    _hasMore = results.length == kListPageSize;
+    _offset = offset + results.length;
     // Disponibilité stock à part — voir CategoryProductsScreen.
     final ids = results.map((p) => p['id'] as int).toList();
     final stock = await api.getStock(productIds: ids);
@@ -78,6 +96,19 @@ class _SearchScreenState extends State<SearchScreen> {
       product['promo_percent'] = promotions[id];
     }
     return results;
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      final more = await _fetchResults(_currentQuery, offset: _offset);
+      setState(() => _extraResults.addAll(more));
+    } on AppError catch (e) {
+      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+    } finally {
+      if (mounted) setState(() => _isLoadingMore = false);
+    }
   }
 
   void _clear() {
@@ -131,7 +162,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       onRetry: () => _search(_queryController.text.trim()),
                     );
                   }
-                  final results = snapshot.data!;
+                  final results = [...snapshot.data!, ..._extraResults];
                   if (results.isEmpty) {
                     return const ErrorStateView(
                       icon: Icons.search_off,
@@ -139,28 +170,40 @@ class _SearchScreenState extends State<SearchScreen> {
                       messageKey: 'emptyStates.searchMessage',
                     );
                   }
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: AppSpacing.md,
-                      crossAxisSpacing: AppSpacing.md,
-                      childAspectRatio: 0.62,
-                    ),
-                    itemCount: results.length,
-                    itemBuilder: (context, index) {
-                      final product = results[index];
-                      final productId = product['id'] as int;
-                      return ProductGridTile(
-                        product: product,
-                        onTap: () => context.push('/catalog/product/$productId'),
-                        cartQty: cart.quantityFor(productId),
-                        onIncrement: () => addProductToCart(context, productId),
-                        onDecrement: () => decrementCartProduct(context, productId),
-                        isFavorite: favorites.isFavorite(productId),
-                        onToggleFavorite: () => toggleFavorite(context, productId),
-                      );
-                    },
+                  return CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        sliver: SliverGrid(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: AppSpacing.md,
+                            crossAxisSpacing: AppSpacing.md,
+                            childAspectRatio: 0.62,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final product = results[index];
+                              final productId = product['id'] as int;
+                              return ProductGridTile(
+                                product: product,
+                                onTap: () => context.push('/catalog/product/$productId'),
+                                cartQty: cart.quantityFor(productId),
+                                onIncrement: () => addProductToCart(context, productId),
+                                onDecrement: () => decrementCartProduct(context, productId),
+                                isFavorite: favorites.isFavorite(productId),
+                                onToggleFavorite: () => toggleFavorite(context, productId),
+                              );
+                            },
+                            childCount: results.length,
+                          ),
+                        ),
+                      ),
+                      if (_hasMore)
+                        SliverToBoxAdapter(
+                          child: LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore),
+                        ),
+                    ],
                   );
                 },
               ),

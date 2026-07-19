@@ -428,8 +428,14 @@ class OdooApiClient {
   /// Liste de favoris — initialisée automatiquement à chaque commande
   /// confirmée (produits achetés, dédupliqués), modifiable manuellement
   /// ensuite (voir `controllers/favorites_controller.py`).
-  Future<List<Map<String, dynamic>>> getFavorites() async {
-    final result = await _rpc('/echango/favorites', {}) as Map<String, dynamic>;
+  /// `limit` reste `null` (défaut) pour `FavoritesState`, qui a besoin de
+  /// l'ensemble complet des ids favoris — seul l'écran "Mes favoris" passe
+  /// `limit` explicitement, pour sa pagination.
+  Future<List<Map<String, dynamic>>> getFavorites({int? limit, int offset = 0}) async {
+    final result = await _rpc('/echango/favorites', {
+      if (limit != null) 'limit': limit,
+      'offset': offset,
+    }) as Map<String, dynamic>;
     _throwIfOwnError(result);
     return (result['products'] as List).cast<Map<String, dynamic>>();
   }
