@@ -87,7 +87,9 @@
       "invalid_credentials": "Numéro de téléphone ou code PIN incorrect.",
       "phone_already_used": "Ce numéro de téléphone est déjà utilisé.",
       "session_expired": "Votre session a expiré. Merci de vous reconnecter.",
-      "pin_locked": "Trop de tentatives incorrectes. Compte bloqué temporairement."
+      "pin_locked": "Trop de tentatives incorrectes. Compte bloqué temporairement.",
+      "account_pending_verification": "Votre compte est en cours de vérification par notre équipe. Vous pourrez commander une fois validé.",
+      "account_rejected": "Votre compte n'a pas été validé. Contactez notre support pour plus d'informations."
     },
     "validation": {
       "required": "Ce champ est obligatoire.",

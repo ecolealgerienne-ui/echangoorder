@@ -104,6 +104,15 @@ class EchangoCheckoutController(http.Controller):
             return {"error": "validation.required"}
 
         partner = request.env.user.partner_id
+        # Qualité clients — un compte pas encore validé par un modérateur
+        # (ou rejeté) ne peut pas passer commande. Vérifié ici, au moment
+        # de la confirmation réelle (la seule action qui compte vraiment),
+        # pas à la création du panier ni pendant le parcours checkout.
+        if partner.x_verification_state == "pending":
+            return {"error": "auth.account_pending_verification"}
+        if partner.x_verification_state == "rejected":
+            return {"error": "auth.account_rejected"}
+
         order = request.env["sale.order"].sudo().search(
             [("partner_id", "=", partner.id), ("state", "=", "draft")],
             order="id desc", limit=1,

@@ -38,6 +38,8 @@ class AppError implements Exception {
   static const authPhoneAlreadyUsed = 'auth.phone_already_used';
   static const authSessionExpired = 'auth.session_expired';
   static const authPinLocked = 'auth.pin_locked';
+  static const authAccountPendingVerification = 'auth.account_pending_verification';
+  static const authAccountRejected = 'auth.account_rejected';
 
   // --- Validation formulaire ---
   static const validationRequired = 'validation.required';

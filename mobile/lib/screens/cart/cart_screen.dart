@@ -142,15 +142,32 @@ class _CartScreenState extends State<CartScreen> {
               _AmountRow(label: 'cart.subtotal'.tr(), amount: cart.amountSubtotal),
               const SizedBox(height: AppSpacing.xs),
               _AmountRow(label: 'cart.total'.tr(), amount: cart.amountTotal, emphasize: true),
+              // Qualité clients — compte pas encore validé par un
+              // modérateur (ou rejeté) : averti dès le panier plutôt qu'au
+              // bout du tunnel checkout, où la vérification définitive est
+              // de toute façon refaite côté serveur.
+              if (cart.verificationState != null && cart.verificationState != 'verified') ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  AppMessenger.messageFor(AppError(
+                    cart.verificationState == 'rejected'
+                        ? AppError.authAccountRejected
+                        : AppError.authAccountPendingVerification,
+                  )),
+                  style: const TextStyle(color: AppColors.danger),
+                ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               AppButton(
                 label: 'actions.goToCheckout'.tr(),
-                onPressed: () {
-                  // Repart d'un état propre à chaque entrée dans le tunnel
-                  // (pas de résidu d'un essai précédent abandonné).
-                  context.read<CheckoutState>().reset();
-                  context.push('/cart/checkout/reception-mode');
-                },
+                onPressed: (cart.verificationState != null && cart.verificationState != 'verified')
+                    ? null
+                    : () {
+                        // Repart d'un état propre à chaque entrée dans le tunnel
+                        // (pas de résidu d'un essai précédent abandonné).
+                        context.read<CheckoutState>().reset();
+                        context.push('/cart/checkout/reception-mode');
+                      },
               ),
             ],
           ),

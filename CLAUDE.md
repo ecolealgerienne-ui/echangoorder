@@ -187,11 +187,19 @@ Conséquences déjà actées pour Echango Order :
   - Adresse de livraison → adresses enfants standards de `res.partner` (mécanisme multi-adresses natif, `type='delivery'`) plutôt qu'un champ texte libre. `x_adresse_favorite` implémenté (F10) exactement comme prévu ici : un simple booléen sur `res.partner` (`models/res_partner.py`), une seule adresse favorite à la fois par client (contrôleur `sudo()` qui désactive les autres favoris du même parent à l'écriture) — pas de réécriture de l'adresse.
   - Commandes → `sale.order` standard (statuts, lignes, `partner_id`) plutôt qu'un modèle de commande custom.
   - Coordonnées GPS → `res.partner.partner_latitude`/`partner_longitude` — **champs standards du module `base` lui-même** (pas besoin du module `base_geolocalize`, qui ne fait qu'ajouter un bouton de géocodage automatique ; les champs existent nativement, confirmé contre le code source Odoo 19). **Remplace `x_latitude`/`x_longitude`**, retirés de la liste ci-dessous.
-- **Champs sans équivalent standard, donc custom, restent justifiés** : `x_pin` (hashé, sur `res.users` — aucune notion de PIN dans Odoo, l'auth standard est login/mot de passe), `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_substitution_produit`, modèle `x_delivery_zone` (pas de notion de zone de livraison simple nativement en Odoo 19 CE).
+- **Champs sans équivalent standard, donc custom, restent justifiés** : `x_pin` (hashé, sur `res.users` — aucune notion de PIN dans Odoo, l'auth standard est login/mot de passe), `x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_substitution_produit`, `x_verification_state` (voir § Qualité clients ci-dessous), modèle `x_delivery_zone` (pas de notion de zone de livraison simple nativement en Odoo 19 CE).
+
+## Qualité clients — vérification manuelle des nouveaux comptes
+
+**Décision produit (2026-07)** : plutôt que de choisir un service de géocodage externe pour valider automatiquement les adresses/comptes, un modérateur valide **manuellement** chaque nouveau compte client depuis le back-office Odoo avant qu'il puisse passer commande.
+
+- `res.partner.x_verification_state` (Selection : `pending`/`verified`/`rejected`) — défaut `verified` au niveau du champ (pour ne pas affecter les partenaires déjà en base : adresses de livraison enfants, fournisseurs, contacts internes...), positionné explicitement à `pending` **uniquement** par `/echango/auth/register` sur un nouveau compte client.
+- Fiche contact standard (`base.view_partner_form`) enrichie d'un statusbar + boutons "Valider"/"Rejeter" (`views/res_partner_views.xml`), plus un menu "Clients à valider" (Echango Order) filtré sur les comptes portail non vérifiés.
+- Vérifié au moment de `/echango/checkout/confirm` (la seule action qui compte réellement) — un compte `pending`/`rejected` ne peut pas confirmer de commande. L'app avertit aussi dès l'écran Panier (`verification_state` renvoyé par `_cart_payload`) pour éviter de faire remplir tout le tunnel checkout pour rien, mais la vérification faisant foi reste côté serveur.
 
 ## Custom fields Odoo attendus (Expert Odoo)
 
-`x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_pin` (hashé, sur `res.users`), `x_adresse_favorite` (booléen sur `res.partner`, implémenté F10 — voir ci-dessus), `x_substitution_produit`, modèle `x_delivery_zone`.
+`x_reception_mode`, `x_creneau`, `x_firebase_token`, `x_vitrine_publique`, `x_pin` (hashé, sur `res.users`), `x_adresse_favorite` (booléen sur `res.partner`, implémenté F10 — voir ci-dessus), `x_substitution_produit`, `x_verification_state` (Selection sur `res.partner`, implémenté — voir § Qualité clients ci-dessus), modèle `x_delivery_zone`.
 
 ~~`x_langue`~~ : supprimé, remplacé par le champ standard `res.partner.lang` (voir § Principe architecture Odoo ci-dessus).
 

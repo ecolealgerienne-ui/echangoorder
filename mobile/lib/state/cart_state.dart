@@ -48,6 +48,7 @@ class CartState extends ChangeNotifier {
   double _amountSubtotal = 0;
   double _amountTotal = 0;
   double _discount = 0;
+  String? _verificationState;
 
   List<CartLine> get lines => _lines;
   double get amountSubtotal => _amountSubtotal;
@@ -55,6 +56,11 @@ class CartState extends ChangeNotifier {
   // F15 — négatif quand un code promo est appliqué (`order.reward_amount`
   // standard, module `sale_loyalty`), 0 sinon.
   double get discount => _discount;
+  // Qualité clients — "pending"/"verified"/"rejected" (`res.partner.
+  // x_verification_state`) : permet de bloquer "Valider mon panier" dès
+  // cet écran plutôt qu'au bout du tunnel checkout (la vérification
+  // définitive reste faite côté serveur à la confirmation).
+  String? get verificationState => _verificationState;
   int get itemCount => _lines.length;
   bool get isEmpty => _lines.isEmpty;
 
@@ -65,6 +71,7 @@ class CartState extends ChangeNotifier {
     _amountSubtotal = (payload['amount_subtotal'] as num?)?.toDouble() ?? 0;
     _amountTotal = (payload['amount_total'] as num?)?.toDouble() ?? 0;
     _discount = (payload['discount'] as num?)?.toDouble() ?? 0;
+    _verificationState = payload['verification_state'] as String?;
     notifyListeners();
   }
 

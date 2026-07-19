@@ -44,6 +44,12 @@ class EchangoAuthController(http.Controller):
             "name": name or phone,
             "phone": phone,
             "lang": partner_lang,
+            # Qualité clients — chaque NOUVEAU compte démarre "pending" (le
+            # champ par défaut à "verified" pour ne pas affecter les
+            # partenaires déjà en base) : un modérateur doit le valider en
+            # back-office avant que le client puisse passer commande, voir
+            # controllers/checkout_controller.py.
+            "x_verification_state": "pending",
         })
         user = users.create({
             "name": partner.name,

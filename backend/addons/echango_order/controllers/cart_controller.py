@@ -42,8 +42,17 @@ class EchangoCartController(http.Controller):
         ], limit=1)
 
     def _cart_payload(self, order):
+        # Qualité clients — remonté ici (et pas seulement à la confirmation
+        # finale) pour que l'app puisse avertir/bloquer "Valider mon
+        # panier" dès l'écran Panier plutôt qu'au bout du tunnel checkout.
+        # La vérification qui compte réellement reste côté serveur, au
+        # moment de `/echango/checkout/confirm`.
+        verification_state = request.env.user.partner_id.x_verification_state
         if not order:
-            return {"order_id": None, "lines": [], "amount_subtotal": 0.0, "amount_total": 0.0, "discount": 0.0}
+            return {
+                "order_id": None, "lines": [], "amount_subtotal": 0.0, "amount_total": 0.0, "discount": 0.0,
+                "verification_state": verification_state,
+            }
         lines = []
         # F15 — les lignes de récompense (code promo appliqué, module
         # standard `loyalty`/`sale_loyalty`) sont exclues de la liste
@@ -69,6 +78,7 @@ class EchangoCartController(http.Controller):
             "amount_subtotal": order.amount_untaxed,
             "amount_total": order.amount_total,
             "discount": order.reward_amount,
+            "verification_state": verification_state,
         }
 
     @http.route("/echango/cart", type="jsonrpc", auth="user", methods=["POST"], csrf=False)

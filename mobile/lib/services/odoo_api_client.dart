@@ -31,6 +31,8 @@ const _errorCodeMap = <String, String>{
   'promo.invalid': AppError.promoInvalid,
   'promo.expired': AppError.promoExpired,
   'promo.already_used': AppError.promoAlreadyUsed,
+  'auth.account_pending_verification': AppError.authAccountPendingVerification,
+  'auth.account_rejected': AppError.authAccountRejected,
 };
 
 /// Client JSON-RPC Odoo : les endpoints custom d'auth d'`echango_order`
