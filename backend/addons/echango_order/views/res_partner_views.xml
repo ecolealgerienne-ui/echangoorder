@@ -18,6 +18,16 @@
                     <field name="x_verification_state" widget="statusbar" statusbar_visible="pending,verified"/>
                 </header>
             </xpath>
+            <!-- Le formulaire contact standard rend l'email obligatoire dès
+                 qu'un compte utilisateur est lié (comportement Odoo connu,
+                 pensé pour l'invitation portail par email) — bloquant ici
+                 puisque l'app n'utilise jamais l'email (auth téléphone+PIN,
+                 F02). Neutralisé pour nos clients : le clic sur "Valider le
+                 client" déclenche une sauvegarde implicite du formulaire, que
+                 ce champ obligatoire-mais-vide empêchait. -->
+            <xpath expr="//field[@name='email']" position="attributes">
+                <attribute name="required">0</attribute>
+            </xpath>
         </field>
     </record>
 
