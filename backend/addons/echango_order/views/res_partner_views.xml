@@ -31,10 +31,41 @@
         </field>
     </record>
 
+    <!-- Suivi clients — liste de tous les clients de l'app (comptes
+         portail créés via /echango/auth/register), avec les infos utiles
+         au premier coup d'oeil (téléphone, ville, statut de vérification).
+         Le détail des commandes d'un client reste sur le bouton
+         statistique "Ventes" standard de sa fiche (ajouté par le module
+         `sale`, déjà présent — pas de développement nécessaire). -->
+    <record id="view_partner_list_customers" model="ir.ui.view">
+        <field name="name">res.partner.list.customers</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <list string="Clients">
+                <field name="name"/>
+                <field name="phone"/>
+                <field name="city"/>
+                <field name="x_verification_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_partner_customers" model="ir.actions.act_window">
+        <field name="name">Clients</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_partner_list_customers"/>
+        <field name="domain">[('user_ids', '!=', False)]</field>
+    </record>
+
+    <menuitem id="menu_partner_customers" name="Clients"
+              parent="menu_echango_order_root" action="action_partner_customers" sequence="5"/>
+
     <record id="action_partner_pending_verification" model="ir.actions.act_window">
         <field name="name">Clients à valider</field>
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_partner_list_customers"/>
         <field name="domain">[('user_ids', '!=', False), ('x_verification_state', '!=', 'verified')]</field>
     </record>
 
