@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../errors/app_error.dart';
+import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/coming_soon.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/screen_placeholder.dart';
 
@@ -63,7 +63,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     return _OrderDetail(order: order, lines: lines);
   }
 
-  Future<void> _confirmCancel(BuildContext context) async {
+  Future<void> _confirmCancel(BuildContext context, int orderId) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -81,9 +81,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ],
       ),
     );
-    if (confirmed == true && context.mounted) {
-      // Annulation réelle : F16 (pas encore implémentée).
-      showComingSoon(context);
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await context.read<OdooApiClient>().cancelOrder(orderId: orderId);
+      if (!context.mounted) return;
+      AppMessenger.showInfo(context, 'order.cancelled');
+      _load();
+    } on AppError catch (e) {
+      if (context.mounted) AppMessenger.showError(context, e, onRetry: () => _confirmCancel(context, orderId));
     }
   }
 
@@ -127,10 +133,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   onPressed: () => context.push('/profile/orders/${widget.orderRef}/substitution'),
                   variant: AppButtonVariant.secondary,
                 ),
-                if (state != 'cancel')
+                // F16 — visible uniquement tant que la commande est
+                // "Confirmée" (state == 'sale'), pas de suivi
+                // stock.picking pour distinguer "préparation commencée".
+                if (state == 'sale')
                   PlaceholderAction(
                     label: 'actions.cancelOrder'.tr(),
-                    onPressed: () => _confirmCancel(context),
+                    onPressed: () => _confirmCancel(context, order['id'] as int),
                     variant: AppButtonVariant.danger,
                   ),
               ],

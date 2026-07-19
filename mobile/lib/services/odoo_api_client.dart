@@ -27,6 +27,7 @@ const _errorCodeMap = <String, String>{
   'cart.product_unavailable': AppError.checkoutOutOfStock,
   'not_found': AppError.notFound,
   'checkout.out_of_delivery_zone': AppError.checkoutOutOfDeliveryZone,
+  'order.cannot_cancel': AppError.orderCannotCancel,
 };
 
 /// Client JSON-RPC Odoo : les endpoints custom d'auth d'`echango_order`
@@ -344,6 +345,13 @@ class OdooApiClient {
 
   Future<void> deleteAccount({required String pin}) async {
     final result = await _rpc('/echango/profile/delete_account', {'pin': pin}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+  }
+
+  /// F16 — annulation, uniquement tant que la commande est "Confirmée"
+  /// (voir `controllers/order_controller.py` pour la règle exacte).
+  Future<void> cancelOrder({required int orderId}) async {
+    final result = await _rpc('/echango/order/cancel', {'order_id': orderId}) as Map<String, dynamic>;
     _throwIfOwnError(result);
   }
 

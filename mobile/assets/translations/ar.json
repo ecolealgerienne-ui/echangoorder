@@ -47,6 +47,7 @@
     "keepOrder": "الاحتفاظ بطلبي",
     "statusConfirmed": "مؤكد",
     "statusCancelled": "ملغى",
+    "cancelled": "تم إلغاء طلبك بنجاح.",
     "reorderTitle": "🛒 إعادة الطلب؟",
     "reorderMessage": "ستتم إضافة منتجات هذا الطلب إلى سلتك.",
     "reorderUnavailableWarning": "⚠️ بعض المنتجات لم تعد متوفرة ولم تتم إضافتها."

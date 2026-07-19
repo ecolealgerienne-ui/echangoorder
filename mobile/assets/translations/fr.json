@@ -47,6 +47,7 @@
     "keepOrder": "Garder ma commande",
     "statusConfirmed": "Confirmée",
     "statusCancelled": "Annulée",
+    "cancelled": "Votre commande a bien été annulée.",
     "reorderTitle": "🛒 Commander à nouveau ?",
     "reorderMessage": "Les articles de cette commande seront ajoutés à votre panier.",
     "reorderUnavailableWarning": "⚠️ Certains produits ne sont plus disponibles et n'ont pas été ajoutés."
