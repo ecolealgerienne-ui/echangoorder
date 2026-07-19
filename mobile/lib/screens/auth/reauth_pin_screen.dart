@@ -6,6 +6,7 @@ import '../../errors/app_messenger.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/logout.dart';
 import '../../validation/validators.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/pin_input_field.dart';
@@ -37,7 +38,7 @@ class _ReauthPinScreenState extends State<ReauthPinScreen> {
     if (_isSubmitting) return;
     final phone = authState.phone;
     if (phone == null) {
-      authState.logout();
+      fullLogout(context);
       return;
     }
     final pinError = validatePin(_pinController.text);
@@ -71,7 +72,7 @@ class _ReauthPinScreenState extends State<ReauthPinScreen> {
           PlaceholderAction(label: 'actions.logIn'.tr(), onPressed: () => _submit(authState, api)),
           PlaceholderAction(
             label: 'actions.logout'.tr(),
-            onPressed: authState.logout,
+            onPressed: () => fullLogout(context),
             variant: AppButtonVariant.secondary,
           ),
         ],

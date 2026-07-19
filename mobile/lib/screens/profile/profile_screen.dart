@@ -7,6 +7,7 @@ import '../../errors/app_messenger.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/logout.dart';
 import '../../utils/require_account.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/delete_account_dialog.dart';
@@ -68,10 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _logout(BuildContext context) {
-    context.read<OdooApiClient>().clearSession();
-    context.read<AuthState>().logout();
-  }
+  void _logout(BuildContext context) => fullLogout(context);
 
   /// Un invité (mode "Continuer sans compte", F02) n'a pas de session Odoo
   /// réelle : ces écrans/actions appellent tous des endpoints `auth="user"`
