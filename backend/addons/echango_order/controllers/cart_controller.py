@@ -54,15 +54,19 @@ class EchangoCartController(http.Controller):
                 "verification_state": verification_state,
             }
         # Promotions automatiques (badge "Promo") : `_update_programs_and_rewards`
-        # (module standard `sale_loyalty`) n'est PAS déclenché par un simple
-        # create()/write() ORM sur sale.order.line — seulement par
-        # `action_confirm()` ou un recalcul de prix — vérifié contre le code
-        # source. Sans cet appel explicite, une remise automatique
-        # n'apparaît qu'à la confirmation finale, jamais dans le panier ni
-        # le récapitulatif de checkout. Rappelé ici (plutôt que dans chaque
-        # route add/update/remove) pour couvrir aussi `/echango/cart`
-        # (simple consultation, ex. juste après retrait d'un article).
-        order.sudo()._update_programs_and_rewards()
+        # seul (module standard `sale_loyalty`) recalcule l'éligibilité mais
+        # n'ajoute PAS la ligne de remise — confirmé en reproduisant le
+        # comportement du bouton "Récompense" de l'interface Ventes
+        # standard (nécessaire même là, testé par l'utilisateur directement
+        # dans Odoo), qui appelle `action_open_reward_wizard()` : celui-ci
+        # fait `_update_programs_and_rewards()` PUIS `_apply_program_reward()`
+        # sur l'unique récompense réclamable s'il n'y en a qu'une (sinon
+        # renvoie une action d'assistant de choix, ignorée ici — même
+        # simplification déjà actée pour F15 : un programme correctement
+        # configuré n'a qu'une récompense, pas d'écran de choix multiple).
+        # Rappelé ici (plutôt que dans chaque route add/update/remove) pour
+        # couvrir aussi `/echango/cart` (simple consultation).
+        order.sudo().action_open_reward_wizard()
         lines = []
         # F15 — les lignes de récompense (code promo appliqué, module
         # standard `loyalty`/`sale_loyalty`) sont exclues de la liste
