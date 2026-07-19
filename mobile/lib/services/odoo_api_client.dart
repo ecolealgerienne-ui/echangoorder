@@ -377,6 +377,15 @@ class OdooApiClient {
     _throwIfOwnError(result);
   }
 
+  /// F00 — vitrine publique, aucune session requise (`auth='public'` côté
+  /// Odoo, voir `controllers/vitrine_controller.py`) : utilisable avant
+  /// toute inscription/connexion.
+  Future<List<Map<String, dynamic>>> getVitrineProducts() async {
+    final result = await _rpc('/echango/vitrine/products', {}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return (result['products'] as List).cast<Map<String, dynamic>>();
+  }
+
   /// Vérifie la forme d'erreur propre à nos contrôleurs custom
   /// (`{"error": "auth.xxx"}`) — pas celle des appels `call_kw` standards,
   /// dont les erreurs remontent au niveau JSON-RPC (`body['error']`, géré

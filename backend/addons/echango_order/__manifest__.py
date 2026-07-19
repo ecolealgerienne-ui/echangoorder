@@ -21,6 +21,7 @@ mesure du branchement de chaque écran (F02 auth en premier).
         "security/ir_rule.xml",
         "views/delivery_zone_views.xml",
         "views/sale_order_views.xml",
+        "views/product_template_views.xml",
     ],
     "installable": True,
     "application": True,

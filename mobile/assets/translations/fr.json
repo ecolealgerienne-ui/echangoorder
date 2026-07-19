@@ -117,6 +117,10 @@
   "share": {
     "intro": "Découvre ce produit sur Echango Order :"
   },
+  "vitrine": {
+    "popupTitle": "🛒 Envie de commander ?",
+    "popupBody": "Créez votre compte gratuitement pour profiter de nos meilleurs prix !"
+  },
   "legal": {
     "cgu": "CGU",
     "privacy": "Confidentialité",
