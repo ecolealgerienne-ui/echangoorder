@@ -11,6 +11,7 @@ import '../../state/favorites_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/add_to_cart.dart';
 import '../../utils/pagination.dart';
+import '../../utils/product_enrichment.dart';
 import '../../utils/toggle_favorite.dart';
 import '../../widgets/load_more_button.dart';
 import '../../widgets/product_grid_tile.dart';
@@ -75,19 +76,11 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     );
     _hasMore = products.length == kListPageSize;
     _offset = offset + products.length;
-    // Disponibilité stock récupérée à part (contrôleur dédié, sudo() côté
-    // serveur) plutôt que via le champ calculé qty_available exposé au
-    // portail — voir status-V1.md § Points de vigilance.
-    final ids = products.map((p) => p['id'] as int).toList();
-    final stock = await api.getStock(productIds: ids);
-    final promotions = await api.getPromotions(productIds: ids);
-    for (final product in products) {
-      final id = product['id'] as int;
-      final qty = stock[id];
-      if (qty != null) product['qty_available'] = qty;
-      product['on_promo'] = promotions.containsKey(id);
-      product['promo_percent'] = promotions[id];
-    }
+    // Disponibilité stock + promotions récupérées à part (contrôleurs
+    // dédiés, sudo() côté serveur) plutôt que via le champ calculé
+    // qty_available exposé au portail — voir status-V1.md § Points de
+    // vigilance.
+    await enrichProductsWithStockAndPromotions(api, products);
     return products;
   }
 

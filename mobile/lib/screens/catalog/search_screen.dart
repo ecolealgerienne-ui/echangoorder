@@ -13,6 +13,7 @@ import '../../state/favorites_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/add_to_cart.dart';
 import '../../utils/pagination.dart';
+import '../../utils/product_enrichment.dart';
 import '../../utils/toggle_favorite.dart';
 import '../../widgets/load_more_button.dart';
 import '../../widgets/product_grid_tile.dart';
@@ -91,17 +92,8 @@ class _SearchScreenState extends State<SearchScreen> {
     );
     _hasMore = results.length == kListPageSize;
     _offset = offset + results.length;
-    // Disponibilité stock à part — voir CategoryProductsScreen.
-    final ids = results.map((p) => p['id'] as int).toList();
-    final stock = await api.getStock(productIds: ids);
-    final promotions = await api.getPromotions(productIds: ids);
-    for (final product in results) {
-      final id = product['id'] as int;
-      final qty = stock[id];
-      if (qty != null) product['qty_available'] = qty;
-      product['on_promo'] = promotions.containsKey(id);
-      product['promo_percent'] = promotions[id];
-    }
+    // Disponibilité stock + promotions à part — voir CategoryProductsScreen.
+    await enrichProductsWithStockAndPromotions(api, results);
     return results;
   }
 

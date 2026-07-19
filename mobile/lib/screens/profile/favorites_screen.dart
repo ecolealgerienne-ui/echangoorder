@@ -13,6 +13,7 @@ import '../../state/favorites_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/add_to_cart.dart';
 import '../../utils/pagination.dart';
+import '../../utils/product_enrichment.dart';
 import '../../utils/toggle_favorite.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/load_more_button.dart';
@@ -75,16 +76,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     final favorites = await api.getFavorites(limit: kListPageSize, offset: offset);
     _hasMore = favorites.length == kListPageSize;
     _offset = offset + favorites.length;
-    final ids = favorites.map((p) => p['id'] as int).toList();
-    final stock = await api.getStock(productIds: ids);
-    final promotions = await api.getPromotions(productIds: ids);
-    for (final product in favorites) {
-      final id = product['id'] as int;
-      final qty = stock[id];
-      if (qty != null) product['qty_available'] = qty;
-      product['on_promo'] = promotions.containsKey(id);
-      product['promo_percent'] = promotions[id];
-    }
+    await enrichProductsWithStockAndPromotions(api, favorites);
     return favorites;
   }
 
