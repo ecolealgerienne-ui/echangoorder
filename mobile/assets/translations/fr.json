@@ -165,7 +165,8 @@
   },
   "catalog": {
     "outOfStock": "Épuisé",
-    "onPromo": "Promo"
+    "onPromo": "Promo",
+    "onPromoPercent": "-{percent}%"
   },
   "emptyStates": {
     "cartTitle": "Votre panier est vide",

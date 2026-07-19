@@ -34,6 +34,14 @@ class EchangoCatalogController(http.Controller):
         produits concernés qu'ils soient listés un par un ou via une
         catégorie/étiquette/domaine — pas besoin de réimplémenter cette
         logique.
+        Le pourcentage affiché sur le badge (demande utilisateur) n'a de
+        sens que pour une récompense en pourcentage (`discount_mode`
+        "percent" — vérifié contre le code source, pas "discount_type").
+        Une remise en montant fixe/par point reste badgée mais sans
+        pourcentage (`None`) plutôt que d'afficher un montant trompeur sur
+        une tuile qui n'affiche qu'un prix unitaire. Si plusieurs
+        récompenses actives visent le même produit, on garde le
+        pourcentage le plus avantageux.
         """
         ids = [int(i) for i in (product_ids or [])]
         today = fields.Date.today()
@@ -48,5 +56,13 @@ class EchangoCatalogController(http.Controller):
         rewards = programs.reward_ids.filtered(
             lambda r: r.reward_type == "discount" and r.discount_applicability == "specific"
         )
-        promoted_tmpl_ids = rewards.all_discount_product_ids.product_tmpl_id.ids
-        return {"promoted_ids": [tid for tid in promoted_tmpl_ids if tid in ids]}
+        promotions = {}
+        for reward in rewards:
+            percent = reward.discount if reward.discount_mode == "percent" else None
+            for tmpl_id in reward.all_discount_product_ids.product_tmpl_id.ids:
+                if tmpl_id not in ids:
+                    continue
+                current = promotions.get(tmpl_id)
+                if tmpl_id not in promotions or (percent or 0) > (current or 0):
+                    promotions[tmpl_id] = percent
+        return {"promotions": {str(tmpl_id): percent for tmpl_id, percent in promotions.items()}}

@@ -165,7 +165,8 @@
   },
   "catalog": {
     "outOfStock": "غير متوفر",
-    "onPromo": "عرض"
+    "onPromo": "عرض",
+    "onPromoPercent": "-{percent}%"
   },
   "emptyStates": {
     "cartTitle": "سلتك فارغة",

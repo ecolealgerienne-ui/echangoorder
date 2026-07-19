@@ -11,6 +11,10 @@ class AppColors {
   static const border = Color(0xFFE1E4E9);
   static const danger = Color(0xFFD64545);
   static const disabled = Color(0xFFC7CBD1);
+  // Distinct du vert primaire (bouton "Acheter") et du rouge "Épuisé" —
+  // badge Promo (demande utilisateur : une couleur qui le distingue des
+  // autres badges/boutons de la tuile produit).
+  static const promo = Color(0xFFE07A1F);
 }
 
 class AppSpacing {

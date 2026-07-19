@@ -19,9 +19,12 @@ import '../theme/app_theme.dart';
 /// l'image (Accueil/Catalogue/Recherche uniquement, absent de l'écran
 /// d'ajout de favoris où ce serait redondant avec le "+").
 ///
-/// Le badge "Promo" lit `product['on_promo']` (bool, fusionné par l'écran
-/// appelant comme `qty_available` — voir `OdooApiClient.getPromotedIds`,
-/// module standard `loyalty`) ; masqué si le produit est épuisé.
+/// Le badge "Promo" lit `product['on_promo']` (bool) et `promo_percent`
+/// (num?, absent/null si la remise n'est pas exprimée en %), fusionnés par
+/// l'écran appelant comme `qty_available` — voir
+/// `OdooApiClient.getPromotions`, module standard `loyalty` ; masqué si le
+/// produit est épuisé, couleur dédiée (`AppColors.promo`) pour le
+/// distinguer du bouton "Acheter" (vert) et du badge "Épuisé" (rouge).
 class ProductGridTile extends StatelessWidget {
   final Map<String, dynamic> product;
   final VoidCallback onTap;
@@ -51,6 +54,7 @@ class ProductGridTile extends StatelessWidget {
     final qty = (product['qty_available'] as num?)?.toDouble();
     final outOfStock = qty != null && qty <= 0;
     final onPromo = product['on_promo'] as bool? ?? false;
+    final promoPercent = (product['promo_percent'] as num?)?.toDouble();
     final imageBase64 = product['image_128'];
 
     return InkWell(
@@ -101,11 +105,13 @@ class ProductGridTile extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        color: AppColors.promo,
                         borderRadius: BorderRadius.circular(AppLayout.radius / 2),
                       ),
                       child: Text(
-                        'catalog.onPromo'.tr(),
+                        promoPercent != null
+                            ? 'catalog.onPromoPercent'.tr(namedArgs: {'percent': promoPercent.toStringAsFixed(0)})
+                            : 'catalog.onPromo'.tr(),
                         style: const TextStyle(color: AppColors.background, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ),

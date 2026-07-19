@@ -58,11 +58,13 @@ class _HomeScreenState extends State<HomeScreen> {
     // serveur) — même logique que Catalogue/Recherche (F04), manquait ici.
     final ids = products.map((p) => p['id'] as int).toList();
     final stock = await api.getStock(productIds: ids);
-    final promoted = await api.getPromotedIds(productIds: ids);
+    final promotions = await api.getPromotions(productIds: ids);
     for (final product in products) {
-      final qty = stock[product['id'] as int];
+      final id = product['id'] as int;
+      final qty = stock[id];
       if (qty != null) product['qty_available'] = qty;
-      product['on_promo'] = promoted.contains(product['id'] as int);
+      product['on_promo'] = promotions.containsKey(id);
+      product['promo_percent'] = promotions[id];
     }
     return products;
   }

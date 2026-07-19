@@ -53,6 +53,16 @@ class EchangoCartController(http.Controller):
                 "order_id": None, "lines": [], "amount_subtotal": 0.0, "amount_total": 0.0, "discount": 0.0,
                 "verification_state": verification_state,
             }
+        # Promotions automatiques (badge "Promo") : `_update_programs_and_rewards`
+        # (module standard `sale_loyalty`) n'est PAS déclenché par un simple
+        # create()/write() ORM sur sale.order.line — seulement par
+        # `action_confirm()` ou un recalcul de prix — vérifié contre le code
+        # source. Sans cet appel explicite, une remise automatique
+        # n'apparaît qu'à la confirmation finale, jamais dans le panier ni
+        # le récapitulatif de checkout. Rappelé ici (plutôt que dans chaque
+        # route add/update/remove) pour couvrir aussi `/echango/cart`
+        # (simple consultation, ex. juste après retrait d'un article).
+        order.sudo()._update_programs_and_rewards()
         lines = []
         # F15 — les lignes de récompense (code promo appliqué, module
         # standard `loyalty`/`sale_loyalty`) sont exclues de la liste

@@ -229,11 +229,14 @@ class OdooApiClient {
 
   /// Badge "Promo" (module standard `loyalty`, promotions automatiques
   /// sur des produits précis — voir `controllers/catalog_controller.py`).
-  Future<Set<int>> getPromotedIds({required List<int> productIds}) async {
+  /// Valeur `null` : produit en promo mais remise non exprimée en
+  /// pourcentage (montant fixe/par point) — badge affiché sans %.
+  Future<Map<int, double?>> getPromotions({required List<int> productIds}) async {
     if (productIds.isEmpty) return {};
     final result =
         await _rpc('/echango/catalog/promotions', {'product_ids': productIds}) as Map<String, dynamic>;
-    return (result['promoted_ids'] as List).cast<int>().toSet();
+    final promotions = result['promotions'] as Map<String, dynamic>;
+    return promotions.map((key, value) => MapEntry(int.parse(key), (value as num?)?.toDouble()));
   }
 
   /// F07 — vérifie qu'une ville/code postal est dans une `x_delivery_zone`
