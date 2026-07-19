@@ -177,6 +177,15 @@ class EchangoCheckoutController(http.Controller):
         )
         if not order or not order.order_line:
             return {"error": "not_found"}
+        # Stock revérifié à la confirmation, pas seulement à l'ajout au
+        # panier (`cart_controller.add`) : un panier laissé en brouillon
+        # plusieurs jours peut être confirmé alors qu'un produit est
+        # entre-temps devenu indisponible — même principe que la
+        # revérification de la capacité des créneaux ci-dessus (trouvé à
+        # l'audit technique du 2026-07-19).
+        for line in order.order_line.filtered(lambda l: not l.is_reward_line):
+            if line.product_id.product_tmpl_id.qty_available <= 0:
+                return {"error": "cart.product_unavailable"}
 
         vals = {"x_reception_mode": reception_mode}
         if slot_start:
