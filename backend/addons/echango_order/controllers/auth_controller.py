@@ -73,6 +73,18 @@ class EchangoAuthController(http.Controller):
         if not phone or not pin:
             return {"error": "validation.required"}
 
+        # Rate limiting par IP (décorateur ci-dessus) contournable en
+        # multipliant les IP (proxy/VPN) pour cibler un seul numéro —
+        # limite supplémentaire par numéro de téléphone, plus permissive
+        # en apparence mais qui ne peut pas être diluée sur plusieurs IP,
+        # pour ralentir ce cas précis (trouvé à l'audit sécurité du
+        # 2026-07-19 : les codes d'erreur distincts account_locked/
+        # invalid_credentials permettent aussi de deviner si un numéro
+        # est inscrit — non résolu ici, dégraderait l'UX sans réel
+        # bénéfice contre un attaquant déterminé, voir status-V1.md).
+        if request.env["x_rate_limit"].sudo()._hit(f"auth.login.phone:{phone}", 10, 15):
+            return {"error": "rate_limited"}
+
         # Odoo's AccessDenied écrase volontairement son message par "Access
         # Denied" (anti fuite d'info) : impossible d'y lire un code d'erreur
         # après coup. On vérifie donc l'état de verrouillage nous-mêmes avant
