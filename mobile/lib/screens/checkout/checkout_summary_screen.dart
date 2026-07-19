@@ -47,8 +47,8 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
           );
       if (!mounted) return;
       await context.read<CartState>().refresh();
-      context.read<CheckoutState>().reset();
       if (!mounted) return;
+      context.read<CheckoutState>().reset();
       context.go('/cart/checkout/confirmation/${result['order_ref']}', extra: result);
     } on AppError catch (e) {
       if (mounted) AppMessenger.showError(context, e, onRetry: _confirm);

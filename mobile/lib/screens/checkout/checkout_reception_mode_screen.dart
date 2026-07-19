@@ -37,29 +37,32 @@ class _CheckoutReceptionModeScreenState extends State<CheckoutReceptionModeScree
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                child: RadioListTile<ReceptionMode>(
-                  value: ReceptionMode.delivery,
-                  groupValue: _mode,
-                  onChanged: (value) => setState(() => _mode = value),
-                  title: Text('checkout.deliveryHome'.tr()),
+          // RadioGroup centralise groupValue/onChanged pour tous les Radio
+          // descendants (Radio.groupValue/onChanged individuels dépréciés
+          // depuis Flutter 3.32).
+          child: RadioGroup<ReceptionMode>(
+            groupValue: _mode,
+            onChanged: (value) => setState(() => _mode = value),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Card(
+                  child: RadioListTile<ReceptionMode>(
+                    value: ReceptionMode.delivery,
+                    title: Text('checkout.deliveryHome'.tr()),
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Card(
-                child: RadioListTile<ReceptionMode>(
-                  value: ReceptionMode.pickup,
-                  groupValue: _mode,
-                  onChanged: (value) => setState(() => _mode = value),
-                  title: Text('checkout.pickupStore'.tr()),
+                const SizedBox(height: AppSpacing.sm),
+                Card(
+                  child: RadioListTile<ReceptionMode>(
+                    value: ReceptionMode.pickup,
+                    title: Text('checkout.pickupStore'.tr()),
+                  ),
                 ),
-              ),
-              const Spacer(),
-              AppButton(label: 'common.continue'.tr(), onPressed: _mode == null ? null : _continue),
-            ],
+                const Spacer(),
+                AppButton(label: 'common.continue'.tr(), onPressed: _mode == null ? null : _continue),
+              ],
+            ),
           ),
         ),
       ),

@@ -53,7 +53,7 @@ class _CheckoutAddressScreenState extends State<CheckoutAddressScreen> {
     // externe (Google/Mapbox/Nominatim) + package geolocator, décision non
     // prise pour l'instant — voir status-V1.md. On exerce quand même la
     // demande de permission (F14).
-    if (context.mounted) AppMessenger.showInfo(context, 'common.comingSoon');
+    if (mounted) AppMessenger.showInfo(context, 'common.comingSoon');
   }
 
   Future<void> _continue() async {

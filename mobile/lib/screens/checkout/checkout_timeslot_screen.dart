@@ -45,24 +45,31 @@ class _CheckoutTimeslotScreenState extends State<CheckoutTimeslotScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: ListView(
-                  children: [
-                    if (todaySlots.isNotEmpty) ...[
-                      Text('checkout.today'.tr(), style: Theme.of(context).textTheme.titleMedium),
-                      for (final slot in todaySlots) _slotTile(slot),
-                      const SizedBox(height: AppSpacing.md),
+          // RadioGroup centralise groupValue/onChanged pour tous les Radio
+          // descendants (Radio.groupValue/onChanged individuels dépréciés
+          // depuis Flutter 3.32).
+          child: RadioGroup<DateTime>(
+            groupValue: _selected,
+            onChanged: (value) => setState(() => _selected = value),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ListView(
+                    children: [
+                      if (todaySlots.isNotEmpty) ...[
+                        Text('checkout.today'.tr(), style: Theme.of(context).textTheme.titleMedium),
+                        for (final slot in todaySlots) _slotTile(slot),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                      Text('checkout.tomorrow'.tr(), style: Theme.of(context).textTheme.titleMedium),
+                      for (final slot in tomorrowSlots) _slotTile(slot),
                     ],
-                    Text('checkout.tomorrow'.tr(), style: Theme.of(context).textTheme.titleMedium),
-                    for (final slot in tomorrowSlots) _slotTile(slot),
-                  ],
+                  ),
                 ),
-              ),
-              AppButton(label: 'common.continue'.tr(), onPressed: _selected == null ? null : _continue),
-            ],
+                AppButton(label: 'common.continue'.tr(), onPressed: _selected == null ? null : _continue),
+              ],
+            ),
           ),
         ),
       ),
@@ -72,8 +79,6 @@ class _CheckoutTimeslotScreenState extends State<CheckoutTimeslotScreen> {
   Widget _slotTile(TimeSlot slot) {
     return RadioListTile<DateTime>(
       value: slot.start,
-      groupValue: _selected,
-      onChanged: (value) => setState(() => _selected = value),
       title: Text(formatSlotRange(slot.start, slot.end)),
     );
   }
