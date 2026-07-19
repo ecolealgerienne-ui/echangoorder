@@ -309,6 +309,8 @@ class OdooApiClient {
     String? zipCode,
     String? comment,
     bool favorite = false,
+    double? latitude,
+    double? longitude,
   }) async {
     final result = await _rpc('/echango/profile/addresses/add', {
       'name': name,
@@ -317,6 +319,8 @@ class OdooApiClient {
       'zip_code': zipCode,
       'comment': comment,
       'favorite': favorite,
+      'latitude': latitude,
+      'longitude': longitude,
     }) as Map<String, dynamic>;
     _throwIfOwnError(result);
     return result;
@@ -330,6 +334,8 @@ class OdooApiClient {
     String? zipCode,
     String? comment,
     bool? favorite,
+    double? latitude,
+    double? longitude,
   }) async {
     final result = await _rpc('/echango/profile/addresses/update', {
       'address_id': addressId,
@@ -339,6 +345,8 @@ class OdooApiClient {
       'zip_code': zipCode,
       'comment': comment,
       'favorite': favorite,
+      'latitude': latitude,
+      'longitude': longitude,
     }) as Map<String, dynamic>;
     _throwIfOwnError(result);
     return result;
@@ -347,14 +355,6 @@ class OdooApiClient {
   Future<void> removeAddress({required int addressId}) async {
     final result = await _rpc('/echango/profile/addresses/remove', {
       'address_id': addressId,
-    }) as Map<String, dynamic>;
-    _throwIfOwnError(result);
-  }
-
-  Future<void> updateLocation({required double latitude, required double longitude}) async {
-    final result = await _rpc('/echango/profile/update_location', {
-      'latitude': latitude,
-      'longitude': longitude,
     }) as Map<String, dynamic>;
     _throwIfOwnError(result);
   }

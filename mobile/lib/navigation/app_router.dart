@@ -27,7 +27,6 @@ import '../screens/product/product_detail_screen.dart';
 import '../screens/profile/addresses_screen.dart';
 import '../screens/profile/change_pin_screen.dart';
 import '../screens/profile/language_settings_screen.dart';
-import '../screens/profile/my_location_screen.dart';
 import '../screens/profile/notification_settings_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/system/maintenance_screen.dart';
@@ -168,7 +167,6 @@ GoRouter buildAppRouter(AuthState authState) {
               builder: (context, state) => const ProfileScreen(),
               routes: [
                 GoRoute(path: 'addresses', builder: (context, state) => const AddressesScreen()),
-                GoRoute(path: 'my-location', builder: (context, state) => const MyLocationScreen()),
                 GoRoute(path: 'change-pin', builder: (context, state) => const ChangePinScreen()),
                 GoRoute(
                   path: 'notifications',

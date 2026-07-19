@@ -188,11 +188,6 @@
     "disabled": "الإشعارات معطّلة.",
     "openSettings": "فتح إعدادات الهاتف"
   },
-  "myLocation": {
-    "currentLabel": "الموقع المسجّل:",
-    "none": "لا يوجد موقع مسجّل حاليًا.",
-    "updated": "تم تحديث الموقع."
-  },
   "addresses": {
     "emptyTitle": "لا يوجد عنوان محفوظ",
     "emptyMessage": "أضف عنوانًا لتسريع طلباتك القادمة.",
@@ -231,7 +226,6 @@
     "Substitution": { "title": "منتج غير متوفر", "subtitle": "استبدال المنتج — F17" },
     "Profile": { "title": "ملفي الشخصي", "subtitle": "الملف الشخصي — F10" },
     "Addresses": { "title": "عناويني", "subtitle": "العناوين المحفوظة — F10" },
-    "MyLocation": { "title": "موقعي", "subtitle": "الموقع الجغرافي — F10" },
     "ChangePin": { "title": "تغيير الرمز السري", "subtitle": "تعديل الرمز السري — F10" },
     "NotificationSettings": { "title": "الإشعارات", "subtitle": "تفضيلات الإشعارات — F10 / F11" },
     "LanguageSettings": { "title": "اللغة", "subtitle": "الفرنسية / العربية — F10" },

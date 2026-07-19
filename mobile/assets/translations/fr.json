@@ -188,11 +188,6 @@
     "disabled": "Notifications désactivées.",
     "openSettings": "Ouvrir les réglages du téléphone"
   },
-  "myLocation": {
-    "currentLabel": "Position enregistrée :",
-    "none": "Aucune position enregistrée pour l'instant.",
-    "updated": "Position mise à jour."
-  },
   "addresses": {
     "emptyTitle": "Aucune adresse enregistrée",
     "emptyMessage": "Ajoutez une adresse pour accélérer vos prochaines commandes.",
@@ -231,7 +226,6 @@
     "Substitution": { "title": "Produit indisponible", "subtitle": "Substitution produit — F17" },
     "Profile": { "title": "Mon Profil", "subtitle": "Profil utilisateur — F10" },
     "Addresses": { "title": "Mes adresses", "subtitle": "Adresses sauvegardées — F10" },
-    "MyLocation": { "title": "Ma localisation", "subtitle": "Localisation GPS — F10" },
     "ChangePin": { "title": "Modifier PIN", "subtitle": "Modification du code PIN — F10" },
     "NotificationSettings": { "title": "Notifications", "subtitle": "Préférences notifications — F10 / F11" },
     "LanguageSettings": { "title": "Langue", "subtitle": "Français / Arabe — F10" },

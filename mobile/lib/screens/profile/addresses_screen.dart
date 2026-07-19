@@ -1,10 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../errors/app_error.dart';
 import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
+import '../../services/permission_service.dart';
 import '../../theme/app_theme.dart';
 import '../../validation/validators.dart';
 import '../../widgets/app_button.dart';
@@ -14,6 +16,14 @@ import '../../widgets/app_button.dart';
 /// § Principe architecture Odoo). `res.partner` étant en lecture seule pour
 /// le portail, tout le CRUD passe par `controllers/profile_controller.py`
 /// en `sudo()` avec vérification explicite de `parent_id`.
+///
+/// L'ancien menu séparé "Ma localisation" est fusionné ici : chaque adresse
+/// peut optionnellement être enrichie de coordonnées GPS (`partner_latitude`/
+/// `partner_longitude`, champs standards déjà utilisés pour F10) en plus de
+/// la saisie manuelle — pas à sa place, faute de service de géocodage
+/// inverse choisi (impossible de déduire rue/ville/code postal depuis des
+/// coordonnées seules). La vérification de zone de livraison (F07) continue
+/// de se baser sur ville/code postal, pas sur les coordonnées.
 ///
 /// **Non fait dans cette passe** : le checkout (F07) ne propose pas encore
 /// de choisir une de ces adresses sauvegardées — il continue de créer un
@@ -173,7 +183,43 @@ class _AddressFormScreenState extends State<_AddressFormScreen> {
   late final _zipController = TextEditingController(text: widget.address?['zip'] as String? ?? '');
   late final _commentController = TextEditingController(text: widget.address?['comment'] as String? ?? '');
   late bool _favorite = widget.address?['favorite'] as bool? ?? false;
+  // `partner_latitude`/`partner_longitude` valent 0.0 par défaut côté Odoo
+  // (champs Float, jamais null) — traité comme "pas de position" ici,
+  // aucune adresse de livraison réelle n'étant à l'équateur.
+  late double? _latitude = _nonZero(widget.address?['latitude']);
+  late double? _longitude = _nonZero(widget.address?['longitude']);
   bool _isSubmitting = false;
+  bool _isFetchingLocation = false;
+
+  static double? _nonZero(dynamic value) {
+    final v = (value as num?)?.toDouble();
+    return (v == null || v == 0.0) ? null : v;
+  }
+
+  Future<void> _useGpsLocation() async {
+    if (_isFetchingLocation) return;
+    final granted = await requestLocationPermission(context);
+    if (!granted || !mounted) return;
+
+    setState(() => _isFetchingLocation = true);
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) AppMessenger.showError(context, const AppError(AppError.permissionDenied));
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+      });
+    } catch (_) {
+      if (mounted) AppMessenger.showError(context, const AppError(AppError.permissionDenied));
+    } finally {
+      if (mounted) setState(() => _isFetchingLocation = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -208,6 +254,8 @@ class _AddressFormScreenState extends State<_AddressFormScreen> {
           zipCode: _zipController.text.trim(),
           comment: _commentController.text.trim(),
           favorite: _favorite,
+          latitude: _latitude,
+          longitude: _longitude,
         );
       } else {
         await api.addAddress(
@@ -217,6 +265,8 @@ class _AddressFormScreenState extends State<_AddressFormScreen> {
           zipCode: _zipController.text.trim(),
           comment: _commentController.text.trim(),
           favorite: _favorite,
+          latitude: _latitude,
+          longitude: _longitude,
         );
       }
       if (!mounted) return;
@@ -272,6 +322,19 @@ class _AddressFormScreenState extends State<_AddressFormScreen> {
                 onChanged: (value) => setState(() => _favorite = value ?? false),
                 title: Text('addresses.favoriteLabel'.tr()),
               ),
+              const SizedBox(height: AppSpacing.md),
+              AppButton(
+                label: 'actions.useGpsLocation'.tr(),
+                onPressed: _useGpsLocation,
+                variant: AppButtonVariant.secondary,
+              ),
+              if (_latitude != null && _longitude != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '📍 ${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               AppButton(label: 'common.confirm'.tr(), onPressed: _isSubmitting ? null : _submit),
             ],

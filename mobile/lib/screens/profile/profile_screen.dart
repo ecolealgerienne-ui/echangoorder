@@ -85,11 +85,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.MyLocation.title'.tr(),
-          onPressed: () => context.push('/profile/my-location'),
-          variant: AppButtonVariant.secondary,
-        ),
-        PlaceholderAction(
           label: 'screens.ChangePin.title'.tr(),
           onPressed: () => context.push('/profile/change-pin'),
           variant: AppButtonVariant.secondary,

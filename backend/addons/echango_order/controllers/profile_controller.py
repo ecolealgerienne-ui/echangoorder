@@ -22,8 +22,6 @@ class EchangoProfileController(http.Controller):
             "name": partner.name,
             "phone": partner.phone,
             "lang": partner.lang,
-            "latitude": partner.partner_latitude,
-            "longitude": partner.partner_longitude,
         }
 
     @http.route("/echango/profile/update_name", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
@@ -32,19 +30,6 @@ class EchangoProfileController(http.Controller):
         if not name:
             return {"error": "validation.required"}
         request.env.user.partner_id.sudo().write({"name": name})
-        return {"success": True}
-
-    @http.route("/echango/profile/update_location", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
-    def update_location(self, latitude=None, longitude=None, **kw):
-        try:
-            lat = float(latitude)
-            lng = float(longitude)
-        except (TypeError, ValueError):
-            return {"error": "validation.required"}
-        request.env.user.partner_id.sudo().write({
-            "partner_latitude": lat,
-            "partner_longitude": lng,
-        })
         return {"success": True}
 
     @http.route("/echango/profile/change_pin", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
@@ -86,6 +71,11 @@ class EchangoProfileController(http.Controller):
             "zip": address.zip,
             "comment": address.comment,
             "favorite": address.x_adresse_favorite,
+            # "Ma localisation" (ex-menu séparé) fusionnée dans les adresses :
+            # champs standards du module base, déjà utilisés pour F10 avant
+            # cette fusion — voir CLAUDE.md § Principe architecture Odoo.
+            "latitude": address.partner_latitude,
+            "longitude": address.partner_longitude,
         }
 
     def _owned_address(self, address_id):
@@ -110,8 +100,21 @@ class EchangoProfileController(http.Controller):
         ])
         return {"addresses": [self._address_payload(a) for a in addresses]}
 
+    @staticmethod
+    def _coords_vals(latitude, longitude):
+        """GPS optionnel sur une adresse — en plus de rue/ville/code postal,
+        pas à leur place (pas de service de géocodage inverse choisi, donc
+        pas moyen de remplir rue/ville depuis des coordonnées seules ; la
+        vérification de zone de livraison continue de se baser sur
+        ville/code postal, pas sur les coordonnées)."""
+        try:
+            return {"partner_latitude": float(latitude), "partner_longitude": float(longitude)}
+        except (TypeError, ValueError):
+            return {}
+
     @http.route("/echango/profile/addresses/add", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
-    def add_address(self, name=None, street=None, city=None, zip_code=None, comment=None, favorite=False, **kw):
+    def add_address(self, name=None, street=None, city=None, zip_code=None, comment=None, favorite=False,
+                     latitude=None, longitude=None, **kw):
         partner = request.env.user.partner_id
         if not (street or "").strip() or not (city or "").strip():
             return {"error": "validation.required"}
@@ -126,12 +129,13 @@ class EchangoProfileController(http.Controller):
             "zip": zip_code,
             "comment": comment,
             "x_adresse_favorite": bool(favorite),
+            **self._coords_vals(latitude, longitude),
         })
         return self._address_payload(address)
 
     @http.route("/echango/profile/addresses/update", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     def update_address(self, address_id=None, name=None, street=None, city=None, zip_code=None, comment=None,
-                        favorite=None, **kw):
+                        favorite=None, latitude=None, longitude=None, **kw):
         address = self._owned_address(address_id)
         if not address:
             return {"error": "not_found"}
@@ -145,6 +149,7 @@ class EchangoProfileController(http.Controller):
             "city": city,
             "zip": zip_code,
             "comment": comment,
+            **self._coords_vals(latitude, longitude),
         }
         if favorite is not None:
             vals["x_adresse_favorite"] = bool(favorite)
