@@ -43,7 +43,12 @@
   },
   "order": {
     "confirmCancel": "تأكيد الإلغاء",
-    "keepOrder": "الاحتفاظ بطلبي"
+    "keepOrder": "الاحتفاظ بطلبي",
+    "statusConfirmed": "مؤكد",
+    "statusCancelled": "ملغى",
+    "reorderTitle": "🛒 إعادة الطلب؟",
+    "reorderMessage": "ستتم إضافة منتجات هذا الطلب إلى سلتك.",
+    "reorderUnavailableWarning": "⚠️ بعض المنتجات لم تعد متوفرة ولم تتم إضافتها."
   },
   "substitution": {
     "original": "المنتج الأصلي",

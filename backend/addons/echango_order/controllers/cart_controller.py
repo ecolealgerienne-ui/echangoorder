@@ -110,3 +110,38 @@ class EchangoCartController(http.Controller):
         order = line.order_id
         line.sudo().unlink()
         return self._cart_payload(order)
+
+    @http.route("/echango/cart/reorder", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    def reorder(self, order_id=None, **kw):
+        """F09 — recopie les lignes d'une commande passée dans le panier en
+        cours, en excluant les produits qui ne sont plus vendables/en stock
+        (specs QA : "produits indisponibles exclus automatiquement, avec
+        message informatif")."""
+        partner = request.env.user.partner_id
+        source = request.env["sale.order"].sudo().search([
+            ("id", "=", order_id), ("partner_id", "=", partner.id),
+        ], limit=1)
+        if not source:
+            return {"error": "not_found"}
+
+        cart = self._cart_order(create=True)
+        unavailable = []
+        for line in source.order_line:
+            variant = line.product_id
+            template = variant.product_tmpl_id
+            if not template.sale_ok or template.qty_available <= 0:
+                unavailable.append(line.name)
+                continue
+            existing = cart.order_line.filtered(lambda l: l.product_id == variant)
+            if existing:
+                existing.sudo().write({"product_uom_qty": existing.product_uom_qty + line.product_uom_qty})
+            else:
+                request.env["sale.order.line"].sudo().create({
+                    "order_id": cart.id,
+                    "product_id": variant.id,
+                    "product_uom_qty": line.product_uom_qty,
+                })
+
+        payload = self._cart_payload(cart)
+        payload["unavailable"] = unavailable
+        return payload

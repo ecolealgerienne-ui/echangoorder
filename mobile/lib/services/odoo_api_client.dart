@@ -98,6 +98,7 @@ class OdooApiClient {
     required List<String> fields,
     int? limit,
     int offset = 0,
+    String? order,
   }) async {
     final result = await _rpc('/web/dataset/call_kw', {
       'model': model,
@@ -107,6 +108,7 @@ class OdooApiClient {
         'fields': fields,
         if (limit != null) 'limit': limit,
         'offset': offset,
+        if (order != null) 'order': order,
       },
     });
     return (result as List).cast<Map<String, dynamic>>();
@@ -192,6 +194,17 @@ class OdooApiClient {
 
   Future<Map<String, dynamic>> removeCartLine({required int lineId}) async {
     final result = await _rpc('/echango/cart/remove', {'line_id': lineId}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
+  /// F09 — recopie les lignes d'une commande passée dans le panier en
+  /// cours (produits non vendables/en rupture exclus côté serveur, voir
+  /// `cart_controller.py`). La réponse est l'état complet du panier
+  /// (comme les autres mutations) + une clé `unavailable` (noms des
+  /// lignes exclues, pour l'avertissement F09).
+  Future<Map<String, dynamic>> reorder({required int orderId}) async {
+    final result = await _rpc('/echango/cart/reorder', {'order_id': orderId}) as Map<String, dynamic>;
     _throwIfOwnError(result);
     return result;
   }

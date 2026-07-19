@@ -2,44 +2,173 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../errors/app_error.dart';
+import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
+import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
+import '../../state/cart_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_button.dart';
 
-class OrderHistoryScreen extends StatelessWidget {
+/// F09 — historique des commandes du client connecté. `sale.order` est
+/// déjà lisible par le portail (règle standard, restreinte à ses propres
+/// commandes) — pas de contrôleur custom nécessaire pour la lecture, juste
+/// pour le reorder (mutation panier, voir `cart_controller.py`).
+///
+/// **Simplification assumée** : le bouton "Commander à nouveau" est
+/// affiché pour toute commande confirmée (`state == 'sale'`), pas
+/// seulement les commandes "Livrées" — le suivi réel de la livraison
+/// (`stock.picking`) n'est pas encore synchronisé (F08 complet, différé).
+class OrderHistoryScreen extends StatefulWidget {
   const OrderHistoryScreen({super.key});
+
+  @override
+  State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
+}
+
+class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
+  Future<List<Map<String, dynamic>>>? _ordersFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    if (context.read<AuthState>().status == SessionStatus.authenticated) {
+      _load();
+    }
+  }
+
+  void _load() {
+    setState(() {
+      _ordersFuture = context.read<OdooApiClient>().searchRead(
+            model: 'sale.order',
+            domain: const [
+              ['state', '!=', 'draft'],
+            ],
+            fields: const ['name', 'date_order', 'amount_total', 'state'],
+            order: 'date_order desc',
+          );
+    });
+  }
+
+  Future<void> _reorder(Map<String, dynamic> order) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('order.reorderTitle'.tr()),
+        content: Text('order.reorderMessage'.tr()),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text('common.cancel'.tr())),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text('actions.addToCart'.tr())),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final unavailable = await context.read<CartState>().reorder(orderId: order['id'] as int);
+      if (!mounted) return;
+      if (unavailable.isNotEmpty) {
+        AppMessenger.showInfo(context, 'order.reorderUnavailableWarning');
+      }
+      context.go('/cart');
+    } on AppError catch (e) {
+      if (mounted) AppMessenger.showError(context, e, onRetry: () => _reorder(order));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isGuest = context.watch<AuthState>().status == SessionStatus.guest;
 
-    // Pas d'historique réel avant Odoo : toujours vide pour l'instant.
-    // Message spécifique pour les invités (specs F09 : "Utilisateur invité :
-    // message invitant à créer un compte pour accéder à l'historique").
     return Scaffold(
       appBar: AppBar(title: Text('screens.OrderHistory.title'.tr())),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ErrorStateView(
-                icon: Icons.receipt_long_outlined,
-                titleKey: 'emptyStates.ordersTitle',
-                messageKey: isGuest ? 'emptyStates.ordersGuestMessage' : 'emptyStates.ordersMessage',
+        child: isGuest || _ordersFuture == null
+            ? _emptyState(context, isGuest: isGuest)
+            : FutureBuilder<List<Map<String, dynamic>>>(
+                future: _ordersFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    final error = snapshot.error is AppError
+                        ? snapshot.error as AppError
+                        : const AppError(AppError.unknown);
+                    return ErrorStateView.forError(error, onRetry: _load);
+                  }
+                  final orders = snapshot.data!;
+                  if (orders.isEmpty) {
+                    return _emptyState(context, isGuest: false);
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    itemCount: orders.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+                    itemBuilder: (context, index) => _OrderCard(
+                      order: orders[index],
+                      onTap: () => context.push('/profile/orders/${orders[index]['name']}'),
+                      onReorder: () => _reorder(orders[index]),
+                    ),
+                  );
+                },
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: AppButton(
-                // Point d'entrée démo pour continuer à valider le suivi de
-                // commande tant qu'il n'y a pas de vraies commandes (Odoo).
-                label: 'screens.OrderTracking.title'.tr(),
-                onPressed: () => context.push('/profile/orders/ECH-DEMO-0001'),
-                variant: AppButtonVariant.secondary,
-              ),
-            ),
-          ],
+      ),
+    );
+  }
+
+  Widget _emptyState(BuildContext context, {required bool isGuest}) {
+    return ErrorStateView(
+      icon: Icons.receipt_long_outlined,
+      titleKey: 'emptyStates.ordersTitle',
+      messageKey: isGuest ? 'emptyStates.ordersGuestMessage' : 'emptyStates.ordersMessage',
+    );
+  }
+}
+
+class _OrderCard extends StatelessWidget {
+  final Map<String, dynamic> order;
+  final VoidCallback onTap;
+  final VoidCallback onReorder;
+
+  const _OrderCard({required this.order, required this.onTap, required this.onReorder});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = order['name'] as String? ?? '';
+    final amount = (order['amount_total'] as num?)?.toDouble() ?? 0;
+    final state = order['state'] as String?;
+    final date = DateTime.tryParse(order['date_order'] as String? ?? '');
+    final isConfirmed = state == 'sale';
+    final statusLabel = state == 'cancel' ? 'order.statusCancelled'.tr() : 'order.statusConfirmed'.tr();
+
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: Theme.of(context).textTheme.titleMedium),
+              if (date != null)
+                Text(
+                  '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              const SizedBox(height: AppSpacing.xs),
+              Text('${amount.toStringAsFixed(2)} €  ${state == 'cancel' ? '❌' : '✅'} $statusLabel'),
+              if (isConfirmed) ...[
+                const SizedBox(height: AppSpacing.xs),
+                AppButton(
+                  label: 'actions.reorder'.tr(),
+                  onPressed: onReorder,
+                  variant: AppButtonVariant.secondary,
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

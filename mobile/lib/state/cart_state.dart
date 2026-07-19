@@ -76,4 +76,12 @@ class CartState extends ChangeNotifier {
 
   Future<void> removeLine({required int lineId}) async =>
       _applyPayload(await _api.removeCartLine(lineId: lineId));
+
+  /// F09 — retourne les noms des lignes exclues (produits non vendables ou
+  /// en rupture) pour que l'écran affiche l'avertissement.
+  Future<List<String>> reorder({required int orderId}) async {
+    final payload = await _api.reorder(orderId: orderId);
+    _applyPayload(payload);
+    return (payload['unavailable'] as List).cast<String>();
+  }
 }
