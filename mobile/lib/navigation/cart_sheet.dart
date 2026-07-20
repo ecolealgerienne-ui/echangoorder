@@ -16,9 +16,9 @@ Future<void> showCartSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => FractionallySizedBox(
+    builder: (context) => const FractionallySizedBox(
       heightFactor: 0.92,
-      child: SheetShell(child: const CartScreen()),
+      child: SheetShell(child: CartScreen()),
     ),
   );
 }
