@@ -4,7 +4,16 @@ import '../theme/app_theme.dart';
 import 'app_button.dart';
 
 class PlaceholderAction {
-  final String label;
+  // Fonction plutôt que `String` déjà résolue (bug trouvé par l'utilisateur,
+  // 2026-07-20) : un appelant qui construit `'clé'.tr()` une fois dans SON
+  // PROPRE build() fige le libellé au moment de la construction — si cet
+  // appelant (ex. `ProfileScreen`) ne se reconstruit pas lui-même au
+  // changement de langue (contrairement à `ScreenPlaceholder`, dont le
+  // titre se retraduit correctement), le bouton reste bloqué dans l'ancienne
+  // langue. En différant l'appel à `.tr()` jusqu'au `build()` de
+  // `ScreenPlaceholder` (voir plus bas), le libellé est toujours recalculé
+  // au bon moment, quel que soit le comportement de l'appelant.
+  final String Function() label;
   final VoidCallback onPressed;
   final AppButtonVariant variant;
 
@@ -55,7 +64,7 @@ class ScreenPlaceholder extends StatelessWidget {
               if (child != null) child!,
               if (actions.isNotEmpty) const SizedBox(height: AppSpacing.lg),
               for (final action in actions)
-                AppButton(label: action.label, onPressed: action.onPressed, variant: action.variant),
+                AppButton(label: action.label(), onPressed: action.onPressed, variant: action.variant),
             ],
           ),
         ),

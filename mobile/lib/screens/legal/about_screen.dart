@@ -30,22 +30,22 @@ class _AboutScreenState extends State<AboutScreen> {
       screenKey: 'About',
       actions: [
         PlaceholderAction(
-          label: 'legal.cgu'.tr(),
+          label: () => 'legal.cgu'.tr(),
           onPressed: () => context.push('/profile/legal/cgu'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'legal.privacy'.tr(),
+          label: () => 'legal.privacy'.tr(),
           onPressed: () => context.push('/profile/legal/privacy'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'legal.legal'.tr(),
+          label: () => 'legal.legal'.tr(),
           onPressed: () => context.push('/profile/legal/legal'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'legal.cookies'.tr(),
+          label: () => 'legal.cookies'.tr(),
           onPressed: () => context.push('/profile/legal/cookies'),
           variant: AppButtonVariant.secondary,
         ),

@@ -76,9 +76,9 @@ class _ReauthPinScreenState extends State<ReauthPinScreen> {
       child: ScreenPlaceholder(
         screenKey: 'Reauth',
         actions: [
-          PlaceholderAction(label: 'actions.logIn'.tr(), onPressed: () => _submit(authState, api)),
+          PlaceholderAction(label: () => 'actions.logIn'.tr(), onPressed: () => _submit(authState, api)),
           PlaceholderAction(
-            label: 'actions.logout'.tr(),
+            label: () => 'actions.logout'.tr(),
             onPressed: () => fullLogout(context),
             variant: AppButtonVariant.secondary,
           ),

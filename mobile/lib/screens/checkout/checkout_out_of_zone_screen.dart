@@ -15,14 +15,14 @@ class CheckoutOutOfZoneScreen extends StatelessWidget {
       screenKey: 'CheckoutOutOfZone',
       actions: [
         PlaceholderAction(
-          label: 'checkout.pickupStore'.tr(),
+          label: () => 'checkout.pickupStore'.tr(),
           onPressed: () {
             context.read<CheckoutState>().setReceptionMode(ReceptionMode.pickup);
             context.push('/cart/checkout/timeslot');
           },
         ),
         PlaceholderAction(
-          label: 'checkout.modifyAddress'.tr(),
+          label: () => 'checkout.modifyAddress'.tr(),
           onPressed: () => context.pop(),
           variant: AppButtonVariant.secondary,
         ),

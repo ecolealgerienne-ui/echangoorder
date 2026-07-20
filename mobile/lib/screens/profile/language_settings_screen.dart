@@ -14,12 +14,12 @@ class LanguageSettingsScreen extends StatelessWidget {
       screenKey: 'LanguageSettings',
       actions: [
         PlaceholderAction(
-          label: 'Français',
+          label: () => 'Français',
           onPressed: () => context.setLocale(const Locale('fr')),
           variant: currentLocale.languageCode == 'fr' ? AppButtonVariant.primary : AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'العربية',
+          label: () => 'العربية',
           onPressed: () => context.setLocale(const Locale('ar')),
           variant: currentLocale.languageCode == 'ar' ? AppButtonVariant.primary : AppButtonVariant.secondary,
         ),

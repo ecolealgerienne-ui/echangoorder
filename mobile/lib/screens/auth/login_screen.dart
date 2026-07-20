@@ -68,9 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
     return ScreenPlaceholder(
       screenKey: 'Login',
       actions: [
-        PlaceholderAction(label: 'actions.logIn'.tr(), onPressed: () => _submit(authState, api)),
+        PlaceholderAction(label: () => 'actions.logIn'.tr(), onPressed: () => _submit(authState, api)),
         PlaceholderAction(
-          label: 'actions.forgotPin'.tr(),
+          label: () => 'actions.forgotPin'.tr(),
           onPressed: () => context.push('/forgot-pin'),
           variant: AppButtonVariant.secondary,
         ),

@@ -56,7 +56,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         showAppBar: false,
         actions: [
           PlaceholderAction(
-            label: 'actions.trackOrder'.tr(),
+            label: () => 'actions.trackOrder'.tr(),
             // Navigation inter-onglets (Panier -> Profil), simple avec go_router :
             // pas besoin de passer par le navigator parent comme en React Native.
             onPressed: () => context.go('/profile/orders/${widget.orderRef}'),

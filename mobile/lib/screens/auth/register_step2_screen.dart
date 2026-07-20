@@ -23,13 +23,13 @@ class RegisterStep2Screen extends StatelessWidget {
       screenKey: 'RegisterStep2',
       actions: [
         PlaceholderAction(
-          label: 'actions.useGpsLocation'.tr(),
+          label: () => 'actions.useGpsLocation'.tr(),
           onPressed: () => requestLocationPermission(context),
           variant: AppButtonVariant.secondary,
         ),
-        PlaceholderAction(label: 'common.continue'.tr(), onPressed: () => _continue(context)),
+        PlaceholderAction(label: () => 'common.continue'.tr(), onPressed: () => _continue(context)),
         PlaceholderAction(
-          label: 'common.skip'.tr(),
+          label: () => 'common.skip'.tr(),
           onPressed: () => _continue(context),
           variant: AppButtonVariant.secondary,
         ),

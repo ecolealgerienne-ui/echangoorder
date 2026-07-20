@@ -81,46 +81,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
       screenKey: 'Profile',
       actions: [
         PlaceholderAction(
-          label: 'screens.Addresses.title'.tr(),
+          label: () => 'screens.Addresses.title'.tr(),
           onPressed: () => _requireAccountThen(context, () => context.push('/profile/addresses')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.Favorites.title'.tr(),
+          label: () => 'screens.Favorites.title'.tr(),
           onPressed: () => _requireAccountThen(context, () => context.push('/profile/favorites')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.ChangePin.title'.tr(),
+          label: () => 'screens.ChangePin.title'.tr(),
           onPressed: () => _requireAccountThen(context, () => context.push('/profile/change-pin')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.NotificationSettings.title'.tr(),
+          label: () => 'screens.NotificationSettings.title'.tr(),
           onPressed: () => context.push('/profile/notifications'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.LanguageSettings.title'.tr(),
+          label: () => 'screens.LanguageSettings.title'.tr(),
           onPressed: () => context.push('/profile/language'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.OrderHistory.title'.tr(),
+          label: () => 'screens.OrderHistory.title'.tr(),
           onPressed: () => context.push('/profile/orders'),
         ),
         PlaceholderAction(
-          label: 'screens.About.title'.tr(),
+          label: () => 'screens.About.title'.tr(),
           onPressed: () => context.push('/profile/about'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'actions.logout'.tr(),
+          label: () => 'actions.logout'.tr(),
           onPressed: () => _logout(context),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'actions.deleteAccount'.tr(),
+          label: () => 'actions.deleteAccount'.tr(),
           onPressed: () => _requireAccountThen(context, () => showDeleteAccountDialog(context)),
           variant: AppButtonVariant.danger,
         ),
