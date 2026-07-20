@@ -86,8 +86,16 @@ class EchangoProfileController(http.Controller):
             "name": address.name,
             "street": address.street,
             "city": address.city,
-            "zip": address.zip,
-            "comment": address.comment,
+            # `zip`/`comment` ne sont jamais requis (contrairement à
+            # street/city, validés avant création/mise à jour) — un Char
+            # non renseigné vaut `False` côté ORM Odoo, pas `None`, donc
+            # `False` une fois sérialisé en JSON. Normalisé ici : sinon
+            # `as String?` côté Flutter (`addresses_screen.dart`,
+            # `checkout_address_screen.dart`) plante dès qu'une adresse n'a
+            # pas de code postal/note (trouvé par audit suite au bug
+            # identique sur `x_delivery_status`).
+            "zip": address.zip or None,
+            "comment": address.comment or None,
             "favorite": address.x_adresse_favorite,
             # "Ma localisation" (ex-menu séparé) fusionnée dans les adresses :
             # champs standards du module base, déjà utilisés pour F10 avant

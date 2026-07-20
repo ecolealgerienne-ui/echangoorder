@@ -86,7 +86,7 @@ class EchangoOrderController(http.Controller):
                     "date_order": o.date_order.isoformat() if o.date_order else None,
                     "amount_total": o.amount_total,
                     "state": o.state,
-                    "x_reception_mode": o.x_reception_mode,
+                    "x_reception_mode": o.x_reception_mode or None,
                     "prep_status": self._prep_status(o),
                     # Un champ Selection non renseigné vaut `False` côté
                     # ORM Odoo (pas `None`) — sérialisé en JSON comme un
@@ -119,7 +119,15 @@ class EchangoOrderController(http.Controller):
                 "name": order.name,
                 "amount_total": order.amount_total,
                 "state": order.state,
-                "x_reception_mode": order.x_reception_mode,
+                # Même piège que x_delivery_status ci-dessous (Selection
+                # non renseigné -> False côté ORM, pas None) : `detail()`
+                # n'a pas de filtre sur `state`/`x_reception_mode`
+                # contrairement à `list_orders()`, une commande dont ce
+                # champ n'a jamais été écrit peut donc légitimement
+                # atteindre ce point. `order_tracking_screen.dart` fait
+                # `as String?` dessus sans repli, plantage confirmé par
+                # audit.
+                "x_reception_mode": order.x_reception_mode or None,
                 "x_creneau": order.x_creneau.isoformat() if order.x_creneau else None,
                 "prep_status": self._prep_status(order),
                 "x_delivery_status": order.x_delivery_status or None,
