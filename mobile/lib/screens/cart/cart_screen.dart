@@ -319,17 +319,17 @@ class _CartLinesSkeleton extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: 4,
       separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, index) => Row(
+      itemBuilder: (context, index) => const Row(
         children: [
-          const ShimmerBox(width: 64, height: 64),
-          const SizedBox(width: AppSpacing.md),
+          ShimmerBox(width: 64, height: 64),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ShimmerBox(width: double.infinity, height: 16),
-                const SizedBox(height: AppSpacing.xs),
-                const ShimmerBox(width: 100, height: 14),
+                SizedBox(height: AppSpacing.xs),
+                ShimmerBox(width: 100, height: 14),
               ],
             ),
           ),

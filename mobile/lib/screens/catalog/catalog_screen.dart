@@ -142,15 +142,15 @@ class _CategoryListSkeleton extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: 6,
       separatorBuilder: (context, index) => const Divider(height: 1),
-      itemBuilder: (context, index) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      itemBuilder: (context, index) => const Padding(
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         child: Row(
           children: [
-            const ShimmerBox(width: 24, height: 24, borderRadius: BorderRadius.all(Radius.circular(6))),
-            const SizedBox(width: AppSpacing.md),
+            ShimmerBox(width: 24, height: 24, borderRadius: BorderRadius.all(Radius.circular(6))),
+            SizedBox(width: AppSpacing.md),
             Expanded(child: ShimmerBox(width: double.infinity, height: 16)),
-            const SizedBox(width: AppSpacing.md),
-            const ShimmerBox(width: 28, height: 16),
+            SizedBox(width: AppSpacing.md),
+            ShimmerBox(width: 28, height: 16),
           ],
         ),
       ),

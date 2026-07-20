@@ -329,7 +329,7 @@ class _OrderTrackingSkeleton extends StatelessWidget {
           const ShimmerBox(width: 120, height: 14),
           const SizedBox(height: AppSpacing.lg),
           for (var i = 0; i < 4; i++) ...[
-            ShimmerBox(width: double.infinity, height: 16),
+            const ShimmerBox(width: double.infinity, height: 16),
             const SizedBox(height: AppSpacing.md),
           ],
         ],

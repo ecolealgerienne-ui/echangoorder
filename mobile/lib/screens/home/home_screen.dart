@@ -315,10 +315,10 @@ class _CategoryChipsSkeleton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         itemCount: 4,
         separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
-        itemBuilder: (context, index) => ShimmerBox(
+        itemBuilder: (context, index) => const ShimmerBox(
           width: 72,
           height: 32,
-          borderRadius: const BorderRadius.all(Radius.circular(999)),
+          borderRadius: BorderRadius.all(Radius.circular(999)),
         ),
       ),
     );
@@ -341,7 +341,7 @@ class _ProductGridSkeleton extends StatelessWidget {
         (context, index) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: ShimmerBox(width: double.infinity, height: double.infinity)),
+            const Expanded(child: ShimmerBox(width: double.infinity, height: double.infinity)),
             const SizedBox(height: AppSpacing.xs),
             const ShimmerBox(width: double.infinity, height: 14),
             const SizedBox(height: AppSpacing.xs),

@@ -256,14 +256,14 @@ class _OrderListSkeleton extends StatelessWidget {
           color: AppColorTokens.of(context).surface,
           borderRadius: BorderRadius.circular(AppLayout.radius),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ShimmerBox(width: 140, height: 16),
-            const SizedBox(height: AppSpacing.xs),
-            const ShimmerBox(width: 90, height: 12),
-            const SizedBox(height: AppSpacing.sm),
-            const ShimmerBox(width: 160, height: 14),
+            SizedBox(height: AppSpacing.xs),
+            ShimmerBox(width: 90, height: 12),
+            SizedBox(height: AppSpacing.sm),
+            ShimmerBox(width: 160, height: 14),
           ],
         ),
       ),
