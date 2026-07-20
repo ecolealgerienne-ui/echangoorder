@@ -92,7 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
     _hasMore = results.length == kListPageSize;
     _offset = offset + results.length;
-    // Disponibilité stock + promotions à part — voir CategoryProductsScreen.
+    // Disponibilité stock + promotions à part — même logique que HomeScreen.
     await enrichProductsWithStockAndPromotions(api, results);
     return results;
   }
@@ -189,7 +189,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               final productId = product['id'] as int;
                               return ProductGridTile(
                                 product: product,
-                                onTap: () => context.push('/catalog/product/$productId'),
+                                onTap: () => context.push('/home/product/$productId'),
                                 cartQty: cart.quantityFor(productId),
                                 onIncrement: () => addProductToCart(context, productId),
                                 onDecrement: () => decrementCartProduct(context, productId),

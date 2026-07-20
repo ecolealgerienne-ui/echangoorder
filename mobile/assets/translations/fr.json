@@ -34,7 +34,6 @@
   },
   "nav": {
     "home": "Accueil",
-    "catalog": "Catalogue",
     "cart": "Panier",
     "profile": "Profil"
   },
@@ -206,8 +205,6 @@
     "searchMessage": "Essayez avec un autre mot-clé.",
     "productsTitle": "Aucun produit disponible",
     "productsMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour.",
-    "categoriesTitle": "Aucune catégorie disponible",
-    "categoriesMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour.",
     "favoritesTitle": "Aucun favori pour l'instant",
     "favoritesMessage": "Vos produits commandés s'ajoutent ici automatiquement — vous pouvez aussi en ajouter vous-même."
   },
@@ -247,8 +244,6 @@
     "ForgotPin": { "title": "PIN oublié", "subtitle": "Réinitialisation PIN — F02" },
     "Reauth": { "title": "Session expirée", "subtitle": "Ré-authentification par PIN — sécurité" },
     "Home": { "title": "Accueil", "subtitle": "Accueil — F03" },
-    "Catalog": { "title": "Catalogue", "subtitle": "Catégories — F04" },
-    "CategoryProducts": { "title": "Produits", "subtitle": "Produits par catégorie — F04" },
     "Search": { "title": "Rechercher", "subtitle": "Recherche — F04" },
     "ProductDetail": { "title": "Fiche produit", "subtitle": "Fiche produit — F05" },
     "Cart": { "title": "Mon Panier", "subtitle": "Panier — F06" },

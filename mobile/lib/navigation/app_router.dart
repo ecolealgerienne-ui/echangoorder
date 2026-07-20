@@ -8,9 +8,6 @@ import '../screens/auth/register_step1_screen.dart';
 import '../screens/auth/register_step2_screen.dart';
 import '../screens/auth/register_step3_screen.dart';
 import '../screens/cart/cart_screen.dart';
-import '../screens/catalog/catalog_screen.dart';
-import '../screens/catalog/category_products_screen.dart';
-import '../screens/catalog/search_screen.dart';
 import '../screens/checkout/checkout_address_screen.dart';
 import '../screens/checkout/checkout_out_of_zone_screen.dart';
 import '../screens/checkout/checkout_reception_mode_screen.dart';
@@ -31,6 +28,7 @@ import '../screens/profile/favorites_screen.dart';
 import '../screens/profile/language_settings_screen.dart';
 import '../screens/profile/notification_settings_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/search/search_screen.dart';
 import '../screens/system/maintenance_screen.dart';
 import '../screens/vitrine/vitrine_screen.dart';
 import '../state/auth_state.dart';
@@ -112,6 +110,13 @@ GoRouter buildAppRouter(AuthState authState) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => MainTabScaffold(navigationShell: navigationShell),
         branches: [
+          // Catalogue (F04) fusionné dans l'Accueil (2026-07-20, demande
+          // utilisateur) : le bandeau catégories de HomeScreen filtre
+          // directement sa propre grille au lieu de naviguer vers un écran
+          // dédié — CatalogScreen/CategoryProductsScreen supprimés (rôle
+          // repris par HomeScreen). SearchScreen reste un écran à part
+          // entière (une vraie recherche texte mérite sa propre UI), déplacé
+          // sous l'onglet Accueil.
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home',
@@ -122,27 +127,7 @@ GoRouter buildAppRouter(AuthState authState) {
                   builder: (context, state) =>
                       ProductDetailScreen(productId: state.pathParameters['productId']!),
                 ),
-              ],
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/catalog',
-              builder: (context, state) => const CatalogScreen(),
-              routes: [
-                GoRoute(
-                  path: 'category/:categoryId',
-                  builder: (context, state) => CategoryProductsScreen(
-                    categoryId: state.pathParameters['categoryId']!,
-                    categoryName: state.extra as String?,
-                  ),
-                ),
                 GoRoute(path: 'search', builder: (context, state) => const SearchScreen()),
-                GoRoute(
-                  path: 'product/:productId',
-                  builder: (context, state) =>
-                      ProductDetailScreen(productId: state.pathParameters['productId']!),
-                ),
               ],
             ),
           ]),

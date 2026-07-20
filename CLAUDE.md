@@ -53,6 +53,8 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 
 **Hors périmètre Phase 1** (voir specs §5) : paiement en ligne, programme fidélité, GPS temps réel, app Préparateurs, app Transporteur, intégration Fleetbase active, filtres avancés catalogue, favoris, chat support, avis produits.
 
+**F04 fusionné dans l'Accueil (décision produit, 2026-07-20)** : plus d'écran/onglet Catalogue séparé — le bandeau catégories de `HomeScreen` (F03) filtre directement sa propre grille de produits (`categ_id` ajouté au domaine `search_read`) au lieu de naviguer vers un écran dédié. `CatalogScreen` (liste des catégories) et `CategoryProductsScreen` (grille par catégorie) supprimés, barre de navigation passée de 4 à 3 onglets (Accueil/Panier/Profil). La recherche texte (`SearchScreen`) reste un écran à part entière — déplacée sous l'onglet Accueil (`/home/search`, dossier `screens/search/`) plutôt que `screens/catalog/` (dossier supprimé, ne contenait plus qu'elle).
+
 ### Phase 1.5 (décision produit, 2026-07-20)
 
 **F11 (Notifications Push) et F12 (Partage Produit — réception du deep link uniquement) sont reportées en Phase 1.5**, retirées du périmètre de clôture de la Phase 1 — toutes deux sont code-complètes mais dépendent d'un déploiement réel non encore fait, pas d'un développement restant :

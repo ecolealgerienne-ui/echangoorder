@@ -5,8 +5,11 @@ import 'package:provider/provider.dart';
 import '../state/cart_state.dart';
 import '../theme/app_theme.dart';
 
-/// Coquille des 4 onglets (Accueil/Catalogue/Panier/Profil), chacun gardant
-/// sa propre pile de navigation — équivalent du bottom tab navigator RN.
+/// Coquille des 3 onglets (Accueil/Panier/Profil), chacun gardant sa propre
+/// pile de navigation — équivalent du bottom tab navigator RN. L'onglet
+/// Catalogue a été retiré (2026-07-20, demande utilisateur) : son rôle est
+/// repris par le bandeau catégories de l'Accueil (filtre la grille sur
+/// place), voir `screens/home/home_screen.dart`.
 class MainTabScaffold extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -27,7 +30,6 @@ class MainTabScaffold extends StatelessWidget {
         indicatorColor: AppColors.surface,
         destinations: [
           NavigationDestination(icon: const Text('🏠'), label: 'nav.home'.tr()),
-          NavigationDestination(icon: const Text('📋'), label: 'nav.catalog'.tr()),
           NavigationDestination(
             icon: Badge(
               isLabelVisible: itemCount > 0,

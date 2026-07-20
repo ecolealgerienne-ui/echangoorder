@@ -28,11 +28,13 @@ import '../../widgets/shimmer_loader.dart';
 /// chargement à la demande via `LoadMoreButton` plutôt que tout afficher
 /// d'un coup — voir `utils/pagination.dart`.
 ///
-/// Bandeau recherche + catégories (direction Casbah, phase C) : accès
-/// direct depuis l'Accueil plutôt que de forcer un détour par l'onglet
-/// Catalogue. Navigue vers les écrans F04 existants (`/catalog/search`,
-/// `/catalog/category/:id`) plutôt que de dupliquer leur logique de
-/// recherche/filtrage ici — l'Accueil reste une simple vitrine d'entrée.
+/// Bandeau recherche + catégories (direction Casbah, phase C). Recherche :
+/// navigue vers `SearchScreen` (`/home/search`, une vraie recherche texte
+/// mérite son propre écran). Catégories : filtrent directement la grille
+/// ci-dessous plutôt que de naviguer vers un écran dédié — décision
+/// produit du 2026-07-20 (demande utilisateur) qui a fait disparaître
+/// l'ancien onglet/écran Catalogue (`CatalogScreen`/`CategoryProductsScreen`
+/// supprimés, leur rôle est repris ici).
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -53,10 +55,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // trouvée à l'audit technique du 2026-07-19).
   int _loadGeneration = 0;
 
-  // Bandeau catégories : purement décoratif/navigation, jamais bloquant —
-  // masqué silencieusement en cas d'échec plutôt que de gêner l'accès à la
-  // grille produits (qui reste l'essentiel de l'écran).
+  // Bandeau catégories : masqué silencieusement en cas d'échec de
+  // chargement plutôt que de gêner l'accès à la grille produits (qui reste
+  // l'essentiel de l'écran). `null` = puce "Tous" (aucun filtre).
   Future<List<Map<String, dynamic>>>? _categoriesFuture;
+  int? _selectedCategoryId;
 
   @override
   void initState() {
@@ -91,12 +94,23 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  /// Sélectionne une catégorie (filtre la grille) — retaper la puce déjà
+  /// sélectionnée réinitialise le filtre (bascule vers "Tous") plutôt que
+  /// d'exiger un bouton de réinitialisation séparé.
+  void _selectCategory(int? categoryId) {
+    final next = _selectedCategoryId == categoryId ? null : categoryId;
+    if (next == _selectedCategoryId) return;
+    _selectedCategoryId = next;
+    _loadProducts();
+  }
+
   Future<List<Map<String, dynamic>>> _fetchProducts({required int offset}) async {
     final api = context.read<OdooApiClient>();
     final products = await api.searchRead(
       model: 'product.template',
-      domain: const [
+      domain: [
         ['sale_ok', '=', true],
+        if (_selectedCategoryId != null) ['categ_id', '=', _selectedCategoryId],
       ],
       fields: const ['name', 'list_price', 'image_128'],
       limit: kListPageSize,
@@ -153,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    SliverToBoxAdapter(child: _SearchBar(onTap: () => context.push('/catalog/search'))),
+                    SliverToBoxAdapter(child: _SearchBar(onTap: () => context.push('/home/search'))),
                     SliverToBoxAdapter(child: _buildCategoryChips(context)),
                     const SliverPadding(
                       padding: EdgeInsets.all(AppSpacing.lg),
@@ -171,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
               return CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  SliverToBoxAdapter(child: _SearchBar(onTap: () => context.push('/catalog/search'))),
+                  SliverToBoxAdapter(child: _SearchBar(onTap: () => context.push('/home/search'))),
                   SliverToBoxAdapter(child: _buildCategoryChips(context)),
                   if (products.isEmpty)
                     const SliverFillRemaining(
@@ -250,8 +264,8 @@ class _HomeScreenState extends State<HomeScreen> {
               if (index == 0) {
                 return ChoiceChip(
                   label: Text('catalog.allCategories'.tr()),
-                  selected: true,
-                  onSelected: (_) {},
+                  selected: _selectedCategoryId == null,
+                  onSelected: (_) => _selectCategory(null),
                 );
               }
               final categField = groups[index - 1]['categ_id'] as List<dynamic>?;
@@ -260,8 +274,8 @@ class _HomeScreenState extends State<HomeScreen> {
               final categName = categField[1] as String;
               return ChoiceChip(
                 label: Text(categName),
-                selected: false,
-                onSelected: (_) => context.push('/catalog/category/$categId', extra: categName),
+                selected: _selectedCategoryId == categId,
+                onSelected: (_) => _selectCategory(categId),
               );
             },
           ),
