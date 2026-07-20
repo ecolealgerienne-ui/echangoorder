@@ -192,8 +192,15 @@ class EchangoCheckoutController(http.Controller):
         # checkout_resolve_unavailable_screen.dart`.
         unavailable_lines = []
         for line in order.order_line.filtered(lambda l: not l.is_reward_line):
+            # Stock de la variante précise de la ligne (`product.product.
+            # qty_available`), pas l'agrégat du template (toutes variantes
+            # confondues, F05) — une variante peut être en rupture pendant
+            # qu'une autre du même produit est disponible ; vérifier au
+            # niveau template laisserait passer une commande sur une
+            # variante réellement épuisée tant qu'une variante sœur a du
+            # stock.
             template = line.product_id.product_tmpl_id
-            if template.qty_available <= 0:
+            if line.product_id.qty_available <= 0:
                 substitutes = template.x_substitute_product_ids.filtered(
                     lambda t: t.sale_ok and t.qty_available > 0
                 )

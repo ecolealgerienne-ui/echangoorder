@@ -28,6 +28,11 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   late Future<Map<String, dynamic>> _productFuture;
   int _quantity = 1;
+  // attribute_id -> id du `product.template.attribute.value` choisi (F05,
+  // couleur/taille...) — pré-rempli avec la première valeur de chaque
+  // attribut au chargement (voir _fetchProduct), ajustable ensuite via les
+  // chips de sélection.
+  final Map<int, int> _selectedValues = {};
 
   @override
   void initState() {
@@ -57,7 +62,39 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     // client les découvre en amont, pas seulement au checkout en cas de
     // rupture (voir CheckoutResolveUnavailableScreen).
     product['substitutes'] = await api.getSubstitutes(productId: id);
+    // Variantes (F05, couleur/taille...) — mécanisme standard Odoo
+    // jusqu'ici ignoré par l'app, qui n'ajoutait toujours que la variante
+    // par défaut. `attributes` vide = produit sans variante (immense
+    // majorité du catalogue), aucune UI supplémentaire dans ce cas.
+    final variantsData = await api.getVariants(productId: id);
+    final attributes = (variantsData['attributes'] as List).cast<Map<String, dynamic>>();
+    product['attributes'] = attributes;
+    product['variants'] = variantsData['variants'];
+    if (_selectedValues.isEmpty) {
+      for (final attr in attributes) {
+        final values = (attr['values'] as List).cast<Map<String, dynamic>>();
+        if (values.isNotEmpty) {
+          _selectedValues[attr['attribute_id'] as int] = values.first['id'] as int;
+        }
+      }
+    }
     return product;
+  }
+
+  /// Trouve la variante dont la combinaison d'attributs correspond
+  /// exactement à la sélection en cours — `null` tant que la sélection est
+  /// incomplète (jamais le cas en pratique ici, chaque attribut est
+  /// pré-rempli au chargement) ou si la combinaison n'existe pas (valeurs
+  /// exclues entre elles, cas avancé non géré).
+  Map<String, dynamic>? _resolveVariant(List<Map<String, dynamic>> attributes, List<Map<String, dynamic>> variants) {
+    if (attributes.isEmpty) return null;
+    if (_selectedValues.length != attributes.length) return null;
+    final chosen = _selectedValues.values.toSet();
+    for (final variant in variants) {
+      final ids = (variant['attribute_value_ids'] as List).cast<int>().toSet();
+      if (ids.length == chosen.length && ids.containsAll(chosen)) return variant;
+    }
+    return null;
   }
 
   /// Les 3 branches (Accueil/Catalogue/Profil) exposent chacune leur propre
@@ -112,15 +149,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
             final product = snapshot.data!;
             final name = product['name'] as String? ?? '';
-            final price = (product['list_price'] as num?)?.toDouble() ?? 0;
             final imageBase64 = product['image_1920'];
             final descriptionRaw = product['description'];
             final description = descriptionRaw is String ? _stripHtml(descriptionRaw) : '';
             final uomField = product['uom_id'];
             final uomName = uomField is List && uomField.length > 1 ? uomField[1] as String : '';
-            final qtyAvailable = (product['qty_available'] as num?)?.toDouble();
-            final outOfStock = qtyAvailable != null && qtyAvailable <= 0;
             final substitutes = (product['substitutes'] as List? ?? const []).cast<Map<String, dynamic>>();
+            final attributes = (product['attributes'] as List? ?? const []).cast<Map<String, dynamic>>();
+            final variants = (product['variants'] as List? ?? const []).cast<Map<String, dynamic>>();
+            final hasVariants = attributes.isNotEmpty;
+            final resolvedVariant = hasVariants ? _resolveVariant(attributes, variants) : null;
+            // Prix/stock de la variante résolue une fois la combinaison
+            // complète (toujours le cas ici, chaque attribut pré-rempli au
+            // chargement) — repli sur le prix/stock du template pour un
+            // produit sans variante, comportement inchangé dans ce cas.
+            final price = hasVariants
+                ? (resolvedVariant?['list_price'] as num?)?.toDouble() ?? 0
+                : (product['list_price'] as num?)?.toDouble() ?? 0;
+            final qtyAvailable = hasVariants
+                ? (resolvedVariant?['qty_available'] as num?)?.toDouble()
+                : (product['qty_available'] as num?)?.toDouble();
+            final outOfStock = (hasVariants && resolvedVariant == null) ||
+                (qtyAvailable != null && qtyAvailable <= 0);
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -156,6 +206,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
                     ),
                   ],
+                  if (hasVariants) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    for (final attribute in attributes)
+                      _AttributeSelector(
+                        attribute: attribute,
+                        selectedValueId: _selectedValues[attribute['attribute_id'] as int],
+                        onSelect: (valueId) =>
+                            setState(() => _selectedValues[attribute['attribute_id'] as int] = valueId),
+                      ),
+                  ],
                   const SizedBox(height: AppSpacing.lg),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -187,7 +247,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     label: 'actions.addToCart'.tr(),
                     onPressed: outOfStock
                         ? null
-                        : () => addProductToCart(context, product['id'] as int, qty: _quantity),
+                        : () => addProductToCart(
+                              context,
+                              product['id'] as int,
+                              qty: _quantity,
+                              variantId: resolvedVariant?['id'] as int?,
+                            ),
                   ),
                   if (substitutes.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.lg),
@@ -211,6 +276,45 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// F05 — sélecteur d'une valeur d'attribut (couleur/taille...) sous forme
+/// de puces (`ChoiceChip`), une rangée par attribut. Chaque valeur est un
+/// `product.template.attribute.value` (voir `catalog_controller.py.
+/// variants()`) — son id est ce qui est comparé côté app pour résoudre la
+/// variante exacte, pas le nom affiché.
+class _AttributeSelector extends StatelessWidget {
+  final Map<String, dynamic> attribute;
+  final int? selectedValueId;
+  final ValueChanged<int> onSelect;
+
+  const _AttributeSelector({required this.attribute, required this.selectedValueId, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    final values = (attribute['values'] as List).cast<Map<String, dynamic>>();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(attribute['name'] as String? ?? '', style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            children: [
+              for (final value in values)
+                ChoiceChip(
+                  label: Text(value['name'] as String? ?? ''),
+                  selected: value['id'] == selectedValueId,
+                  onSelected: (_) => onSelect(value['id'] as int),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

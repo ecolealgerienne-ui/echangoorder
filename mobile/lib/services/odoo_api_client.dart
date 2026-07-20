@@ -225,9 +225,16 @@ class OdooApiClient {
     return result;
   }
 
-  Future<Map<String, dynamic>> addToCart({required int productId, num qty = 1}) async {
-    final result =
-        await _rpc('/echango/cart/add', {'product_id': productId, 'qty': qty}) as Map<String, dynamic>;
+  /// [variantId] — variante précise choisie (F05, couleur/taille...),
+  /// résolue côté app depuis [getVariants]. Omis pour un produit sans
+  /// variante (ou tant qu'on veut la variante par défaut Odoo) — comporte-
+  /// ment inchangé dans ce cas.
+  Future<Map<String, dynamic>> addToCart({required int productId, num qty = 1, int? variantId}) async {
+    final result = await _rpc('/echango/cart/add', {
+      'product_id': productId,
+      'qty': qty,
+      if (variantId != null) 'variant_id': variantId,
+    }) as Map<String, dynamic>;
     _throwIfOwnError(result);
     return result;
   }
@@ -510,6 +517,17 @@ class OdooApiClient {
     final result =
         await _rpc('/echango/catalog/substitutes', {'product_id': productId}) as Map<String, dynamic>;
     return (result['substitutes'] as List).cast<Map<String, dynamic>>();
+  }
+
+  /// F05 — attributs (couleur/taille...) et variantes d'un produit
+  /// (mécanisme standard Odoo, `attribute_line_ids`/`product_variant_ids`
+  /// — jusqu'ici ignoré par l'app, qui n'ajoutait toujours que la variante
+  /// par défaut). `attributes` vide = produit sans variante, rien à
+  /// afficher. Voir `catalog_controller.py.variants()`.
+  Future<Map<String, dynamic>> getVariants({required int productId}) async {
+    final result =
+        await _rpc('/echango/catalog/variants', {'product_id': productId}) as Map<String, dynamic>;
+    return result;
   }
 
   /// F00 — vitrine publique, aucune session requise (`auth='public'` côté

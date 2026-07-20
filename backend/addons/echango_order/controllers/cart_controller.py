@@ -131,19 +131,40 @@ class EchangoCartController(http.Controller):
 
     @http.route("/echango/cart/add", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     @require_fresh_session
-    def add(self, product_id=None, qty=1, **kw):
+    def add(self, product_id=None, qty=1, variant_id=None, **kw):
         template = request.env["product.template"].sudo().search(
             [("id", "=", product_id), ("sale_ok", "=", True)], limit=1,
         )
+        if not template:
+            return {"error": "cart.product_unavailable"}
+
+        # F05 — sélection de variante (couleur/taille...) : `variant_id`
+        # transmis une fois la combinaison résolue côté app (voir
+        # `catalog_controller.py.variants()`) — jusqu'ici toujours ignoré,
+        # l'ajout prenait systématiquement `template.product_variant_id`
+        # (la variante par défaut Odoo), quelle que soit la sélection du
+        # client. Vérifié explicitement qu'il appartient bien à ce template
+        # (pas de confiance aveugle dans un id fourni par le client).
+        if variant_id:
+            variant = request.env["product.product"].sudo().search(
+                [("id", "=", variant_id), ("product_tmpl_id", "=", template.id)], limit=1,
+            )
+            if not variant:
+                return {"error": "cart.product_unavailable"}
+        else:
+            variant = template.product_variant_id
+
         # Vérification stock côté serveur (pas seulement client) : le
         # bouton désactivé côté app ne suffit pas, un appel direct à cet
-        # endpoint doit aussi être bloqué.
-        if not template or template.qty_available <= 0:
+        # endpoint doit aussi être bloqué. Stock de la variante précise
+        # (`product.product.qty_available`) plutôt que l'agrégat du
+        # template (toutes variantes confondues) — une variante peut être
+        # en rupture pendant qu'une autre du même produit est disponible.
+        if variant.qty_available <= 0:
             return {"error": "cart.product_unavailable"}
         qty = max(1, qty or 1)
 
         order = self._cart_order(create=True)
-        variant = template.product_variant_id
         line = order.order_line.filtered(lambda l: l.product_id == variant)
         if line:
             line.sudo().write({"product_uom_qty": line.product_uom_qty + qty})
@@ -156,12 +177,16 @@ class EchangoCartController(http.Controller):
             # et panier, causé par une liste de prix/devise différente
             # assignée à certains clients. Plus simple qu'une liste de prix
             # unique à maintenir, et garantit que catalogue et panier
-            # affichent toujours exactement le même montant.
+            # affichent toujours exactement le même montant. Pour une
+            # variante précise, `variant.lst_price` (prix de base + éventuel
+            # supplément d'attribut, `price_extra`) est la bonne source —
+            # `template.list_price` reste le repli pour la variante par
+            # défaut, comportement inchangé pour tout produit sans variante.
             request.env["sale.order.line"].sudo().create({
                 "order_id": order.id,
                 "product_id": variant.id,
                 "product_uom_qty": qty,
-                "price_unit": template.list_price,
+                "price_unit": variant.lst_price if variant_id else template.list_price,
             })
         return self._cart_payload(order)
 

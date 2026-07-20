@@ -111,3 +111,45 @@ class EchangoCatalogController(http.Controller):
                 for t in substitutes
             ]
         }
+
+    @http.route("/echango/catalog/variants", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
+    def variants(self, product_id=None, **kw):
+        """F05 — sélection de variante (couleur/taille...) sur la fiche
+        produit. Mécanisme 100% standard Odoo (`attribute_line_ids`,
+        `product_template_attribute_value_ids`, `product_variant_ids`) —
+        jusqu'ici totalement ignoré par l'app, qui n'ajoutait toujours que
+        `template.product_variant_id` (la variante par défaut). Résolution
+        en `sudo()` même raison que `stock()`/`substitutes()` ci-dessus.
+        Renvoie la liste complète des variantes avec leur combinaison
+        d'attributs plutôt que d'utiliser `_get_variant_for_combination()`
+        côté serveur : l'app résout elle-même la variante correspondant à
+        la sélection en cours (simple recherche d'ensemble), et ça permet
+        d'afficher le stock/prix de chaque combinaison sans aller-retour
+        supplémentaire par variante.
+        """
+        template = request.env["product.template"].sudo().search([("id", "=", product_id)], limit=1)
+        if not template:
+            return {"attributes": [], "variants": []}
+        attributes = [
+            {
+                "attribute_id": line.attribute_id.id,
+                "name": line.attribute_id.name,
+                "values": [{"id": ptav.id, "name": ptav.name} for ptav in line.product_template_value_ids],
+            }
+            for line in template.attribute_line_ids
+        ]
+        variants = [
+            {
+                "id": variant.id,
+                # ids `product.template.attribute.value` composant cette
+                # variante — comparés côté app à la sélection en cours pour
+                # trouver la variante exacte (un ensemble par combinaison).
+                "attribute_value_ids": variant.product_template_attribute_value_ids.ids,
+                "list_price": variant.lst_price,
+                "qty_available": variant.qty_available,
+                "image_128": variant.image_128.decode() if variant.image_128 else None,
+            }
+            for variant in template.product_variant_ids
+        ]
+        return {"attributes": attributes, "variants": variants}
