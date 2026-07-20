@@ -9,7 +9,6 @@ import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
 import '../../utils/order_status.dart';
 import '../../widgets/app_button.dart';
-import '../../widgets/screen_placeholder.dart';
 
 /// F09 (détail) — données réelles de la commande (`sale.order` + ses
 /// lignes). Le suivi temps réel complet (statuts `stock.picking`
@@ -129,16 +128,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             final canCancel = state == 'sent' ||
                 (state == 'sale' && (prepStatus == null || prepStatus == 'pending'));
 
-            return ScreenPlaceholder(
-              screenKey: 'OrderTracking',
-              actions: [
-                if (canCancel)
-                  PlaceholderAction(
-                    label: 'actions.cancelOrder'.tr(),
-                    onPressed: () => _confirmCancel(context, order['id'] as int),
-                    variant: AppButtonVariant.danger,
-                  ),
-              ],
+            // `ScreenPlaceholder` construit son propre Scaffold/AppBar (voir
+            // widgets/screen_placeholder.dart) — cet écran a déjà le sien
+            // au-dessus (pour garder l'AppBar visible pendant le
+            // chargement/en cas d'erreur, avant que `order` ne soit connu).
+            // L'utiliser ici aussi empilait 2 AppBar "Suivi de commande"
+            // l'une sous l'autre (bug signalé par l'utilisateur, capture
+            // d'écran) — reproduit ici la même mise en page (padding,
+            // espacement) sans le Scaffold/AppBar en double.
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -162,6 +161,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   for (final line in detail.lines)
                     Text('• ${line['name']} x${line['product_uom_qty']}'),
+                  if (canCancel) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    AppButton(
+                      label: 'actions.cancelOrder'.tr(),
+                      onPressed: () => _confirmCancel(context, order['id'] as int),
+                      variant: AppButtonVariant.danger,
+                    ),
+                  ],
                 ],
               ),
             );
