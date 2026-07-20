@@ -10,6 +10,7 @@ import '../../state/auth_state.dart';
 import '../../state/cart_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
+import '../../utils/order_status.dart';
 import '../../utils/pagination.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/load_more_button.dart';
@@ -176,7 +177,9 @@ class _OrderCard extends StatelessWidget {
     final state = order['state'] as String?;
     final date = parseOdooDatetime(order['date_order'] as String?);
     final isConfirmed = state == 'sale';
-    final statusLabel = state == 'cancel' ? 'order.statusCancelled'.tr() : 'order.statusConfirmed'.tr();
+    final statusLabel = state == 'cancel'
+        ? 'order.statusCancelled'.tr()
+        : (prepStatusLabel(order) ?? 'order.statusConfirmed'.tr());
 
     return Card(
       child: InkWell(

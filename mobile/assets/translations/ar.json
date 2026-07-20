@@ -71,7 +71,12 @@
     "cancelled": "تم إلغاء طلبك بنجاح.",
     "reorderTitle": "🛒 إعادة الطلب؟",
     "reorderMessage": "ستتم إضافة منتجات هذا الطلب إلى سلتك.",
-    "reorderUnavailableWarning": "⚠️ بعض المنتجات لم تعد متوفرة ولم تتم إضافتها."
+    "reorderUnavailableWarning": "⚠️ بعض المنتجات لم تعد متوفرة ولم تتم إضافتها.",
+    "prepPending": "قيد التحضير",
+    "prepReadyPickup": "جاهز للاستلام",
+    "prepReadyDelivery": "جاهز للتوصيل",
+    "prepCompletedPickup": "تم الاستلام",
+    "prepCompletedDelivery": "تم التوصيل"
   },
   "permissions": {
     "locationTitle": "موقعك",

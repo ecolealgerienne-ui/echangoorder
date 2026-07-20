@@ -4,6 +4,25 @@ from odoo.http import request
 
 from .session_utils import require_fresh_session
 
+# F08 — statut de préparation (décision produit 2026-07) : réutilise le
+# `stock.picking` (bon de livraison) qu'Odoo génère automatiquement à la
+# confirmation d'une commande (module `stock`, déjà dépendance du module) —
+# aucun champ/modèle custom, aucune app préparateur/transporteur dédiée.
+# Volontairement réduit à 3 statuts simples plutôt que d'exposer les 5+
+# états techniques de `stock.picking` (non parlants pour un client) :
+# - "pending" (draft/waiting/confirmed) : pas encore prêt.
+# - "ready" (assigned) : stock réservé, prêt à livrer/retirer.
+# - "completed" (done) : livré ou retiré, le picking est validé.
+# `cancel` volontairement absent : le statut de la commande elle-même
+# (`sale.order.state == 'cancel'`) fait déjà foi pour ce cas côté app.
+_PICKING_STATUS_MAP = {
+    "draft": "pending",
+    "waiting": "pending",
+    "confirmed": "pending",
+    "assigned": "ready",
+    "done": "completed",
+}
+
 
 class EchangoOrderController(http.Controller):
     """F16 — actions sur une commande déjà confirmée (annulation).
@@ -17,6 +36,19 @@ class EchangoOrderController(http.Controller):
     CLAUDE.md § Produits de substitution) : le client choisit toujours,
     jamais le préparateur, donc plus besoin d'un flux post-confirmation.
     """
+
+    def _prep_status(self, order):
+        """F08 — voir _PICKING_STATUS_MAP ci-dessus. Une commande peut
+        avoir plusieurs `stock.picking` dans des cas avancés (reliquat
+        partiel...) — on ne s'intéresse ici qu'au principal bon de
+        livraison sortant, le plus récent (`id desc`), suffisant pour la
+        simplicité recherchée en Phase 1 (pas de vrai suivi préparateur
+        multi-étapes)."""
+        picking = order.picking_ids.filtered(lambda p: p.picking_type_id.code == "outgoing")
+        picking = picking.sorted("id", reverse=True)[:1]
+        if not picking or picking.state == "cancel":
+            return None
+        return _PICKING_STATUS_MAP.get(picking.state)
 
     def _owned_order(self, order_id=None, order_ref=None):
         partner = request.env.user.partner_id
@@ -54,6 +86,8 @@ class EchangoOrderController(http.Controller):
                     "date_order": o.date_order.isoformat() if o.date_order else None,
                     "amount_total": o.amount_total,
                     "state": o.state,
+                    "x_reception_mode": o.x_reception_mode,
+                    "prep_status": self._prep_status(o),
                 }
                 for o in orders
             ]
@@ -78,6 +112,7 @@ class EchangoOrderController(http.Controller):
                 "state": order.state,
                 "x_reception_mode": order.x_reception_mode,
                 "x_creneau": order.x_creneau.isoformat() if order.x_creneau else None,
+                "prep_status": self._prep_status(order),
             },
             "lines": [
                 {"name": line.name, "product_uom_qty": line.product_uom_qty}

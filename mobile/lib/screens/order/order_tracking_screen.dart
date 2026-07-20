@@ -7,6 +7,7 @@ import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
+import '../../utils/order_status.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/screen_placeholder.dart';
 
@@ -104,7 +105,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 : receptionMode == 'pickup'
                     ? 'checkout.pickupStore'.tr()
                     : null;
-            final statusLabel = state == 'cancel' ? 'order.statusCancelled'.tr() : 'order.statusConfirmed'.tr();
+            final statusLabel = state == 'cancel'
+                ? 'order.statusCancelled'.tr()
+                : (prepStatusLabel(order) ?? 'order.statusConfirmed'.tr());
 
             return ScreenPlaceholder(
               screenKey: 'OrderTracking',
