@@ -18,13 +18,18 @@ class AppColors {
   /// pas encore branché sur un composant précis : réservé aux prochaines
   /// passes (statut de commande "Confirmée", F08/F09).
   static const secondary = Color(0xFF1F8A55);
-  static const danger = Color(0xFFD64545);
+  // Assombri (audit contraste, phase F) : 0xFFD64545 d'origine ne donnait que
+  // ~4.4:1 avec du texte blanc dessus (badge "Épuisé", bouton danger),
+  // sous le seuil AA (4.5:1) pour du texte < 18px/14px gras. Cette teinte
+  // atteint ~5.1:1, tout en restant dans la même famille de rouge.
+  static const danger = Color(0xFFD02E2E);
   static const disabled = Color(0xFFC7CBD1);
   // Distinct du bleu primaire et du rouge "Épuisé" — badge Promo (demande
   // utilisateur : une couleur qui le distingue des autres badges/boutons de
   // la tuile produit). Tuile de la Casbah plutôt que l'orange générique
-  // d'origine.
-  static const promo = Color(0xFFB5622E);
+  // d'origine. Assombri (même audit contraste que [danger] ci-dessus) :
+  // 0xFFB5622E ne donnait que ~4.4:1 avec du texte blanc ; ~5.3:1 ici.
+  static const promo = Color(0xFFA25829);
 }
 
 /// Contrepartie sombre de [AppColors] — mêmes rôles, tons ajustés pour le
@@ -42,6 +47,10 @@ class AppColorsDark {
   static const border = Color(0xFF243237);
   static const primary = Color(0xFF5B9DBF);
   static const secondary = Color(0xFF3DAE79);
+  // Volontairement clair/saturé (pas assombri comme [AppColors.danger]) :
+  // ce ton sert surtout de texte/icône sur fond sombre (~6:1 contre le fond),
+  // pas de fond de badge — voir [AppColorTokens.onDanger] pour le texte posé
+  // par-dessus un badge/bouton de cette couleur en mode sombre.
   static const danger = Color(0xFFE8746B);
   static const disabled = Color(0xFF3A4A4E);
   static const promo = Color(0xFFD98A54);
@@ -65,6 +74,16 @@ class AppColorTokens {
   final Color danger;
   final Color disabled;
   final Color promo;
+  // Couleur de texte/icône à poser SUR un fond [danger]/[promo] (badge
+  // "Épuisé"/"Promo", bouton danger) — distincte de [danger]/[promo]
+  // eux-mêmes car ces derniers servent aussi de texte/icône sur fond
+  // neutre, un rôle qui demande la relation de contraste inverse (audit
+  // WCAG, phase F ; voir commentaires sur [AppColors.danger]/[promo] et
+  // [AppColorsDark.danger] ci-dessus). Clair : blanc, sûr une fois les
+  // fonds assombris. Sombre : encre foncée, ces fonds étant volontairement
+  // clairs en mode sombre.
+  final Color onDanger;
+  final Color onPromo;
 
   const AppColorTokens._({
     required this.background,
@@ -77,6 +96,8 @@ class AppColorTokens {
     required this.danger,
     required this.disabled,
     required this.promo,
+    required this.onDanger,
+    required this.onPromo,
   });
 
   static const _light = AppColorTokens._(
@@ -90,6 +111,8 @@ class AppColorTokens {
     danger: AppColors.danger,
     disabled: AppColors.disabled,
     promo: AppColors.promo,
+    onDanger: AppColors.surface,
+    onPromo: AppColors.surface,
   );
 
   static const _dark = AppColorTokens._(
@@ -103,6 +126,8 @@ class AppColorTokens {
     danger: AppColorsDark.danger,
     disabled: AppColorsDark.disabled,
     promo: AppColorsDark.promo,
+    onDanger: AppColors.text,
+    onPromo: AppColors.text,
   );
 
   static AppColorTokens of(BuildContext context) =>

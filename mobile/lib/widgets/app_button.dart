@@ -30,7 +30,7 @@ class AppButton extends StatelessWidget {
       AppButtonVariant.danger => ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: tokens.danger,
-            foregroundColor: tokens.surface,
+            foregroundColor: tokens.onDanger,
             minimumSize: const Size.fromHeight(AppLayout.minTouchHeight),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppLayout.radius)),
           ),

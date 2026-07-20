@@ -27,6 +27,7 @@ class MainTabScaffold extends StatelessWidget {
     // l'utilisateur, 2026-07-20 : la barre du bas ne se mettait à jour
     // qu'après un changement d'onglet) — voir `state/locale_state.dart`.
     context.watch<LocaleState>();
+    final tokens = AppColorTokens.of(context);
 
     return Scaffold(
       body: navigationShell,
@@ -40,7 +41,7 @@ class MainTabScaffold extends StatelessWidget {
               index,
               initialLocation: index == navigationShell.currentIndex,
             ),
-            indicatorColor: AppColors.surface,
+            indicatorColor: tokens.surface,
             destinations: [
               NavigationDestination(icon: const Text('🏠'), label: 'nav.home'.tr()),
               NavigationDestination(icon: const Text('👤'), label: 'nav.profile'.tr()),

@@ -52,7 +52,7 @@ class _AboutScreenState extends State<AboutScreen> {
       ],
       child: Text(
         'about.versionLabel'.tr(namedArgs: {'version': _version ?? '…'}),
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColorTokens.of(context).textMuted),
       ),
     );
   }

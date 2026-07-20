@@ -32,3 +32,16 @@ flutter:
   uses-material-design: true
   assets:
     - assets/translations/
+  fonts:
+    - family: CasbahDisplay
+      fonts:
+        - asset: assets/fonts/Lora-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Lora-Bold.ttf
+          weight: 700
+    - family: CasbahDisplayArabic
+      fonts:
+        - asset: assets/fonts/ElMessiri-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/ElMessiri-Bold.ttf
+          weight: 700

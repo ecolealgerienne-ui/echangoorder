@@ -59,7 +59,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           ? const SizedBox.shrink()
           : Text(
               (isGranted ? 'notificationSettings.enabled' : 'notificationSettings.disabled').tr(),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColorTokens.of(context).textMuted),
             ),
     );
   }

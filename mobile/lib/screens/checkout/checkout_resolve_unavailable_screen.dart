@@ -93,7 +93,7 @@ class _CheckoutResolveUnavailableScreenState extends State<CheckoutResolveUnavai
           children: [
             Text(
               'checkout.resolveUnavailableIntro'.tr(),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColorTokens.of(context).textMuted),
             ),
             const SizedBox(height: AppSpacing.md),
             for (final line in widget.lines)
@@ -139,11 +139,12 @@ class _UnavailableLineCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final substitutes = (line['substitutes'] as List).cast<Map<String, dynamic>>();
     final showQtyStepper = selectedDecision != null && selectedDecision != removeChoice;
+    final tokens = AppColorTokens.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: tokens.surface,
         borderRadius: BorderRadius.circular(AppLayout.radius),
       ),
       child: RadioGroup<int>(
@@ -162,7 +163,7 @@ class _UnavailableLineCard extends StatelessWidget {
             ),
             Text(
               'errors.checkout.out_of_stock'.tr(),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.danger),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens.danger),
             ),
             const SizedBox(height: AppSpacing.sm),
             if (substitutes.isEmpty)
@@ -178,7 +179,7 @@ class _UnavailableLineCard extends StatelessWidget {
             RadioListTile<int>(
               contentPadding: EdgeInsets.zero,
               value: removeChoice,
-              title: Text('checkout.removeLine'.tr(), style: const TextStyle(color: AppColors.danger)),
+              title: Text('checkout.removeLine'.tr(), style: TextStyle(color: tokens.danger)),
             ),
             if (showQtyStepper) ...[
               const SizedBox(height: AppSpacing.xs),
@@ -214,6 +215,7 @@ class _SubstituteChoice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageBase64 = substitute['image_128'];
+    final tokens = AppColorTokens.of(context);
     return RadioListTile<int>(
       contentPadding: EdgeInsets.zero,
       value: substitute['id'] as int,
@@ -225,8 +227,8 @@ class _SubstituteChoice extends StatelessWidget {
           child: imageBase64 is String
               ? Image.memory(base64Decode(imageBase64), fit: BoxFit.cover)
               : Container(
-                  color: AppColors.background,
-                  child: const Icon(Icons.image_not_supported_outlined, size: 18, color: AppColors.textMuted),
+                  color: tokens.background,
+                  child: Icon(Icons.image_not_supported_outlined, size: 18, color: tokens.textMuted),
                 ),
         ),
       ),

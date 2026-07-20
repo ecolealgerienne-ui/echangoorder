@@ -143,13 +143,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final profile = snapshot.data!;
         final name = profile['name'] as String? ?? '';
         final phone = profile['phone'] as String? ?? '';
+        final textMuted = AppColorTokens.of(context).textMuted;
         return InkWell(
           onTap: () => _editName(name),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             child: Row(
               children: [
-                const Icon(Icons.person_outline, size: 40, color: AppColors.textMuted),
+                Icon(Icons.person_outline, size: 40, color: textMuted),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
@@ -160,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
-                const Icon(Icons.edit_outlined, size: 18, color: AppColors.textMuted),
+                Icon(Icons.edit_outlined, size: 18, color: textMuted),
               ],
             ),
           ),

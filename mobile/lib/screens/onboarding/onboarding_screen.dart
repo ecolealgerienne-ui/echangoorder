@@ -71,6 +71,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final isLastSlide = _currentPage == _slides.length - 1;
+    final tokens = AppColorTokens.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -88,7 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(slide.icon, size: 96, color: AppColors.primary),
+                        Icon(slide.icon, size: 96, color: tokens.primary),
                         const SizedBox(height: AppSpacing.lg),
                         Text(
                           slide.titleKey.tr(),
@@ -99,7 +100,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           slide.subtitleKey.tr(),
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.textMuted),
                         ),
                       ],
                     ),
@@ -118,7 +119,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     height: 8,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: i == _currentPage ? AppColors.primary : AppColors.disabled,
+                      color: i == _currentPage ? tokens.primary : tokens.disabled,
                     ),
                   ),
               ],

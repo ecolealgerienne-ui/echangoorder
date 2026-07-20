@@ -25,7 +25,7 @@ import 'pressable_scale.dart';
 /// (num?, absent/null si la remise n'est pas exprimée en %), fusionnés par
 /// l'écran appelant comme `qty_available` — voir
 /// `OdooApiClient.getPromotions`, module standard `loyalty` ; masqué si le
-/// produit est épuisé, couleur dédiée (`AppColors.promo`) pour le
+/// produit est épuisé, couleur dédiée (`tokens.promo`) pour le
 /// distinguer du bouton "Acheter" (vert) et du badge "Épuisé" (rouge).
 ///
 /// La tuile est présentée comme une carte (fond + ombre légère, direction
@@ -112,7 +112,7 @@ class ProductGridTile extends StatelessWidget {
                           ),
                           child: Text(
                             'catalog.outOfStock'.tr(),
-                            style: TextStyle(color: tokens.surface, fontSize: 11, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: tokens.onDanger, fontSize: 11, fontWeight: FontWeight.w600),
                           ),
                         ),
                       )
@@ -132,7 +132,7 @@ class ProductGridTile extends StatelessWidget {
                             promoPercent != null
                                 ? 'catalog.onPromoPercent'.tr(namedArgs: {'percent': promoPercent.toStringAsFixed(0)})
                                 : 'catalog.onPromo'.tr(),
-                            style: TextStyle(color: tokens.surface, fontSize: 11, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: tokens.onPromo, fontSize: 11, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),

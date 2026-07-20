@@ -157,6 +157,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             final substitutes = (product['substitutes'] as List? ?? const []).cast<Map<String, dynamic>>();
             final attributes = (product['attributes'] as List? ?? const []).cast<Map<String, dynamic>>();
             final variants = (product['variants'] as List? ?? const []).cast<Map<String, dynamic>>();
+            final tokens = AppColorTokens.of(context);
             final hasVariants = attributes.isNotEmpty;
             final resolvedVariant = hasVariants ? _resolveVariant(attributes, variants) : null;
             // Prix/stock de la variante résolue une fois la combinaison
@@ -182,12 +183,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     child: Container(
                       clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: tokens.surface,
                         borderRadius: BorderRadius.circular(AppLayout.radius),
                       ),
                       child: imageBase64 is String
                           ? Image.memory(base64Decode(imageBase64), fit: BoxFit.cover)
-                          : const Icon(Icons.image_not_supported_outlined, size: 64, color: AppColors.textMuted),
+                          : Icon(Icons.image_not_supported_outlined, size: 64, color: tokens.textMuted),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -203,7 +204,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       description,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.textMuted),
                     ),
                   ],
                   if (hasVariants) ...[
@@ -239,7 +240,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     Text(
                       'errors.checkout.out_of_stock'.tr(),
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.danger),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.danger),
                     ),
                   ],
                   const SizedBox(height: AppSpacing.sm),
@@ -331,6 +332,7 @@ class _SubstituteTile extends StatelessWidget {
     final imageBase64 = substitute['image_128'];
     final qtyAvailable = (substitute['qty_available'] as num?)?.toDouble();
     final outOfStock = qtyAvailable != null && qtyAvailable <= 0;
+    final tokens = AppColorTokens.of(context);
     return InkWell(
       borderRadius: BorderRadius.circular(AppLayout.radius),
       onTap: onTap,
@@ -344,7 +346,7 @@ class _SubstituteTile extends StatelessWidget {
                 width: double.infinity,
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: tokens.surface,
                   borderRadius: BorderRadius.circular(AppLayout.radius),
                 ),
                 child: imageBase64 is String
@@ -352,7 +354,7 @@ class _SubstituteTile extends StatelessWidget {
                         opacity: outOfStock ? 0.4 : 1,
                         child: Image.memory(base64Decode(imageBase64), fit: BoxFit.cover),
                       )
-                    : const Icon(Icons.image_not_supported_outlined, size: 28, color: AppColors.textMuted),
+                    : Icon(Icons.image_not_supported_outlined, size: 28, color: tokens.textMuted),
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
