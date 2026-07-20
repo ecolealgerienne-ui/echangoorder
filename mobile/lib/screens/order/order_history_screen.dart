@@ -67,6 +67,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     return orders;
   }
 
+  Future<void> _handleRefresh() async {
+    _load();
+    try {
+      await _ordersFuture;
+    } catch (_) {
+      // Déjà affiché par le FutureBuilder (snapshot.hasError).
+    }
+  }
+
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
     final generation = _loadGeneration;
@@ -117,38 +126,42 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       body: SafeArea(
         child: isGuest || _ordersFuture == null
             ? _emptyState(context, isGuest: isGuest)
-            : FutureBuilder<List<Map<String, dynamic>>>(
-                future: _ordersFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    final error = snapshot.error is AppError
-                        ? snapshot.error as AppError
-                        : const AppError(AppError.unknown);
-                    return ErrorStateView.forError(error, onRetry: _load);
-                  }
-                  final orders = [...snapshot.data!, ..._extraOrders];
-                  if (orders.isEmpty) {
-                    return _emptyState(context, isGuest: false);
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    itemCount: orders.length + (_hasMore ? 1 : 0),
-                    separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (context, index) {
-                      if (index == orders.length) {
-                        return LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore);
-                      }
-                      return _OrderCard(
-                        order: orders[index],
-                        onTap: () => context.push('/profile/orders/${orders[index]['name']}'),
-                        onReorder: () => _reorder(orders[index]),
-                      );
-                    },
-                  );
-                },
+            : RefreshIndicator(
+                onRefresh: _handleRefresh,
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _ordersFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      final error = snapshot.error is AppError
+                          ? snapshot.error as AppError
+                          : const AppError(AppError.unknown);
+                      return ErrorStateView.forError(error, onRetry: _load);
+                    }
+                    final orders = [...snapshot.data!, ..._extraOrders];
+                    if (orders.isEmpty) {
+                      return _emptyState(context, isGuest: false);
+                    }
+                    return ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      itemCount: orders.length + (_hasMore ? 1 : 0),
+                      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+                      itemBuilder: (context, index) {
+                        if (index == orders.length) {
+                          return LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore);
+                        }
+                        return _OrderCard(
+                          order: orders[index],
+                          onTap: () => context.push('/profile/orders/${orders[index]['name']}'),
+                          onReorder: () => _reorder(orders[index]),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
       ),
     );
