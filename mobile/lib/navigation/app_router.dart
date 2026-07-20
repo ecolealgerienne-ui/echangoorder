@@ -35,6 +35,7 @@ import '../screens/system/maintenance_screen.dart';
 import '../screens/vitrine/vitrine_screen.dart';
 import '../state/auth_state.dart';
 import 'main_tab_scaffold.dart';
+import 'sheet_page.dart';
 
 const _publicPaths = [
   '/vitrine',
@@ -149,42 +150,56 @@ GoRouter buildAppRouter(AuthState authState) {
             GoRoute(
               path: '/cart',
               builder: (context, state) => const CartScreen(),
+              // Tunnel checkout présenté en feuille (slide-up, coins arrondis,
+              // fond assombri) plutôt qu'en push plein écran classique —
+              // direction Casbah, voir `navigation/sheet_page.dart` et
+              // `docs/design_direction.md` § Phase D. Le panier lui-même
+              // (au-dessus) reste un onglet classique de la barre de
+              // navigation, non concerné par ce traitement.
               routes: [
                 GoRoute(
                   path: 'checkout/reception-mode',
-                  builder: (context, state) => const CheckoutReceptionModeScreen(),
+                  pageBuilder: (context, state) =>
+                      sheetPage(state: state, child: const CheckoutReceptionModeScreen()),
                 ),
                 GoRoute(
                   path: 'checkout/address',
-                  builder: (context, state) => const CheckoutAddressScreen(),
+                  pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutAddressScreen()),
                 ),
                 GoRoute(
                   path: 'checkout/out-of-zone',
-                  builder: (context, state) => const CheckoutOutOfZoneScreen(),
+                  pageBuilder: (context, state) =>
+                      sheetPage(state: state, child: const CheckoutOutOfZoneScreen()),
                 ),
                 GoRoute(
                   path: 'checkout/timeslot',
-                  builder: (context, state) => const CheckoutTimeslotScreen(),
+                  pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutTimeslotScreen()),
                 ),
                 GoRoute(
                   path: 'checkout/summary',
-                  builder: (context, state) => const CheckoutSummaryScreen(),
+                  pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutSummaryScreen()),
                 ),
                 GoRoute(
                   path: 'checkout/resolve-unavailable',
-                  builder: (context, state) => CheckoutResolveUnavailableScreen(
-                    lines: (state.extra as List).cast<Map<String, dynamic>>(),
+                  pageBuilder: (context, state) => sheetPage(
+                    state: state,
+                    child: CheckoutResolveUnavailableScreen(
+                      lines: (state.extra as List).cast<Map<String, dynamic>>(),
+                    ),
                   ),
                 ),
                 GoRoute(
                   path: 'checkout/confirmation/:orderRef',
-                  builder: (context, state) {
+                  pageBuilder: (context, state) {
                     final extra = state.extra as Map<String, dynamic>?;
-                    return OrderConfirmationScreen(
-                      orderRef: state.pathParameters['orderRef']!,
-                      amountTotal: (extra?['amount_total'] as num?)?.toDouble(),
-                      receptionMode: extra?['reception_mode'] as String?,
-                      slotStart: extra?['slot_start'] as String?,
+                    return sheetPage(
+                      state: state,
+                      child: OrderConfirmationScreen(
+                        orderRef: state.pathParameters['orderRef']!,
+                        amountTotal: (extra?['amount_total'] as num?)?.toDouble(),
+                        receptionMode: extra?['reception_mode'] as String?,
+                        slotStart: extra?['slot_start'] as String?,
+                      ),
                     );
                   },
                 ),

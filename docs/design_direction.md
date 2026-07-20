@@ -81,8 +81,16 @@ Référence : le motif géométrique du carreau maghrébin — émeraude (`#0E6E
 | A — Fondations | Palette Casbah (2 accents + secondaire hérité) + mode sombre dans `ColorScheme`, police display FR/AR (asset embarqué), ombres/élévation, courbes d'animation standard | `theme/app_theme.dart` |
 | B — Composants partagés | `AppButton`, `ProductGridTile` (ombre + micro-interaction ajout panier), nouveau `ShimmerLoader`, set d'illustrations pour `ErrorStateView` | `widgets/app_button.dart`, `widgets/product_grid_tile.dart`, nouveau `widgets/shimmer_loader.dart`, `errors/error_state_view.dart` |
 | C — Accueil & Catalogue | Bandeau catégories + recherche visible dès l'Accueil, remplacement spinners → shimmer | `screens/home/home_screen.dart`, `screens/catalog/catalog_screen.dart` |
-| D — Panier/Checkout en bottom sheet | Panier persistant en feuille extensible plutôt que route dédiée | `screens/cart/*`, `navigation/app_router.dart` |
+| D — Panier/Checkout en bottom sheet | Tunnel checkout présenté en feuille (glisse depuis le bas, coins arrondis, fond assombri) ; cartes lignes de panier avec ombre | `navigation/sheet_page.dart` (nouveau), `navigation/app_router.dart`, `screens/cart/cart_screen.dart` |
 | E — Suivi commande & Historique | Timeline visuelle du statut (F08, déjà 5 étapes en logique — habillage seulement), cartes commande avec ombre | `screens/order/*` |
 | F — Passe RTL/dark mode/accessibilité | Vérifier chaque écran modifié en arabe + mode sombre + contraste plein soleil | Tous les écrans touchés |
 
 Méthode : une phase à la fois, commit + push après chacune, validation réelle (`flutter run`) par l'utilisateur avant d'enchaîner — pas de vérification visuelle possible depuis le sandbox Claude Code.
+
+### Phase D — décision de périmètre (2026-07-20)
+
+L'idée initiale ("panier persistant en feuille extensible plutôt que route dédiée") impliquait de retirer le Panier de la barre d'onglets (`StatefulShellRoute.indexedStack`, `MainTabScaffold`) pour le remplacer par une barre flottante persistante ouvrant une feuille par-dessus les autres onglets. **Périmètre réduit en cours de route** : cette restructuration touche l'architecture de navigation principale — déjà testée en réel par l'utilisateur (4 onglets, "j'ai fait tous les tests, c'est ok") — sans qu'aucune vérification visuelle ne soit possible dans ce sandbox avant de la pousser. Risque jugé disproportionné par rapport au gain esthétique.
+
+**Ce qui a été fait à la place** : le panier reste un onglet classique (aucun changement à `MainTabScaffold`/`StatefulShellRoute`) ; c'est le **tunnel checkout** (`/cart/checkout/*`, déjà des routes poussées par-dessus l'onglet, pas des onglets eux-mêmes) qui adopte la présentation "feuille" — glisse depuis le bas, coins supérieurs arrondis (`AppShape.archTop`), fond assombri derrière (`navigation/sheet_page.dart`, `sheetPage()`). Changement purement présentationnel (transition + habillage), aucune topologie de route modifiée. Les lignes du panier gagnent aussi une carte avec ombre (cohérence visuelle avec `ProductGridTile`, phase B) et la barre de résumé en bas devient "ancrée" (ombre portée vers le haut plutôt qu'un simple filet).
+
+Si le panier flottant persistant reste souhaité, ce serait une décision produit à part entière (retrait d'un onglet testé) à valider explicitement plutôt qu'un simple ajustement visuel — non fait ici.

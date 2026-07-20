@@ -13,6 +13,8 @@ import '../../state/checkout_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/pressable_scale.dart';
+import '../../widgets/shimmer_loader.dart';
 
 /// F06 — Panier : reflète le devis Odoo (`sale.order` brouillon) du
 /// client connecté, voir `state/cart_state.dart`. Pas encore de panier
@@ -85,7 +87,7 @@ class _CartScreenState extends State<CartScreen> {
         child: !isAuthenticated
             ? _emptyState(context)
             : _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const _CartLinesSkeleton()
                 : _error != null
                     ? ErrorStateView.forError(_error!, onRetry: _load)
                     : cart.isEmpty
@@ -135,7 +137,11 @@ class _CartScreenState extends State<CartScreen> {
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: AppColors.border)),
+            color: AppColors.surface,
+            // Barre d'action "ancrée" façon feuille (direction Casbah,
+            // phase D) : ombre portée vers le haut plutôt qu'un simple
+            // filet, pour la détacher du contenu qui défile derrière.
+            boxShadow: [BoxShadow(color: Color(0x1A16232B), blurRadius: 16, offset: Offset(0, -4))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -227,54 +233,104 @@ class _CartLineTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final qtyLabel = line.uom == null || line.uom!.isEmpty ? '${line.qty}' : '${line.qty} ${line.uom}';
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 64,
-          height: 64,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppLayout.radius),
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppLayout.radius),
+        boxShadow: AppElevation.card,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(AppLayout.radius),
+            ),
+            child: line.imageBase64 != null
+                ? Image.memory(base64Decode(line.imageBase64!), fit: BoxFit.cover)
+                : const Icon(Icons.image_not_supported_outlined, color: AppColors.textMuted),
           ),
-          child: line.imageBase64 != null
-              ? Image.memory(base64Decode(line.imageBase64!), fit: BoxFit.cover)
-              : const Icon(Icons.image_not_supported_outlined, color: AppColors.textMuted),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(line.name, style: Theme.of(context).textTheme.bodyMedium),
-              Text(
-                '${formatPrice(context, line.unitPrice)}${line.uom == null || line.uom!.isEmpty ? '' : ' / ${line.uom}'}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: line.qty > 1 ? () => onDecrement(line) : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                  ),
-                  Text(qtyLabel, style: Theme.of(context).textTheme.bodyMedium),
-                  IconButton(
-                    onPressed: () => onIncrement(line),
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => onRemove(line),
-                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-                  ),
-                ],
-              ),
-            ],
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(line.name, style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  '${formatPrice(context, line.unitPrice)}${line.uom == null || line.uom!.isEmpty ? '' : ' / ${line.uom}'}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  children: [
+                    PressableScale(
+                      enabled: line.qty > 1,
+                      child: IconButton(
+                        onPressed: line.qty > 1 ? () => onDecrement(line) : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                    ),
+                    AnimatedSwitcher(
+                      duration: AppMotion.fast,
+                      transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                      child: Text(qtyLabel, key: ValueKey(qtyLabel), style: Theme.of(context).textTheme.bodyMedium),
+                    ),
+                    PressableScale(
+                      child: IconButton(
+                        onPressed: () => onIncrement(line),
+                        icon: const Icon(Icons.add_circle_outline),
+                      ),
+                    ),
+                    const Spacer(),
+                    PressableScale(
+                      child: IconButton(
+                        onPressed: () => onRemove(line),
+                        icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Squelette chatoyant pendant le chargement du panier (direction Casbah,
+/// phase D) — remplace le spinner générique.
+class _CartLinesSkeleton extends StatelessWidget {
+  const _CartLinesSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      itemCount: 4,
+      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) => Row(
+        children: [
+          const ShimmerBox(width: 64, height: 64),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ShimmerBox(width: double.infinity, height: 16),
+                const SizedBox(height: AppSpacing.xs),
+                const ShimmerBox(width: 100, height: 14),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
