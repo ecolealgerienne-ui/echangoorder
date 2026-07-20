@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
 import '../../utils/order_status.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/shimmer_loader.dart';
 
 /// F09 (détail) — données réelles de la commande (`sale.order` + ses
 /// lignes). Le suivi temps réel complet (statuts `stock.picking`
@@ -86,7 +87,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           future: _detailFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
+              return const _OrderTrackingSkeleton();
             }
             if (snapshot.hasError) {
               final error =
@@ -104,14 +105,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 : receptionMode == 'pickup'
                     ? 'checkout.pickupStore'.tr()
                     : null;
-            final statusLabel = switch (state) {
-              'cancel' => 'order.statusCancelled'.tr(),
-              // F08 — en attente de prise en charge par un opérateur (voir
-              // CLAUDE.md § Statuts de commande) : pas encore de stock.
-              // picking à ce stade, prepStatusLabel() ne renverrait rien.
-              'sent' => 'order.statusPendingReview'.tr(),
-              _ => prepStatusLabel(order) ?? 'order.statusConfirmed'.tr(),
-            };
+            // Timeline visuelle (direction Casbah, phase E) : `null` pour une
+            // commande annulée (pas de progression à montrer dans ce cas,
+            // juste le badge "Annulée" ci-dessous).
+            final timeline = orderTimelineProgress(order);
 
             // F16 — décision produit 2026-07 (revue suite à un bug signalé :
             // le bouton restait affiché même pour une commande déjà
@@ -144,26 +141,46 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('${'common.reference'.tr()} ${widget.orderRef}'),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text('${state == 'cancel' ? '❌' : '✅'} $statusLabel'),
-                  if (modeLabel != null) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(modeLabel),
-                  ],
-                  if (creneau != null) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text('🕐 ${creneau.hour.toString().padLeft(2, '0')}h${creneau.minute.toString().padLeft(2, '0')}'),
-                  ],
-                  const SizedBox(height: AppSpacing.xs),
-                  Text('${'cart.total'.tr()} : ${formatPrice(context, order['amount_total'] as num)}'),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    '${detail.lines.length} ${'checkout.itemsLabel'.tr()}',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  _TrackingCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('${'common.reference'.tr()} ${widget.orderRef}'),
+                        if (modeLabel != null) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(modeLabel),
+                        ],
+                        if (creneau != null) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            '🕐 ${creneau.hour.toString().padLeft(2, '0')}h${creneau.minute.toString().padLeft(2, '0')}',
+                          ),
+                        ],
+                        const SizedBox(height: AppSpacing.xs),
+                        Text('${'cart.total'.tr()} : ${formatPrice(context, order['amount_total'] as num)}'),
+                        const SizedBox(height: AppSpacing.md),
+                        if (timeline == null)
+                          Text('❌ ${'order.statusCancelled'.tr()}', style: const TextStyle(color: AppColors.danger))
+                        else
+                          _StatusTimeline(progress: timeline),
+                      ],
+                    ),
                   ),
-                  for (final line in detail.lines)
-                    Text('• ${line['name']} x${line['product_uom_qty']}'),
+                  const SizedBox(height: AppSpacing.md),
+                  _TrackingCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          '${detail.lines.length} ${'checkout.itemsLabel'.tr()}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        for (final line in detail.lines)
+                          Text('• ${line['name']} x${line['product_uom_qty']}'),
+                      ],
+                    ),
+                  ),
                   if (canCancel) ...[
                     const SizedBox(height: AppSpacing.lg),
                     AppButton(
@@ -187,4 +204,134 @@ class _OrderDetail {
   final List<Map<String, dynamic>> lines;
 
   const _OrderDetail({required this.order, required this.lines});
+}
+
+/// Regroupement en carte (ombre, direction Casbah — voir
+/// `docs/design_direction.md`) plutôt que du texte directement sur le fond
+/// de l'écran.
+class _TrackingCard extends StatelessWidget {
+  final Widget child;
+
+  const _TrackingCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppLayout.radius),
+        boxShadow: AppElevation.card,
+      ),
+      child: child,
+    );
+  }
+}
+
+enum _StepState { done, current, upcoming }
+
+/// Timeline verticale du cycle de vie de la commande (F08, direction
+/// Casbah phase E) — dot + ligne de connexion + libellé par étape, plutôt
+/// qu'un simple libellé de statut isolé.
+class _StatusTimeline extends StatelessWidget {
+  final OrderTimelineProgress progress;
+
+  const _StatusTimeline({required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < progress.steps.length; i++)
+          _StatusTimelineRow(
+            label: progress.steps[i],
+            state: i < progress.currentIndex
+                ? _StepState.done
+                : i == progress.currentIndex
+                    ? _StepState.current
+                    : _StepState.upcoming,
+            isLast: i == progress.steps.length - 1,
+          ),
+      ],
+    );
+  }
+}
+
+class _StatusTimelineRow extends StatelessWidget {
+  final String label;
+  final _StepState state;
+  final bool isLast;
+
+  const _StatusTimelineRow({required this.label, required this.state, required this.isLast});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = state == _StepState.upcoming ? AppColors.border : AppColors.primary;
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 20,
+                height: 20,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: state == _StepState.upcoming ? Colors.transparent : color,
+                  border: Border.all(color: color, width: 2),
+                ),
+                child: state == _StepState.done
+                    ? const Icon(Icons.check, size: 12, color: AppColors.surface)
+                    : null,
+              ),
+              if (!isLast) Expanded(child: Container(width: 2, color: color)),
+            ],
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.md),
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: state == _StepState.upcoming ? AppColors.textMuted : AppColors.text,
+                      fontWeight: state == _StepState.current ? FontWeight.w700 : FontWeight.w400,
+                    ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Squelette chatoyant pendant le chargement du suivi (direction Casbah,
+/// phase E) — remplace le spinner générique.
+class _OrderTrackingSkeleton extends StatelessWidget {
+  const _OrderTrackingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const ShimmerBox(width: 160, height: 16),
+          const SizedBox(height: AppSpacing.sm),
+          const ShimmerBox(width: 120, height: 14),
+          const SizedBox(height: AppSpacing.lg),
+          for (var i = 0; i < 4; i++) ...[
+            ShimmerBox(width: double.infinity, height: 16),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ],
+      ),
+    );
+  }
 }

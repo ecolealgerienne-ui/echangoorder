@@ -14,6 +14,7 @@ import '../../utils/order_status.dart';
 import '../../utils/pagination.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/load_more_button.dart';
+import '../../widgets/shimmer_loader.dart';
 
 /// F09 — historique des commandes du client connecté. `sale.order` est
 /// déjà lisible par le portail (règle standard, restreinte à ses propres
@@ -132,7 +133,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   future: _ordersFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const _OrderListSkeleton();
                     }
                     if (snapshot.hasError) {
                       final error = snapshot.error is AppError
@@ -199,8 +200,15 @@ class _OrderCard extends StatelessWidget {
       _ => prepStatusLabel(order) ?? 'order.statusConfirmed'.tr(),
     };
 
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppLayout.radius),
+        boxShadow: AppElevation.card,
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
+        borderRadius: BorderRadius.circular(AppLayout.radius),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -225,6 +233,35 @@ class _OrderCard extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Squelette chatoyant pendant le chargement de l'historique (direction
+/// Casbah, phase E) — remplace le spinner générique.
+class _OrderListSkeleton extends StatelessWidget {
+  const _OrderListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      itemCount: 4,
+      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) => Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppLayout.radius)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShimmerBox(width: 140, height: 16),
+            const SizedBox(height: AppSpacing.xs),
+            const ShimmerBox(width: 90, height: 12),
+            const SizedBox(height: AppSpacing.sm),
+            const ShimmerBox(width: 160, height: 14),
+          ],
         ),
       ),
     );
