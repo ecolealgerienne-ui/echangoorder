@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'pressable_scale.dart';
 
 enum AppButtonVariant { primary, secondary, danger }
 
@@ -37,6 +38,9 @@ class AppButton extends StatelessWidget {
         ),
     };
 
-    return Padding(padding: const EdgeInsets.only(top: AppSpacing.sm), child: button);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: PressableScale(enabled: onPressed != null, child: button),
+    );
   }
 }
