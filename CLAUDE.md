@@ -53,6 +53,15 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 
 **Hors périmètre Phase 1** (voir specs §5) : paiement en ligne, programme fidélité, GPS temps réel, app Préparateurs, app Transporteur, intégration Fleetbase active, filtres avancés catalogue, favoris, chat support, avis produits.
 
+### Phase 1.5 (décision produit, 2026-07-20)
+
+**F11 (Notifications Push) et F12 (Partage Produit — réception du deep link uniquement) sont reportées en Phase 1.5**, retirées du périmètre de clôture de la Phase 1 — toutes deux sont code-complètes mais dépendent d'un déploiement réel non encore fait, pas d'un développement restant :
+
+- **F11** nécessite un projet Firebase Cloud Messaging en production (clés serveur réelles) et un webhook Odoo joignable depuis l'extérieur — impossible à opérer/tester depuis un Docker/WSL local, requiert le VPS.
+- **F12** — le bouton de partage (lien placeholder, `share_plus`) reste en Phase 1 et fonctionne déjà ; seule la **réception** du deep link (ouvrir l'app depuis un lien partagé, Universal Links/App Links) est reportée : elle nécessite un domaine réel servant les fichiers d'association en HTTPS, et la publication effective de l'app sur Google Play/App Store.
+
+Reprises dès le déploiement VPS + soumission aux stores. Voir `status-V1.md` § 1bis pour le détail de suivi.
+
 ## Exigences transversales (non négociables)
 
 - **Sécurité** : HTTPS/TLS 1.3 obligatoire partout, PIN jamais stocké en clair (Keychain/Keystore uniquement), session expirée après 24h d'inactivité, délai progressif anti brute-force sur le PIN (1s/2s/4s/8s puis blocage après 5 échecs), endpoints publics filtrés + rate limités.
