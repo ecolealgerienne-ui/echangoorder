@@ -6,15 +6,6 @@ import '../theme/app_theme.dart';
 /// `docs/design_direction.md`) pour le tunnel checkout : glisse depuis le
 /// bas, coins supérieurs arrondis ([AppShape.archTop]), fond assombri
 /// derrière plutôt qu'un simple push plein écran.
-///
-/// **Périmètre volontairement limité au tunnel checkout** (poussé
-/// par-dessus l'onglet Panier, pas un onglet lui-même) : le panier reste un
-/// onglet de la barre de navigation principale (`StatefulShellRoute`) —
-/// une architecture de navigation déjà testée en réel par l'utilisateur,
-/// jugée trop risquée à restructurer (retirer un onglet, panier flottant
-/// persistant) sans pouvoir vérifier le résultat visuellement dans ce
-/// sandbox. Voir `docs/design_direction.md` § Phase D pour le détail de
-/// cette décision.
 CustomTransitionPage<void> sheetPage({required GoRouterState state, required Widget child}) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
@@ -27,7 +18,7 @@ CustomTransitionPage<void> sheetPage({required GoRouterState state, required Wid
     barrierDismissible: false,
     transitionDuration: AppMotion.standard,
     reverseTransitionDuration: AppMotion.standard,
-    child: _SheetShell(child: child),
+    child: SheetShell(child: child),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final offset = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
           .chain(CurveTween(curve: AppMotion.curve))
@@ -37,10 +28,13 @@ CustomTransitionPage<void> sheetPage({required GoRouterState state, required Wid
   );
 }
 
-class _SheetShell extends StatelessWidget {
+/// Habillage visuel partagé des feuilles (checkout via [sheetPage], panier
+/// via `navigation/cart_sheet.dart`) : poignée de glissement + coins
+/// supérieurs arrondis sur fond du thème courant.
+class SheetShell extends StatelessWidget {
   final Widget child;
 
-  const _SheetShell({required this.child});
+  const SheetShell({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {

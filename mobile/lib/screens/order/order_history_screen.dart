@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../errors/app_error.dart';
 import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
+import '../../navigation/cart_sheet.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
 import '../../state/cart_state.dart';
@@ -112,7 +113,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       if (unavailable.isNotEmpty) {
         AppMessenger.showInfo(context, 'order.reorderUnavailableWarning');
       }
-      context.go('/cart');
+      if (!context.mounted) return;
+      await showCartSheet(context);
     } on AppError catch (e) {
       if (mounted) AppMessenger.showError(context, e, onRetry: () => _reorder(order));
     }

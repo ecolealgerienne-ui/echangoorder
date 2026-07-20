@@ -34,7 +34,6 @@
   },
   "nav": {
     "home": "Accueil",
-    "cart": "Panier",
     "profile": "Profil"
   },
   "checkout": {
@@ -60,7 +59,8 @@
   },
   "cart": {
     "subtotal": "Sous-total",
-    "total": "Total"
+    "total": "Total",
+    "viewCart": "Voir mon panier"
   },
   "order": {
     "confirmCancel": "Confirmer l'annulation",

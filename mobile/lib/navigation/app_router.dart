@@ -107,6 +107,69 @@ GoRouter buildAppRouter(AuthState authState) {
       ),
       // Affiché quand le health-check Odoo (GET /web/health) échoue, une fois branché.
       GoRoute(path: '/maintenance', builder: (context, state) => const MaintenanceScreen()),
+      // Panier flottant persistant (2026-07-20, décision produit) : `/cart`
+      // n'est plus un onglet de la barre de navigation (voir
+      // `navigation/main_tab_scaffold.dart`, `widgets/cart_bar.dart`) — il
+      // reste néanmoins enregistré ici, hors de la coquille à onglets, pour
+      // que ses routes filles `/cart/checkout/*` continuent de se résoudre
+      // (le contenu de `/cart` lui-même n'est affiché qu'en feuille modale,
+      // via `navigation/cart_sheet.dart`, jamais poussé comme route pleine
+      // page — la présence de la route reste nécessaire pour la
+      // hiérarchie de chemins go_router).
+      GoRoute(
+        path: '/cart',
+        builder: (context, state) => const CartScreen(),
+        // Tunnel checkout présenté en feuille (slide-up, coins arrondis,
+        // fond assombri) plutôt qu'en push plein écran classique —
+        // direction Casbah, voir `navigation/sheet_page.dart` et
+        // `docs/design_direction.md` § Phase D.
+        routes: [
+          GoRoute(
+            path: 'checkout/reception-mode',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutReceptionModeScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/address',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutAddressScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/out-of-zone',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutOutOfZoneScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/timeslot',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutTimeslotScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/summary',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutSummaryScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/resolve-unavailable',
+            pageBuilder: (context, state) => sheetPage(
+              state: state,
+              child: CheckoutResolveUnavailableScreen(
+                lines: (state.extra as List).cast<Map<String, dynamic>>(),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: 'checkout/confirmation/:orderRef',
+            pageBuilder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return sheetPage(
+                state: state,
+                child: OrderConfirmationScreen(
+                  orderRef: state.pathParameters['orderRef']!,
+                  amountTotal: (extra?['amount_total'] as num?)?.toDouble(),
+                  receptionMode: extra?['reception_mode'] as String?,
+                  slotStart: extra?['slot_start'] as String?,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => MainTabScaffold(navigationShell: navigationShell),
         branches: [
@@ -128,66 +191,6 @@ GoRouter buildAppRouter(AuthState authState) {
                       ProductDetailScreen(productId: state.pathParameters['productId']!),
                 ),
                 GoRoute(path: 'search', builder: (context, state) => const SearchScreen()),
-              ],
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/cart',
-              builder: (context, state) => const CartScreen(),
-              // Tunnel checkout présenté en feuille (slide-up, coins arrondis,
-              // fond assombri) plutôt qu'en push plein écran classique —
-              // direction Casbah, voir `navigation/sheet_page.dart` et
-              // `docs/design_direction.md` § Phase D. Le panier lui-même
-              // (au-dessus) reste un onglet classique de la barre de
-              // navigation, non concerné par ce traitement.
-              routes: [
-                GoRoute(
-                  path: 'checkout/reception-mode',
-                  pageBuilder: (context, state) =>
-                      sheetPage(state: state, child: const CheckoutReceptionModeScreen()),
-                ),
-                GoRoute(
-                  path: 'checkout/address',
-                  pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutAddressScreen()),
-                ),
-                GoRoute(
-                  path: 'checkout/out-of-zone',
-                  pageBuilder: (context, state) =>
-                      sheetPage(state: state, child: const CheckoutOutOfZoneScreen()),
-                ),
-                GoRoute(
-                  path: 'checkout/timeslot',
-                  pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutTimeslotScreen()),
-                ),
-                GoRoute(
-                  path: 'checkout/summary',
-                  pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutSummaryScreen()),
-                ),
-                GoRoute(
-                  path: 'checkout/resolve-unavailable',
-                  pageBuilder: (context, state) => sheetPage(
-                    state: state,
-                    child: CheckoutResolveUnavailableScreen(
-                      lines: (state.extra as List).cast<Map<String, dynamic>>(),
-                    ),
-                  ),
-                ),
-                GoRoute(
-                  path: 'checkout/confirmation/:orderRef',
-                  pageBuilder: (context, state) {
-                    final extra = state.extra as Map<String, dynamic>?;
-                    return sheetPage(
-                      state: state,
-                      child: OrderConfirmationScreen(
-                        orderRef: state.pathParameters['orderRef']!,
-                        amountTotal: (extra?['amount_total'] as num?)?.toDouble(),
-                        receptionMode: extra?['reception_mode'] as String?,
-                        slotStart: extra?['slot_start'] as String?,
-                      ),
-                    );
-                  },
-                ),
               ],
             ),
           ]),

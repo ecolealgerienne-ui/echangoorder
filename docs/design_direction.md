@@ -95,6 +95,15 @@ L'idée initiale ("panier persistant en feuille extensible plutôt que route dé
 
 Si le panier flottant persistant reste souhaité, ce serait une décision produit à part entière (retrait d'un onglet testé) à valider explicitement plutôt qu'un simple ajustement visuel — non fait ici.
 
+### Panier flottant persistant — fait après validation réelle (2026-07-20)
+
+Une fois les tests réels de l'ensemble du chantier (phases A-F + fusion F04) confirmés OK par l'utilisateur, la question a été reposée explicitement et confirmée : le panier devient une **feuille flottante persistante** plutôt qu'un onglet.
+
+- **`MainTabScaffold`** : barre de navigation réduite à 2 onglets (Accueil/Profil). Nouveau `widgets/cart_bar.dart` (`CartBar`) affiché au-dessus de la `NavigationBar` (dans son `bottomNavigationBar`, visible sur les deux onglets restants) — masqué si le panier est vide, montre le nombre d'articles + le total, ouvre la feuille au tap.
+- **`navigation/cart_sheet.dart`** (`showCartSheet()`) : ouvre `CartScreen` (inchangé, déjà testé) via `showModalBottomSheet` (`isScrollControlled: true`, 92% de la hauteur d'écran), habillé par `SheetShell` — la classe partagée avec le tunnel checkout (`_SheetShell` de la phase D rendue publique), même poignée de glissement + coins arrondis.
+- **`app_router.dart`** : `/cart` n'est plus une branche de la coquille à onglets, mais reste une route de premier niveau (nécessaire pour que `/cart/checkout/*` continue de se résoudre) — son contenu n'est cependant plus jamais poussé en page pleine, uniquement affiché via la feuille modale.
+- **`OrderHistoryScreen`** : après un reorder, `context.go('/cart')` (qui aurait affiché une page plein écran sans la barre de navigation, incohérente avec la nouvelle architecture) remplacé par `showCartSheet(context)`.
+
 ### Phase F — Passe RTL/dark mode/accessibilité (2026-07-20)
 
 Audit de tous les écrans/composants touchés par les phases A-E (pas l'ensemble de l'app — périmètre = "chaque écran modifié", conformément au plan).
