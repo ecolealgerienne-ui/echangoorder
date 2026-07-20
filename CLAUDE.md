@@ -221,7 +221,7 @@ Conséquences déjà actées pour Echango Order :
 
 Pour un retrait en magasin, il n'y a pas de 5e étape : la validation du bon de livraison (étape 4, `stock.picking.done`) **est** la remise au client — pas de notion de statut de livraison. Côté app, `mobile/lib/utils/order_status.dart` (`prepStatusLabel()`) centralise la résolution de ces libellés (réutilisé par l'historique F09 et le suivi F08).
 
-**Point non traité dans cette passe** : F16 (annulation) reste limité à `state == 'sale'` — annuler une commande encore `sent` (avant prise en charge) n'est pas géré explicitement (le client peut cependant vider les lignes manuellement via le panier, qui reste modifiable à ce stade).
+**F16 (annulation) — revu** : un bug signalé par l'utilisateur (bouton "Annuler" affiché même pour une commande déjà livrée, `state` ne se remettant plus à jour après la prise en charge) a été l'occasion de retrancher le bon critère. Annulable pendant `sent` (en attente de prise en charge) **et** pendant `sale` tant que `prep_status` n'est pas encore `ready`/`completed` (en préparation, pas encore prête) — bloqué dès que la commande est prête, peu importe la suite (prête/en cours de livraison/livrée-récupérée, toutes trop tard). `order_controller.py._can_cancel()` (vérification qui compte) + même logique dupliquée côté `order_tracking_screen.dart` pour l'affichage du bouton.
 
 ## Produits de substitution (F17 — décision produit revue, 2026-07)
 

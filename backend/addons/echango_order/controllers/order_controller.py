@@ -138,19 +138,32 @@ class EchangoOrderController(http.Controller):
             ],
         }
 
+    def _can_cancel(self, order):
+        """F16 — décision produit 2026-07 (revue suite à un bug signalé :
+        le bouton "Annuler" restait affiché même pour une commande déjà
+        livrée). `state == 'sale'` ne suffit plus comme critère depuis la
+        refonte du cycle de vie (F08, voir CLAUDE.md § Statuts de
+        commande) : il reste `'sale'` de la prise en charge jusqu'à la
+        livraison, il ne se remet plus à jour ensuite. Le vrai critère est
+        `prep_status` — annulable tant que l'opérateur n'a pas fini de la
+        préparer ("Prête" ou au-delà = trop tard, colis déjà préparé/parti/
+        remis). `None` (pas de `stock.picking`, ex. produit non suivi en
+        stock) traité comme "pas encore prêt" : rien à annuler côté
+        entrepôt dans ce cas, l'annulation reste possible.
+        """
+        if order.state == "sent":
+            return True
+        if order.state == "sale":
+            return self._prep_status(order) in (None, "pending")
+        return False
+
     @http.route("/echango/order/cancel", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     @require_fresh_session
     def cancel(self, order_id=None, **kw):
         order = self._owned_order(order_id)
         if not order:
             return {"error": "not_found"}
-        # F16 — annulation possible uniquement tant que la commande est
-        # "Confirmée" et pas encore en préparation (specs QA). Pas de
-        # suivi stock.picking synchronisé (F08 différé) : `state == 'sale'`
-        # est le seul proxy disponible actuellement pour "pas encore en
-        # préparation" — voir status-V1.md, point de vigilance sur le
-        # délai d'annulation exact.
-        if order.state != "sale":
+        if not self._can_cancel(order):
             return {"error": "order.cannot_cancel"}
         try:
             order.sudo().action_cancel()

@@ -114,13 +114,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               _ => prepStatusLabel(order) ?? 'order.statusConfirmed'.tr(),
             };
 
+            // F16 — décision produit 2026-07 (revue suite à un bug signalé :
+            // le bouton restait affiché même pour une commande déjà
+            // livrée/récupérée). `state == 'sale'` ne suffit plus comme
+            // critère depuis la refonte du cycle de vie (F08) : il reste
+            // `sale` de la prise en charge jusqu'à la livraison, sans se
+            // remettre à jour ensuite. Le vrai critère est `prep_status` —
+            // annulable pendant "en attente de prise en charge" (`sent`) et
+            // pendant la préparation (`sale` + pas encore "Prête"), bloqué
+            // dès que la commande est prête/livrée/récupérée. Même logique
+            // que `order_controller.py._can_cancel()`, dupliquée ici pour
+            // l'affichage — la vérification qui compte reste côté serveur.
+            final prepStatus = order['prep_status'] as String?;
+            final canCancel = state == 'sent' ||
+                (state == 'sale' && (prepStatus == null || prepStatus == 'pending'));
+
             return ScreenPlaceholder(
               screenKey: 'OrderTracking',
               actions: [
-                // F16 — visible uniquement tant que la commande est
-                // "Confirmée" (state == 'sale'), pas de suivi
-                // stock.picking pour distinguer "préparation commencée".
-                if (state == 'sale')
+                if (canCancel)
                   PlaceholderAction(
                     label: 'actions.cancelOrder'.tr(),
                     onPressed: () => _confirmCancel(context, order['id'] as int),
