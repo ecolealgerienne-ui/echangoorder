@@ -62,12 +62,13 @@ class ProductGridTile extends StatelessWidget {
     final onPromo = product['on_promo'] as bool? ?? false;
     final promoPercent = (product['promo_percent'] as num?)?.toDouble();
     final imageBase64 = product['image_128'];
+    final tokens = AppColorTokens.of(context);
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: tokens.surface,
         borderRadius: BorderRadius.circular(AppLayout.radius),
-        boxShadow: AppElevation.card,
+        boxShadow: AppElevation.of(context),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -85,7 +86,7 @@ class ProductGridTile extends StatelessWidget {
                     Container(
                       clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: tokens.background,
                         borderRadius: BorderRadius.circular(AppLayout.radius),
                       ),
                       child: imageBase64 is String
@@ -93,50 +94,52 @@ class ProductGridTile extends StatelessWidget {
                               opacity: outOfStock ? 0.4 : 1,
                               child: Image.memory(base64Decode(imageBase64), fit: BoxFit.cover),
                             )
-                          : const Icon(Icons.image_not_supported_outlined, size: 40, color: AppColors.textMuted),
+                          : Icon(Icons.image_not_supported_outlined, size: 40, color: tokens.textMuted),
                     ),
                     if (outOfStock)
-                      Positioned(
+                      // PositionedDirectional (start, pas left) : suit le sens
+                      // RTL/LTR ambiant plutôt qu'un côté physique fixe (audit
+                      // RTL, phase F — le badge doit rester du côté "lecture
+                      // en premier", donc à droite en arabe).
+                      PositionedDirectional(
                         top: AppSpacing.xs,
-                        left: AppSpacing.xs,
+                        start: AppSpacing.xs,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.danger,
+                            color: tokens.danger,
                             borderRadius: BorderRadius.circular(AppLayout.radius / 2),
                           ),
                           child: Text(
                             'catalog.outOfStock'.tr(),
-                            style:
-                                const TextStyle(color: AppColors.surface, fontSize: 11, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: tokens.surface, fontSize: 11, fontWeight: FontWeight.w600),
                           ),
                         ),
                       )
                     // Épuisé prime sur promo — pas de sens à mettre en avant
                     // une réduction sur un produit qu'on ne peut pas acheter.
                     else if (onPromo)
-                      Positioned(
+                      PositionedDirectional(
                         top: AppSpacing.xs,
-                        left: AppSpacing.xs,
+                        start: AppSpacing.xs,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.promo,
+                            color: tokens.promo,
                             borderRadius: BorderRadius.circular(AppLayout.radius / 2),
                           ),
                           child: Text(
                             promoPercent != null
                                 ? 'catalog.onPromoPercent'.tr(namedArgs: {'percent': promoPercent.toStringAsFixed(0)})
                                 : 'catalog.onPromo'.tr(),
-                            style:
-                                const TextStyle(color: AppColors.surface, fontSize: 11, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: tokens.surface, fontSize: 11, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
                     if (onToggleFavorite != null)
-                      Positioned(
+                      PositionedDirectional(
                         top: AppSpacing.xs,
-                        right: AppSpacing.xs,
+                        end: AppSpacing.xs,
                         child: _FavoriteButton(isFavorite: isFavorite, onPressed: onToggleFavorite!),
                       ),
                   ],
@@ -165,7 +168,7 @@ class ProductGridTile extends StatelessWidget {
                       onPressed: outOfStock ? null : onAdd,
                       icon: Icon(
                         Icons.add_circle,
-                        color: outOfStock ? AppColors.disabled : AppColors.primary,
+                        color: outOfStock ? tokens.disabled : tokens.primary,
                       ),
                       tooltip: 'actions.addToCart'.tr(),
                     ),
@@ -187,14 +190,15 @@ class _FavoriteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColorTokens.of(context);
     return Material(
-      color: AppColors.surface.withValues(alpha: 0.85),
+      color: tokens.surface.withValues(alpha: 0.85),
       shape: const CircleBorder(),
       child: IconButton(
         onPressed: onPressed,
         icon: Icon(
           isFavorite ? Icons.favorite : Icons.favorite_border,
-          color: isFavorite ? AppColors.danger : AppColors.textMuted,
+          color: isFavorite ? tokens.danger : tokens.textMuted,
         ),
         iconSize: 20,
         visualDensity: VisualDensity.compact,

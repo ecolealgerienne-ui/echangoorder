@@ -47,6 +47,68 @@ class AppColorsDark {
   static const promo = Color(0xFFD98A54);
 }
 
+/// Résolution des tokens de couleur selon le thème courant (clair/sombre)
+/// — à utiliser dans les widgets (`AppColorTokens.of(context).primary`,
+/// etc.) plutôt que [AppColors]/[AppColorsDark] statiques directement, pour
+/// qu'ils suivent `ThemeMode.system` (audit dark mode, phase F — voir
+/// `docs/design_direction.md`). Introduit en phase F pour les composants
+/// touchés par le chantier design (A-E) ; le reste de l'app migre au fur
+/// et à mesure qu'un écran est retouché.
+class AppColorTokens {
+  final Color background;
+  final Color surface;
+  final Color text;
+  final Color textMuted;
+  final Color border;
+  final Color primary;
+  final Color secondary;
+  final Color danger;
+  final Color disabled;
+  final Color promo;
+
+  const AppColorTokens._({
+    required this.background,
+    required this.surface,
+    required this.text,
+    required this.textMuted,
+    required this.border,
+    required this.primary,
+    required this.secondary,
+    required this.danger,
+    required this.disabled,
+    required this.promo,
+  });
+
+  static const _light = AppColorTokens._(
+    background: AppColors.background,
+    surface: AppColors.surface,
+    text: AppColors.text,
+    textMuted: AppColors.textMuted,
+    border: AppColors.border,
+    primary: AppColors.primary,
+    secondary: AppColors.secondary,
+    danger: AppColors.danger,
+    disabled: AppColors.disabled,
+    promo: AppColors.promo,
+  );
+
+  static const _dark = AppColorTokens._(
+    background: AppColorsDark.background,
+    surface: AppColorsDark.surface,
+    text: AppColorsDark.text,
+    textMuted: AppColorsDark.textMuted,
+    border: AppColorsDark.border,
+    primary: AppColorsDark.primary,
+    secondary: AppColorsDark.secondary,
+    danger: AppColorsDark.danger,
+    disabled: AppColorsDark.disabled,
+    promo: AppColorsDark.promo,
+  );
+
+  static AppColorTokens of(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? _dark : _light;
+}
+
 class AppSpacing {
   static const xs = 4.0;
   static const sm = 8.0;
@@ -84,6 +146,10 @@ class AppElevation {
   static const cardDark = [
     BoxShadow(color: Color(0x40000000), blurRadius: 20, offset: Offset(0, 10)),
   ];
+
+  /// Variante à utiliser dans les widgets (suit `ThemeMode.system`, phase F).
+  static List<BoxShadow> of(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? cardDark : card;
 }
 
 /// Durées/courbes d'animation standard — à réutiliser pour toute micro-

@@ -202,9 +202,9 @@ class _OrderCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColorTokens.of(context).surface,
         borderRadius: BorderRadius.circular(AppLayout.radius),
-        boxShadow: AppElevation.card,
+        boxShadow: AppElevation.of(context),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -252,7 +252,10 @@ class _OrderListSkeleton extends StatelessWidget {
       separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
       itemBuilder: (context, index) => Container(
         padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppLayout.radius)),
+        decoration: BoxDecoration(
+          color: AppColorTokens.of(context).surface,
+          borderRadius: BorderRadius.circular(AppLayout.radius),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

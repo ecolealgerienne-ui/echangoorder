@@ -61,7 +61,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text('order.confirmCancel'.tr(), style: const TextStyle(color: AppColors.danger)),
+            child: Text('order.confirmCancel'.tr(), style: TextStyle(color: AppColorTokens.of(dialogContext).danger)),
           ),
         ],
       ),
@@ -160,7 +160,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         Text('${'cart.total'.tr()} : ${formatPrice(context, order['amount_total'] as num)}'),
                         const SizedBox(height: AppSpacing.md),
                         if (timeline == null)
-                          Text('❌ ${'order.statusCancelled'.tr()}', style: const TextStyle(color: AppColors.danger))
+                          Text(
+                            '❌ ${'order.statusCancelled'.tr()}',
+                            style: TextStyle(color: AppColorTokens.of(context).danger),
+                          )
                         else
                           _StatusTimeline(progress: timeline),
                       ],
@@ -220,9 +223,9 @@ class _TrackingCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColorTokens.of(context).surface,
         borderRadius: BorderRadius.circular(AppLayout.radius),
-        boxShadow: AppElevation.card,
+        boxShadow: AppElevation.of(context),
       ),
       child: child,
     );
@@ -268,7 +271,8 @@ class _StatusTimelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = state == _StepState.upcoming ? AppColors.border : AppColors.primary;
+    final tokens = AppColorTokens.of(context);
+    final color = state == _StepState.upcoming ? tokens.border : tokens.primary;
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,9 +288,7 @@ class _StatusTimelineRow extends StatelessWidget {
                   color: state == _StepState.upcoming ? Colors.transparent : color,
                   border: Border.all(color: color, width: 2),
                 ),
-                child: state == _StepState.done
-                    ? const Icon(Icons.check, size: 12, color: AppColors.surface)
-                    : null,
+                child: state == _StepState.done ? Icon(Icons.check, size: 12, color: tokens.surface) : null,
               ),
               if (!isLast) Expanded(child: Container(width: 2, color: color)),
             ],
@@ -298,7 +300,7 @@ class _StatusTimelineRow extends StatelessWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: state == _StepState.upcoming ? AppColors.textMuted : AppColors.text,
+                      color: state == _StepState.upcoming ? tokens.textMuted : tokens.text,
                       fontWeight: state == _StepState.current ? FontWeight.w700 : FontWeight.w400,
                     ),
               ),

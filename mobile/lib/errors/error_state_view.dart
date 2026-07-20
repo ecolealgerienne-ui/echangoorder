@@ -52,6 +52,7 @@ class ErrorStateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedMessage = message ?? messageKey?.tr();
+    final tokens = AppColorTokens.of(context);
 
     return Center(
       child: Padding(
@@ -63,8 +64,8 @@ class ErrorStateView extends StatelessWidget {
               width: 96,
               height: 96,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
-              child: Icon(icon, size: 40, color: AppColors.primary),
+              decoration: BoxDecoration(color: tokens.surface, shape: BoxShape.circle),
+              child: Icon(icon, size: 40, color: tokens.primary),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
@@ -77,7 +78,7 @@ class ErrorStateView extends StatelessWidget {
               Text(
                 resolvedMessage,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.textMuted),
               ),
             ],
             if (onRetry != null) ...[

@@ -44,7 +44,8 @@ class _ShimmerBoxState extends State<ShimmerBox> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final base = AppColors.border;
+    final tokens = AppColorTokens.of(context);
+    final base = tokens.border;
 
     if (reduceMotion) {
       return Container(
@@ -64,7 +65,7 @@ class _ShimmerBoxState extends State<ShimmerBox> with SingleTickerProviderStateM
             decoration: BoxDecoration(
               color: base,
               gradient: LinearGradient(
-                colors: [base, AppColors.surface, base],
+                colors: [base, tokens.surface, base],
                 stops: const [0.35, 0.5, 0.65],
                 begin: Alignment(sweep - 0.6, 0),
                 end: Alignment(sweep + 0.6, 0),

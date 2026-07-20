@@ -278,10 +278,11 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColorTokens.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
       child: Material(
-        color: AppColors.surface,
+        color: tokens.surface,
         borderRadius: BorderRadius.circular(AppLayout.radius),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppLayout.radius),
@@ -290,7 +291,7 @@ class _SearchBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
             child: Row(
               children: [
-                const Icon(Icons.search, color: AppColors.textMuted, size: 20),
+                Icon(Icons.search, color: tokens.textMuted, size: 20),
                 const SizedBox(width: AppSpacing.sm),
                 Text('${'screens.Search.title'.tr()}...', style: Theme.of(context).textTheme.bodyMedium),
               ],

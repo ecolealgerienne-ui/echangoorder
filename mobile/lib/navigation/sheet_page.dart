@@ -59,7 +59,10 @@ class _SheetShell extends StatelessWidget {
                   child: Container(
                     width: 40,
                     height: 4,
-                    decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                    decoration: BoxDecoration(
+                      color: AppColorTokens.of(context).border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
                 Expanded(child: child),

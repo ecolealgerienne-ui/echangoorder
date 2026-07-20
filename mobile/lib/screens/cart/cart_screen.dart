@@ -119,6 +119,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _cartContent(BuildContext context, CartState cart) {
+    final tokens = AppColorTokens.of(context);
     return Column(
       children: [
         Expanded(
@@ -136,12 +137,14 @@ class _CartScreenState extends State<CartScreen> {
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
+          decoration: BoxDecoration(
+            color: tokens.surface,
             // Barre d'action "ancrée" façon feuille (direction Casbah,
             // phase D) : ombre portée vers le haut plutôt qu'un simple
-            // filet, pour la détacher du contenu qui défile derrière.
-            boxShadow: [BoxShadow(color: Color(0x1A16232B), blurRadius: 16, offset: Offset(0, -4))],
+            // filet, pour la détacher du contenu qui défile derrière. Noir
+            // neutre à faible opacité (pas un token clair/sombre dédié) :
+            // se lit correctement dans les deux thèmes.
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 16, offset: const Offset(0, -4))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -152,7 +155,7 @@ class _CartScreenState extends State<CartScreen> {
                 _AmountRow(
                   label: 'checkout.discountLabel'.tr(),
                   amount: cart.discount,
-                  color: AppColors.promo,
+                  color: tokens.promo,
                 ),
               ],
               const SizedBox(height: AppSpacing.xs),
@@ -169,7 +172,7 @@ class _CartScreenState extends State<CartScreen> {
                         ? AppError.authAccountRejected
                         : AppError.authAccountPendingVerification,
                   )),
-                  style: const TextStyle(color: AppColors.danger),
+                  style: TextStyle(color: tokens.danger),
                 ),
               ],
               const SizedBox(height: AppSpacing.sm),
@@ -204,7 +207,7 @@ class _AmountRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = (emphasize
             ? Theme.of(context).textTheme.titleMedium
-            : Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted))
+            : Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColorTokens.of(context).textMuted))
         ?.copyWith(color: color);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -232,13 +235,14 @@ class _CartLineTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final qtyLabel = line.uom == null || line.uom!.isEmpty ? '${line.qty}' : '${line.qty} ${line.uom}';
+    final tokens = AppColorTokens.of(context);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: tokens.surface,
         borderRadius: BorderRadius.circular(AppLayout.radius),
-        boxShadow: AppElevation.card,
+        boxShadow: AppElevation.of(context),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,12 +252,12 @@ class _CartLineTile extends StatelessWidget {
             height: 64,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: tokens.background,
               borderRadius: BorderRadius.circular(AppLayout.radius),
             ),
             child: line.imageBase64 != null
                 ? Image.memory(base64Decode(line.imageBase64!), fit: BoxFit.cover)
-                : const Icon(Icons.image_not_supported_outlined, color: AppColors.textMuted),
+                : Icon(Icons.image_not_supported_outlined, color: tokens.textMuted),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -290,7 +294,7 @@ class _CartLineTile extends StatelessWidget {
                     PressableScale(
                       child: IconButton(
                         onPressed: () => onRemove(line),
-                        icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+                        icon: Icon(Icons.delete_outline, color: tokens.danger),
                       ),
                     ),
                   ],

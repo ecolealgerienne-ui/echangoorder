@@ -23,13 +23,14 @@ class AppButton extends StatelessWidget {
       child: Text(label, textAlign: TextAlign.center),
     );
 
+    final tokens = AppColorTokens.of(context);
     final Widget button = switch (variant) {
       AppButtonVariant.primary => ElevatedButton(onPressed: onPressed, child: child),
       AppButtonVariant.secondary => OutlinedButton(onPressed: onPressed, child: child),
       AppButtonVariant.danger => ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.danger,
-            foregroundColor: AppColors.background,
+            backgroundColor: tokens.danger,
+            foregroundColor: tokens.surface,
             minimumSize: const Size.fromHeight(AppLayout.minTouchHeight),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppLayout.radius)),
           ),
