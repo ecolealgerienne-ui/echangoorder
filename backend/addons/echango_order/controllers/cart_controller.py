@@ -1,4 +1,5 @@
 from odoo import http
+from odoo.exceptions import UserError
 from odoo.http import request
 
 from .session_utils import require_fresh_session
@@ -68,7 +69,26 @@ class EchangoCartController(http.Controller):
         # configuré n'a qu'une récompense, pas d'écran de choix multiple).
         # Rappelé ici (plutôt que dans chaque route add/update/remove) pour
         # couvrir aussi `/echango/cart` (simple consultation).
-        order.sudo().action_open_reward_wizard()
+        #
+        # `action_open_reward_wizard()` est en réalité la méthode du bouton
+        # "Récompense" de l'interface Ventes standard — pensée pour un humain
+        # qui clique en s'attendant à une récompense : si l'ordre n'est
+        # ELIGIBLE À AUCUNE récompense au moment de l'appel (cas normal la
+        # plupart du temps — pas de code promo actif, pas de promotion
+        # automatique applicable), elle lève un `UserError` ("Il n'y a
+        # aucune remise à appliquer") au lieu de ne rien faire. Non catché,
+        # ça annule toute la requête en cours (rollback Odoo, y compris un
+        # retrait de ligne déjà effectué juste avant) et remonte comme une
+        # erreur serveur générique côté app — reproduit en réel (2026-07-20)
+        # en retirant une ligne dont la récompense associée (`loyalty.card`)
+        # disparaissait avec elle : le rappel de cette méthode juste après,
+        # sur un panier qui ne remplit plus aucune condition de récompense,
+        # déclenchait ce `UserError`. Capturé ici : "rien à appliquer" est
+        # un résultat normal d'un recalcul automatique, pas une erreur.
+        try:
+            order.sudo().action_open_reward_wizard()
+        except UserError:
+            pass
         lines = []
         product_lines = order.order_line.filtered(lambda l: not l.is_reward_line)
         # F15 — les lignes de récompense (code promo appliqué, module
