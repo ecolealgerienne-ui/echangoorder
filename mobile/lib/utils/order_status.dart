@@ -31,13 +31,20 @@ String? prepStatusLabel(Map<String, dynamic> order) {
   switch (prepStatus) {
     case 'pending':
       return 'order.prepPending'.tr();
-    case 'ready':
-      return (isPickup ? 'order.prepReadyPickup' : 'order.prepReadyDelivery').tr();
+    // "En cours de préparation" (décision produit 2026-07) : la réservation
+    // de stock reste automatique à la confirmation (pour éviter les
+    // commandes annulées faute de stock), donc le picking passe "prêt"
+    // (assigné) quasi instantanément — ça ne dit rien sur si un opérateur a
+    // commencé à traiter la commande. `in_progress` (voir order_controller.
+    // py._prep_status, basé sur stock.picking.user_id — champ standard
+    // "Responsable") comble ce vrai palier intermédiaire, sans champ custom.
+    case 'in_progress':
+      return 'order.prepInProgress'.tr();
     case 'completed':
       // Retrait magasin : le picking validé = le client a déjà récupéré sa
-      // commande, statut terminal. Livraison à domicile : même libellé que
-      // "ready", le colis est prêt mais pas encore parti — voir
-      // x_delivery_status ci-dessus pour la suite.
+      // commande, statut terminal. Livraison à domicile : le colis est
+      // prêt/emballé mais pas encore parti — voir x_delivery_status
+      // ci-dessus pour la suite (en cours de livraison / livrée).
       return (isPickup ? 'order.prepCompletedPickup' : 'order.prepReadyDelivery').tr();
     default:
       return null;

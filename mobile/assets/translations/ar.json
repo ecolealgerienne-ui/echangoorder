@@ -73,7 +73,7 @@
     "reorderMessage": "ستتم إضافة منتجات هذا الطلب إلى سلتك.",
     "reorderUnavailableWarning": "⚠️ بعض المنتجات لم تعد متوفرة ولم تتم إضافتها.",
     "prepPending": "قيد التحضير",
-    "prepReadyPickup": "جاهز للاستلام",
+    "prepInProgress": "التحضير جارٍ",
     "prepReadyDelivery": "جاهز للتوصيل",
     "prepCompletedPickup": "تم الاستلام",
     "statusPendingReview": "بانتظار المعالجة",

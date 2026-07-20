@@ -4,24 +4,28 @@ from odoo.http import request
 
 from .session_utils import require_fresh_session
 
-# F08 — statut de préparation (décision produit 2026-07) : réutilise le
-# `stock.picking` (bon de livraison) qu'Odoo génère automatiquement à la
+# F08 — statut de préparation (décision produit 2026-07, revue) : réutilise
+# le `stock.picking` (bon de livraison) qu'Odoo génère automatiquement à la
 # confirmation d'une commande (module `stock`, déjà dépendance du module) —
 # aucun champ/modèle custom, aucune app préparateur/transporteur dédiée.
-# Volontairement réduit à 3 statuts simples plutôt que d'exposer les 5+
-# états techniques de `stock.picking` (non parlants pour un client) :
-# - "pending" (draft/waiting/confirmed) : pas encore prêt.
-# - "ready" (assigned) : stock réservé, prêt à livrer/retirer.
-# - "completed" (done) : livré ou retiré, le picking est validé.
+# - "pending" (draft/waiting/confirmed, ou assigned sans personne assigné) :
+#   commande confirmée mais personne n'a encore commencé à la traiter.
+# - "in_progress" (assigned + un responsable assigné) : voir _prep_status.
+# - "completed" (done) : le picking est validé — livré/retiré/prêt selon
+#   le mode de réception (voir `mobile/lib/utils/order_status.dart`).
 # `cancel` volontairement absent : le statut de la commande elle-même
 # (`sale.order.state == 'cancel'`) fait déjà foi pour ce cas côté app.
-_PICKING_STATUS_MAP = {
-    "draft": "pending",
-    "waiting": "pending",
-    "confirmed": "pending",
-    "assigned": "ready",
-    "done": "completed",
-}
+#
+# Point de départ : réservation de stock automatique à la confirmation
+# (décision produit — éviter les commandes annulées faute de stock, cf.
+# status-V1.md). Conséquence : le picking passe de "confirmed" à "assigned"
+# quasi instantanément dès qu'il y a du stock — "assigned" seul ne dit donc
+# rien sur si un opérateur a commencé à traiter la commande. Plutôt qu'un
+# nouveau champ custom pour ça, réutilisation du champ standard
+# `stock.picking.user_id` (Responsable, natif sur tout picking, jamais
+# rempli automatiquement à la création) : un opérateur qui s'assigne le bon
+# signale "je m'en occupe" — c'est ce qui distingue "in_progress" de
+# "pending" ci-dessous, sans rien ajouter au modèle.
 
 
 class EchangoOrderController(http.Controller):
@@ -38,17 +42,21 @@ class EchangoOrderController(http.Controller):
     """
 
     def _prep_status(self, order):
-        """F08 — voir _PICKING_STATUS_MAP ci-dessus. Une commande peut
-        avoir plusieurs `stock.picking` dans des cas avancés (reliquat
-        partiel...) — on ne s'intéresse ici qu'au principal bon de
-        livraison sortant, le plus récent (`id desc`), suffisant pour la
-        simplicité recherchée en Phase 1 (pas de vrai suivi préparateur
-        multi-étapes)."""
+        """F08 — voir le commentaire au-dessus de `_PENDING_PICKING_STATES`.
+        Une commande peut avoir plusieurs `stock.picking` dans des cas
+        avancés (reliquat partiel...) — on ne s'intéresse ici qu'au
+        principal bon de livraison sortant, le plus récent (`id desc`),
+        suffisant pour la simplicité recherchée en Phase 1 (pas de vrai
+        suivi préparateur multi-étapes)."""
         picking = order.picking_ids.filtered(lambda p: p.picking_type_id.code == "outgoing")
         picking = picking.sorted("id", reverse=True)[:1]
         if not picking or picking.state == "cancel":
             return None
-        return _PICKING_STATUS_MAP.get(picking.state)
+        if picking.state == "done":
+            return "completed"
+        if picking.state == "assigned" and picking.user_id:
+            return "in_progress"
+        return "pending"
 
     def _owned_order(self, order_id=None, order_ref=None):
         partner = request.env.user.partner_id
@@ -146,15 +154,18 @@ class EchangoOrderController(http.Controller):
         commande) : il reste `'sale'` de la prise en charge jusqu'à la
         livraison, il ne se remet plus à jour ensuite. Le vrai critère est
         `prep_status` — annulable tant que l'opérateur n'a pas fini de la
-        préparer ("Prête" ou au-delà = trop tard, colis déjà préparé/parti/
-        remis). `None` (pas de `stock.picking`, ex. produit non suivi en
-        stock) traité comme "pas encore prêt" : rien à annuler côté
-        entrepôt dans ce cas, l'annulation reste possible.
+        préparer ("Prête"/`completed` = trop tard, colis déjà préparé/
+        parti/remis). `in_progress` (un opérateur a commencé, voir
+        `_prep_status`) reste annulable — la préparation peut toujours être
+        interrompue/reposée en rayon tant qu'elle n'est pas validée. `None`
+        (pas de `stock.picking`, ex. produit non suivi en stock) traité
+        comme "pas encore prêt" : rien à annuler côté entrepôt dans ce cas,
+        l'annulation reste possible.
         """
         if order.state == "sent":
             return True
         if order.state == "sale":
-            return self._prep_status(order) in (None, "pending")
+            return self._prep_status(order) in (None, "pending", "in_progress")
         return False
 
     @http.route("/echango/order/cancel", type="jsonrpc", auth="user", methods=["POST"], csrf=False)

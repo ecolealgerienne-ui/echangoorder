@@ -120,13 +120,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             // `sale` de la prise en charge jusqu'à la livraison, sans se
             // remettre à jour ensuite. Le vrai critère est `prep_status` —
             // annulable pendant "en attente de prise en charge" (`sent`) et
-            // pendant la préparation (`sale` + pas encore "Prête"), bloqué
-            // dès que la commande est prête/livrée/récupérée. Même logique
-            // que `order_controller.py._can_cancel()`, dupliquée ici pour
-            // l'affichage — la vérification qui compte reste côté serveur.
+            // pendant la préparation, y compris "en cours" (`in_progress`,
+            // un opérateur a commencé mais peut toujours reposer les
+            // articles), bloqué dès que la commande est prête/livrée/
+            // récupérée (`completed`). Même logique que `order_controller.
+            // py._can_cancel()`, dupliquée ici pour l'affichage — la
+            // vérification qui compte reste côté serveur.
             final prepStatus = order['prep_status'] as String?;
             final canCancel = state == 'sent' ||
-                (state == 'sale' && (prepStatus == null || prepStatus == 'pending'));
+                (state == 'sale' &&
+                    (prepStatus == null || prepStatus == 'pending' || prepStatus == 'in_progress'));
 
             // `ScreenPlaceholder` construit son propre Scaffold/AppBar (voir
             // widgets/screen_placeholder.dart) — cet écran a déjà le sien

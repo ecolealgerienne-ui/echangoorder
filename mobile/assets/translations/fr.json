@@ -73,7 +73,7 @@
     "reorderMessage": "Les articles de cette commande seront ajoutés à votre panier.",
     "reorderUnavailableWarning": "⚠️ Certains produits ne sont plus disponibles et n'ont pas été ajoutés.",
     "prepPending": "En préparation",
-    "prepReadyPickup": "Prête à récupérer",
+    "prepInProgress": "En cours de préparation",
     "prepReadyDelivery": "Prête pour la livraison",
     "prepCompletedPickup": "Récupérée",
     "statusPendingReview": "En attente de prise en charge",
