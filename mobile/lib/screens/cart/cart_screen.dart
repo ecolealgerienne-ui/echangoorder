@@ -98,23 +98,14 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _emptyState(BuildContext context) {
-    return Column(
-      children: [
-        const Expanded(
-          child: ErrorStateView(
-            icon: Icons.shopping_cart_outlined,
-            titleKey: 'emptyStates.cartTitle',
-            messageKey: 'emptyStates.cartMessage',
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: AppButton(
-            label: 'actions.browseCatalog'.tr(),
-            onPressed: () => context.go('/catalog'),
-          ),
-        ),
-      ],
+    // Demande utilisateur (2026-07-20) : bouton "Voir le catalogue" retiré —
+    // le panier vide est déjà accessible en un tap depuis l'onglet
+    // Catalogue de la barre de navigation, redondant avec un bouton dédié
+    // ici.
+    return const ErrorStateView(
+      icon: Icons.shopping_cart_outlined,
+      titleKey: 'emptyStates.cartTitle',
+      messageKey: 'emptyStates.cartMessage',
     );
   }
 
