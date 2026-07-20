@@ -10,6 +10,7 @@ import 'state/cart_state.dart';
 import 'state/checkout_state.dart';
 import 'state/currency_state.dart';
 import 'state/favorites_state.dart';
+import 'state/locale_state.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -62,6 +63,7 @@ class _EchangoOrderAppState extends State<EchangoOrderApp> with WidgetsBindingOb
   late final CheckoutState _checkoutState;
   late final FavoritesState _favoritesState;
   late final CurrencyState _currencyState;
+  late final LocaleState _localeState;
   late final GoRouter _router;
 
   @override
@@ -72,6 +74,7 @@ class _EchangoOrderAppState extends State<EchangoOrderApp> with WidgetsBindingOb
     _checkoutState = CheckoutState();
     _favoritesState = FavoritesState(widget.apiClient);
     _currencyState = CurrencyState(widget.apiClient);
+    _localeState = LocaleState();
     // Accessible avant connexion (F00 vitrine) : chargée une fois au
     // démarrage plutôt qu'à l'authentification, silencieuse en cas
     // d'échec (l'app reste utilisable avec le symbole par défaut).
@@ -106,6 +109,7 @@ class _EchangoOrderAppState extends State<EchangoOrderApp> with WidgetsBindingOb
         ChangeNotifierProvider<CheckoutState>.value(value: _checkoutState),
         ChangeNotifierProvider<FavoritesState>.value(value: _favoritesState),
         ChangeNotifierProvider<CurrencyState>.value(value: _currencyState),
+        ChangeNotifierProvider<LocaleState>.value(value: _localeState),
       ],
       child: MaterialApp.router(
         title: 'Echango Order',

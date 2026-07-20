@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../state/locale_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cart_bar.dart';
 
@@ -21,6 +23,11 @@ class MainTabScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Force un rebuild au changement de langue (bug trouvé par
+    // l'utilisateur, 2026-07-20 : la barre du bas ne se mettait à jour
+    // qu'après un changement d'onglet) — voir `state/locale_state.dart`.
+    context.watch<LocaleState>();
+
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: Column(

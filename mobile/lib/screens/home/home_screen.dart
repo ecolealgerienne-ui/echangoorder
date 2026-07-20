@@ -8,6 +8,7 @@ import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/cart_state.dart';
 import '../../state/favorites_state.dart';
+import '../../state/locale_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/add_to_cart.dart';
 import '../../utils/pagination.dart';
@@ -152,6 +153,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Force un rebuild au changement de langue (bug trouvé par
+    // l'utilisateur, 2026-07-20 — voir `state/locale_state.dart`) : l'Accueil
+    // est aussi une racine d'onglet gardée vivante par `StatefulShellRoute`.
+    context.watch<LocaleState>();
     final cart = context.watch<CartState>();
     final favorites = context.watch<FavoritesState>();
 
