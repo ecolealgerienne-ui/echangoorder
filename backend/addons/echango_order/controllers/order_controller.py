@@ -88,7 +88,15 @@ class EchangoOrderController(http.Controller):
                     "state": o.state,
                     "x_reception_mode": o.x_reception_mode,
                     "prep_status": self._prep_status(o),
-                    "x_delivery_status": o.x_delivery_status,
+                    # Un champ Selection non renseigné vaut `False` côté
+                    # ORM Odoo (pas `None`) — sérialisé en JSON comme un
+                    # booléen, pas `null`. Normalisé ici en `None` : sinon
+                    # `x_delivery_status as String?` côté Flutter plante
+                    # (`type 'bool' is not a subtype of type 'String?'`)
+                    # pour toute commande où l'opérateur n'a pas encore
+                    # cliqué "Marquer en cours de livraison"/"livrée", donc
+                    # la quasi-totalité des commandes.
+                    "x_delivery_status": o.x_delivery_status or None,
                 }
                 for o in orders
             ]
@@ -114,7 +122,7 @@ class EchangoOrderController(http.Controller):
                 "x_reception_mode": order.x_reception_mode,
                 "x_creneau": order.x_creneau.isoformat() if order.x_creneau else None,
                 "prep_status": self._prep_status(order),
-                "x_delivery_status": order.x_delivery_status,
+                "x_delivery_status": order.x_delivery_status or None,
             },
             "lines": [
                 {"name": line.name, "product_uom_qty": line.product_uom_qty}
