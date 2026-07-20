@@ -16,6 +16,8 @@ Dernière mise à jour : 2026-07-20
 
 **📌 F11/F12 reportées en Phase 1.5 (décision produit, 2026-07-20)** : ces deux fonctionnalités dépendent d'un déploiement réel (VPS + publication sur Google Play/App Store) qui n'a pas encore eu lieu — elles sortent donc du périmètre de clôture de la Phase 1 et sont reprises dès que l'infra sera prête. Voir § 1bis ci-dessous pour le détail.
 
+**🎨 Chantier design lancé (2026-07-20)** : la Phase 1 fonctionnelle étant close, démarrage d'une passe de refonte visuelle — voir `docs/design_direction.md` pour la direction retenue (**Casbah** : chaux, portes bleues d'Alger, vert existant conservé en secondaire), les pistes archivées (Souk, Zellige) et le plan de mise à jour par phases (A — Fondations du thème, B — Composants partagés, C — Accueil/Catalogue, D — Panier/Checkout en bottom sheet, E — Suivi commande/Historique, F — Passe RTL/dark mode/accessibilité). Phase A pas encore commencée.
+
 ---
 
 ## 0. Setup projet

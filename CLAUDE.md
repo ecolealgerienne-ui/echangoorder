@@ -260,6 +260,7 @@ Avant de créer un champ custom, le module OCA gratuit `stock_picking_product_in
 
 - `docs/specs_macro_drive_transport.md` — vision produit globale (Echango Order + Echango Delivery), roadmap macro, architecture Odoo ↔ Fleetbase.
 - `docs/specs_phase1_echango_order.md` — specs détaillées Phase 1 (wireframes, API, critères d'acceptation QA par fonctionnalité).
+- `docs/design_direction.md` — direction visuelle retenue (**Casbah**, décision 2026-07-20) : palette, typographie FR/AR, langage de formes, plan de mise à jour du thème par phases. Les deux pistes non retenues (Souk, Zellige) y sont archivées pour référence future.
 - `status-V1.md` — suivi de l'avancement de l'implémentation Phase 1, à tenir à jour à chaque étape.
 
 ## Conventions de travail
