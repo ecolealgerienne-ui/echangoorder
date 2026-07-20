@@ -75,6 +75,7 @@
     "prepPending": "قيد التحضير",
     "prepInProgress": "التحضير جارٍ",
     "prepReadyDelivery": "جاهز للتوصيل",
+    "prepReadyPickup": "جاهز للاستلام",
     "prepCompletedPickup": "تم الاستلام",
     "statusPendingReview": "بانتظار المعالجة",
     "outForDelivery": "قيد التوصيل",

@@ -75,6 +75,7 @@
     "prepPending": "En préparation",
     "prepInProgress": "En cours de préparation",
     "prepReadyDelivery": "Prête pour la livraison",
+    "prepReadyPickup": "Prête à récupérer",
     "prepCompletedPickup": "Récupérée",
     "statusPendingReview": "En attente de prise en charge",
     "outForDelivery": "En cours de livraison",

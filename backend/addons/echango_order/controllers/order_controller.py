@@ -105,6 +105,11 @@ class EchangoOrderController(http.Controller):
                     # cliqué "Marquer en cours de livraison"/"livrée", donc
                     # la quasi-totalité des commandes.
                     "x_delivery_status": o.x_delivery_status or None,
+                    # Booléen, pas de piège False/None (voir commentaire
+                    # ci-dessus pour x_delivery_status) : False est une
+                    # valeur légitime ("pas encore récupérée"), pas un
+                    # marqueur de champ non renseigné.
+                    "x_pickup_collected": o.x_pickup_collected,
                 }
                 for o in orders
             ]
@@ -139,6 +144,7 @@ class EchangoOrderController(http.Controller):
                 "x_creneau": order.x_creneau.isoformat() if order.x_creneau else None,
                 "prep_status": self._prep_status(order),
                 "x_delivery_status": order.x_delivery_status or None,
+                "x_pickup_collected": order.x_pickup_collected,
             },
             "lines": [
                 {"name": line.name, "product_uom_qty": line.product_uom_qty}

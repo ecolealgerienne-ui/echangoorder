@@ -30,10 +30,23 @@
                     class="oe_highlight"
                     invisible="state != 'sale' or x_reception_mode != 'home_delivery' or x_delivery_status != 'out_for_delivery'"
                 />
+                <!-- F08 — retrait magasin (décision produit 2026-07, suite
+                     signalement utilisateur) : valider le bon de livraison
+                     (state Odoo -> "Terminé") ne veut pas dire que le client
+                     est passé le récupérer, même problème que la livraison à
+                     domicile ci-dessus. -->
+                <button
+                    name="action_mark_picked_up"
+                    type="object"
+                    string="Marquer récupérée"
+                    class="oe_highlight"
+                    invisible="state != 'sale' or x_reception_mode != 'pickup' or x_pickup_collected"
+                />
             </xpath>
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="x_reception_mode"/>
                 <field name="x_delivery_status" invisible="x_reception_mode != 'home_delivery'" readonly="1"/>
+                <field name="x_pickup_collected" invisible="x_reception_mode != 'pickup'" readonly="1"/>
             </xpath>
         </field>
     </record>

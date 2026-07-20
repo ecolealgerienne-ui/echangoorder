@@ -7,24 +7,34 @@ import 'package:easy_localization/easy_localization.dart';
 /// _prep_status`) : les écrans appelants retombent alors sur le libellé
 /// générique "Confirmée".
 ///
-/// Décision produit 2026-07 (voir CLAUDE.md § Statuts de commande) : pour
-/// une livraison à domicile, un `stock.picking` validé (`prep_status ==
-/// 'completed'`) ne veut pas encore dire "livrée" — juste que le colis est
-/// prêt/emballé, en attente du transporteur. Le vrai passage à "livrée" est
-/// piloté par `x_delivery_status` (statut déclaré manuellement en
-/// back-office, aucun équivalent standard sans intégration transport
-/// réelle — hors périmètre Phase 1), qui prend le pas sur `prep_status`
-/// une fois renseigné.
+/// Décision produit 2026-07 (voir CLAUDE.md § Statuts de commande) : un
+/// `stock.picking` validé (`prep_status == 'completed'`) ne veut pas encore
+/// dire "remise au client" côté livraison à domicile ni côté retrait
+/// magasin — juste que l'opérateur a fini de préparer. Le vrai passage à
+/// "livrée"/"récupérée" est piloté par un statut déclaré manuellement en
+/// back-office (`x_delivery_status`/`x_pickup_collected`, aucun équivalent
+/// standard sans un vrai système de pointage/transport — hors périmètre
+/// Phase 1), qui prend le pas sur `prep_status` une fois renseigné.
 String? prepStatusLabel(Map<String, dynamic> order) {
   final isPickup = order['x_reception_mode'] == 'pickup';
   final prepStatus = order['prep_status'] as String?;
 
-  if (!isPickup) {
+  if (prepStatus == 'completed') {
+    if (isPickup) {
+      // F08 — signalé par l'utilisateur en test réel (bon WH/OUT validé) :
+      // "picking terminé" confondait "prêt" et "récupéré par le client".
+      // `x_pickup_collected` (bouton back-office "Marquer récupérée")
+      // distingue maintenant les deux, même schéma que x_delivery_status.
+      final collected = order['x_pickup_collected'] == true;
+      return (collected ? 'order.prepCompletedPickup' : 'order.prepReadyPickup').tr();
+    }
     switch (order['x_delivery_status'] as String?) {
       case 'out_for_delivery':
         return 'order.outForDelivery'.tr();
       case 'delivered':
         return 'order.delivered'.tr();
+      default:
+        return 'order.prepReadyDelivery'.tr();
     }
   }
 
@@ -40,12 +50,6 @@ String? prepStatusLabel(Map<String, dynamic> order) {
     // "Responsable") comble ce vrai palier intermédiaire, sans champ custom.
     case 'in_progress':
       return 'order.prepInProgress'.tr();
-    case 'completed':
-      // Retrait magasin : le picking validé = le client a déjà récupéré sa
-      // commande, statut terminal. Livraison à domicile : le colis est
-      // prêt/emballé mais pas encore parti — voir x_delivery_status
-      // ci-dessus pour la suite (en cours de livraison / livrée).
-      return (isPickup ? 'order.prepCompletedPickup' : 'order.prepReadyDelivery').tr();
     default:
       return null;
   }
