@@ -25,11 +25,10 @@ import '../../widgets/app_button.dart';
 /// coordonnées seules). La vérification de zone de livraison (F07) continue
 /// de se baser sur ville/code postal, pas sur les coordonnées.
 ///
-/// **Non fait dans cette passe** : le checkout (F07) ne propose pas encore
-/// de choisir une de ces adresses sauvegardées — il continue de créer un
-/// contact `delivery` ad hoc à chaque confirmation (voir
-/// `checkout_controller.py`). Réutiliser une adresse sauvegardée au
-/// checkout est un point de vigilance à traiter séparément.
+/// Ces adresses sont proposées au choix dans le checkout (F07,
+/// `CheckoutAddressScreen`) — favorite pré-sélectionnée, avec une option
+/// "nouvelle adresse" qui retombe sur un formulaire libre pour une adresse
+/// ponctuelle non sauvegardée.
 class AddressesScreen extends StatefulWidget {
   const AddressesScreen({super.key});
 

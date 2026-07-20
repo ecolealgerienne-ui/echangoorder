@@ -1,5 +1,8 @@
 from odoo import http
+from odoo.exceptions import UserError
 from odoo.http import request
+
+from .session_utils import require_fresh_session
 
 
 class EchangoCartController(http.Controller):
@@ -22,9 +25,18 @@ class EchangoCartController(http.Controller):
     """
 
     def _cart_order(self, create=False):
+        # `sent` inclus (F08, décision produit 2026-07 — voir CLAUDE.md §
+        # Statuts de commande) : une commande déjà "confirmée" côté client
+        # mais pas encore prise en charge par un opérateur (`action_
+        # confirm()` toujours pas appelé, voir `models/sale_order.py`)
+        # reste la commande courante — le client peut continuer à y
+        # ajouter des produits depuis le catalogue, pas seulement pendant
+        # qu'elle est en brouillon. Une fois prise en charge (`state ==
+        # 'sale'`), elle sort de ce domaine et un nouvel achat démarre un
+        # nouveau panier `draft`, comme avant.
         partner = request.env.user.partner_id
         order = request.env["sale.order"].sudo().search(
-            [("partner_id", "=", partner.id), ("state", "=", "draft")],
+            [("partner_id", "=", partner.id), ("state", "in", ("draft", "sent"))],
             order="id desc", limit=1,
         )
         if not order and create:
@@ -38,7 +50,7 @@ class EchangoCartController(http.Controller):
         return request.env["sale.order.line"].sudo().search([
             ("id", "=", line_id),
             ("order_id.partner_id", "=", partner.id),
-            ("order_id.state", "=", "draft"),
+            ("order_id.state", "in", ("draft", "sent")),
         ], limit=1)
 
     def _cart_payload(self, order):
@@ -66,7 +78,26 @@ class EchangoCartController(http.Controller):
         # configuré n'a qu'une récompense, pas d'écran de choix multiple).
         # Rappelé ici (plutôt que dans chaque route add/update/remove) pour
         # couvrir aussi `/echango/cart` (simple consultation).
-        order.sudo().action_open_reward_wizard()
+        #
+        # `action_open_reward_wizard()` est en réalité la méthode du bouton
+        # "Récompense" de l'interface Ventes standard — pensée pour un humain
+        # qui clique en s'attendant à une récompense : si l'ordre n'est
+        # ELIGIBLE À AUCUNE récompense au moment de l'appel (cas normal la
+        # plupart du temps — pas de code promo actif, pas de promotion
+        # automatique applicable), elle lève un `UserError` ("Il n'y a
+        # aucune remise à appliquer") au lieu de ne rien faire. Non catché,
+        # ça annule toute la requête en cours (rollback Odoo, y compris un
+        # retrait de ligne déjà effectué juste avant) et remonte comme une
+        # erreur serveur générique côté app — reproduit en réel (2026-07-20)
+        # en retirant une ligne dont la récompense associée (`loyalty.card`)
+        # disparaissait avec elle : le rappel de cette méthode juste après,
+        # sur un panier qui ne remplit plus aucune condition de récompense,
+        # déclenchait ce `UserError`. Capturé ici : "rien à appliquer" est
+        # un résultat normal d'un recalcul automatique, pas une erreur.
+        try:
+            order.sudo().action_open_reward_wizard()
+        except UserError:
+            pass
         lines = []
         product_lines = order.order_line.filtered(lambda l: not l.is_reward_line)
         # F15 — les lignes de récompense (code promo appliqué, module
@@ -103,23 +134,46 @@ class EchangoCartController(http.Controller):
         }
 
     @http.route("/echango/cart", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def get_cart(self, **kw):
         return self._cart_payload(self._cart_order())
 
     @http.route("/echango/cart/add", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
-    def add(self, product_id=None, qty=1, **kw):
+    @require_fresh_session
+    def add(self, product_id=None, qty=1, variant_id=None, **kw):
         template = request.env["product.template"].sudo().search(
             [("id", "=", product_id), ("sale_ok", "=", True)], limit=1,
         )
+        if not template:
+            return {"error": "cart.product_unavailable"}
+
+        # F05 — sélection de variante (couleur/taille...) : `variant_id`
+        # transmis une fois la combinaison résolue côté app (voir
+        # `catalog_controller.py.variants()`) — jusqu'ici toujours ignoré,
+        # l'ajout prenait systématiquement `template.product_variant_id`
+        # (la variante par défaut Odoo), quelle que soit la sélection du
+        # client. Vérifié explicitement qu'il appartient bien à ce template
+        # (pas de confiance aveugle dans un id fourni par le client).
+        if variant_id:
+            variant = request.env["product.product"].sudo().search(
+                [("id", "=", variant_id), ("product_tmpl_id", "=", template.id)], limit=1,
+            )
+            if not variant:
+                return {"error": "cart.product_unavailable"}
+        else:
+            variant = template.product_variant_id
+
         # Vérification stock côté serveur (pas seulement client) : le
         # bouton désactivé côté app ne suffit pas, un appel direct à cet
-        # endpoint doit aussi être bloqué.
-        if not template or template.qty_available <= 0:
+        # endpoint doit aussi être bloqué. Stock de la variante précise
+        # (`product.product.qty_available`) plutôt que l'agrégat du
+        # template (toutes variantes confondues) — une variante peut être
+        # en rupture pendant qu'une autre du même produit est disponible.
+        if variant.qty_available <= 0:
             return {"error": "cart.product_unavailable"}
         qty = max(1, qty or 1)
 
         order = self._cart_order(create=True)
-        variant = template.product_variant_id
         line = order.order_line.filtered(lambda l: l.product_id == variant)
         if line:
             line.sudo().write({"product_uom_qty": line.product_uom_qty + qty})
@@ -132,16 +186,21 @@ class EchangoCartController(http.Controller):
             # et panier, causé par une liste de prix/devise différente
             # assignée à certains clients. Plus simple qu'une liste de prix
             # unique à maintenir, et garantit que catalogue et panier
-            # affichent toujours exactement le même montant.
+            # affichent toujours exactement le même montant. Pour une
+            # variante précise, `variant.lst_price` (prix de base + éventuel
+            # supplément d'attribut, `price_extra`) est la bonne source —
+            # `template.list_price` reste le repli pour la variante par
+            # défaut, comportement inchangé pour tout produit sans variante.
             request.env["sale.order.line"].sudo().create({
                 "order_id": order.id,
                 "product_id": variant.id,
                 "product_uom_qty": qty,
-                "price_unit": template.list_price,
+                "price_unit": variant.lst_price if variant_id else template.list_price,
             })
         return self._cart_payload(order)
 
     @http.route("/echango/cart/update", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def update(self, line_id=None, qty=1, **kw):
         line = self._owned_line(line_id)
         if not line:
@@ -150,6 +209,7 @@ class EchangoCartController(http.Controller):
         return self._cart_payload(line.order_id)
 
     @http.route("/echango/cart/remove", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def remove(self, line_id=None, **kw):
         line = self._owned_line(line_id)
         if not line:
@@ -159,6 +219,7 @@ class EchangoCartController(http.Controller):
         return self._cart_payload(order)
 
     @http.route("/echango/cart/reorder", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def reorder(self, order_id=None, **kw):
         """F09 — recopie les lignes d'une commande passée dans le panier en
         cours, en excluant les produits qui ne sont plus vendables/en stock

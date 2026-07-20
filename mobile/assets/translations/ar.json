@@ -11,14 +11,26 @@
     "reference": "المرجع:"
   },
   "auth": {
+    "nameLabel": "الاسم الكامل",
+    "languageLabel": "اللغة",
     "phoneLabel": "رقم الهاتف",
     "pinLabel": "الرمز السري",
     "pinHint": "من 6 إلى 12 رقمًا",
     "pinConfirmLabel": "تأكيد الرمز السري",
     "currentPinLabel": "الرمز السري الحالي",
     "newPinLabel": "الرمز السري الجديد",
-    "smsCodeLabel": "الرمز المستلم عبر الرسائل القصيرة",
-    "termsNotice": "بإنشاء حساب، فإنك توافق على:"
+    "termsNotice": "بإنشاء حساب، فإنك توافق على:",
+    "pinResetExplanation": "أدخل رقم هاتفك. سيتواصل معك فريقنا لإعادة تعيين رمزك السري.",
+    "pinResetRequestSentTitle": "تم إرسال الطلب",
+    "pinResetRequestSentMessage": "إذا كان هذا الرقم مرتبطًا بحساب، سيتواصل معك فريقنا قريبًا عبر الهاتف لإعادة تعيين رمزك السري."
+  },
+  "onboarding": {
+    "slide1Title": "اطلب منتجاتك المحلية",
+    "slide1Subtitle": "تصفح الكتالوج واطلب في نقرات قليلة.",
+    "slide2Title": "توصيل أو استلام، كما تفضل",
+    "slide2Subtitle": "اختر التوصيل إلى المنزل أو استلام طلبك من المتجر.",
+    "slide3Title": "تتبع طلبك في الوقت الفعلي",
+    "slide3Subtitle": "ابقَ على اطلاع في كل مرحلة، من التأكيد إلى الاستلام."
   },
   "nav": {
     "home": "الرئيسية",
@@ -30,6 +42,7 @@
     "deliveryHome": "🏠 التوصيل إلى المنزل",
     "pickupStore": "🏪 الاستلام من المتجر",
     "modifyAddress": "تعديل العنوان",
+    "newAddressOption": "عنوان جديد لهذا الطلب",
     "streetLabel": "الشارع",
     "cityLabel": "المدينة",
     "zipLabel": "الرمز البريدي",
@@ -40,7 +53,11 @@
     "itemsLabel": "منتجات",
     "promoCodeLabel": "كود الخصم",
     "promoAppliedPrefix": "✅ تم تطبيق الكود:",
-    "discountLabel": "الخصم"
+    "discountLabel": "الخصم",
+    "resolveUnavailableTitle": "منتجات غير متوفرة",
+    "resolveUnavailableIntro": "بعض المنتجات لم تعد متوفرة. اختر بديلاً أو احذفها قبل المتابعة.",
+    "noSubstituteAvailable": "لا يوجد منتج بديل متاح.",
+    "removeLine": "حذف هذا المنتج"
   },
   "cart": {
     "subtotal": "المجموع الفرعي",
@@ -54,13 +71,15 @@
     "cancelled": "تم إلغاء طلبك بنجاح.",
     "reorderTitle": "🛒 إعادة الطلب؟",
     "reorderMessage": "ستتم إضافة منتجات هذا الطلب إلى سلتك.",
-    "reorderUnavailableWarning": "⚠️ بعض المنتجات لم تعد متوفرة ولم تتم إضافتها."
-  },
-  "substitution": {
-    "original": "المنتج الأصلي",
-    "suggested": "اقتراح",
-    "accept": "قبول",
-    "refuse": "رفض — حذف هذا العنصر"
+    "reorderUnavailableWarning": "⚠️ بعض المنتجات لم تعد متوفرة ولم تتم إضافتها.",
+    "prepPending": "قيد التحضير",
+    "prepInProgress": "التحضير جارٍ",
+    "prepReadyDelivery": "جاهز للتوصيل",
+    "prepReadyPickup": "جاهز للاستلام",
+    "prepCompletedPickup": "تم الاستلام",
+    "statusPendingReview": "بانتظار المعالجة",
+    "outForDelivery": "قيد التوصيل",
+    "delivered": "تم التوصيل"
   },
   "permissions": {
     "locationTitle": "موقعك",
@@ -81,7 +100,8 @@
     },
     "server": {
       "unavailable": "الخدمة غير متوفرة مؤقتًا.",
-      "unknown": "خطأ في الخادم. حاول مرة أخرى لاحقًا."
+      "unknown": "خطأ في الخادم. حاول مرة أخرى لاحقًا.",
+      "rate_limited": "محاولات كثيرة جدًا. يرجى الانتظار قليلاً قبل إعادة المحاولة."
     },
     "auth": {
       "invalid_credentials": "رقم الهاتف أو الرمز السري غير صحيح.",
@@ -100,7 +120,8 @@
     "checkout": {
       "out_of_stock": "هذا المنتج لم يعد متوفرًا.",
       "slot_full": "هذه الفترة الزمنية مكتملة.",
-      "out_of_delivery_zone": "عنوانك ليس ضمن منطقة التوصيل لدينا."
+      "out_of_delivery_zone": "عنوانك ليس ضمن منطقة التوصيل لدينا.",
+      "unavailable_products": "بعض منتجات طلبك لم تعد متوفرة."
     },
     "promo": {
       "invalid": "كود الخصم غير صالح.",
@@ -126,6 +147,12 @@
   "vitrine": {
     "popupTitle": "🛒 هل ترغب في الطلب؟",
     "popupBody": "أنشئ حسابك مجانًا للاستفادة من أفضل أسعارنا!"
+  },
+  "about": {
+    "versionLabel": "الإصدار: {version}"
+  },
+  "product": {
+    "substitutesTitle": "منتجات بديلة"
   },
   "legal": {
     "cgu": "الشروط والأحكام",
@@ -160,7 +187,7 @@
     "forgotPin": "نسيت الرمز السري؟",
     "useGpsLocation": "استخدام موقعي الحالي",
     "retry": "إعادة المحاولة",
-    "receiveSms": "استلام رمز عبر الرسائل القصيرة",
+    "sendPinResetRequest": "إرسال الطلب",
     "browseCatalog": "تصفح الكتالوج",
     "loadMore": "عرض المزيد"
   },
@@ -212,13 +239,13 @@
   },
   "screens": {
     "Vitrine": { "title": "أفضل أسعارنا", "subtitle": "واجهة عامة — F00" },
-    "Onboarding": { "title": "اطلب منتجاتك المحلية", "subtitle": "التعريف بالتطبيق — F01" },
     "AuthWelcome": { "title": "مرحبًا", "subtitle": "المصادقة — F02" },
     "RegisterStep1": { "title": "إنشاء حساب — المعلومات", "subtitle": "التسجيل خطوة 1 — F02" },
     "RegisterStep2": { "title": "عنوان التوصيل", "subtitle": "التسجيل خطوة 2 — F02" },
     "RegisterStep3": { "title": "أنشئ رمزك السري", "subtitle": "التسجيل خطوة 3 — F02" },
     "Login": { "title": "تسجيل الدخول", "subtitle": "تسجيل الدخول — F02" },
     "ForgotPin": { "title": "نسيت الرمز السري", "subtitle": "إعادة تعيين الرمز السري — F02" },
+    "Reauth": { "title": "انتهت صلاحية الجلسة", "subtitle": "إعادة المصادقة بالرمز السري — الأمان" },
     "Home": { "title": "الرئيسية", "subtitle": "الرئيسية — F03" },
     "Catalog": { "title": "الكتالوج", "subtitle": "الفئات — F04" },
     "CategoryProducts": { "title": "المنتجات", "subtitle": "منتجات حسب الفئة — F04" },
@@ -230,10 +257,9 @@
     "CheckoutOutOfZone": { "title": "المنطقة غير مشمولة", "subtitle": "خارج منطقة التوصيل — F07" },
     "CheckoutTimeslot": { "title": "الفترة الزمنية", "subtitle": "اختيار الفترة الزمنية — F07" },
     "CheckoutSummary": { "title": "ملخص الطلب", "subtitle": "الملخص وكود الخصم — F07 / F15" },
-    "OrderConfirmation": { "title": "تم تأكيد الطلب!", "subtitle": "التأكيد — F08" },
+    "OrderConfirmation": { "title": "تم إرسال الطلب!", "subtitle": "التأكيد — F08" },
     "OrderHistory": { "title": "طلباتي", "subtitle": "السجل وإعادة الطلب — F09" },
-    "OrderTracking": { "title": "تتبع الطلب", "subtitle": "التتبع، الإلغاء، الاستبدال — F08 / F16 / F17" },
-    "Substitution": { "title": "منتج غير متوفر", "subtitle": "استبدال المنتج — F17" },
+    "OrderTracking": { "title": "تتبع الطلب", "subtitle": "التتبع، الإلغاء — F08 / F16" },
     "Profile": { "title": "ملفي الشخصي", "subtitle": "الملف الشخصي — F10" },
     "Addresses": { "title": "عناويني", "subtitle": "العناوين المحفوظة — F10" },
     "Favorites": { "title": "المفضلة", "subtitle": "المنتجات المفضلة" },

@@ -52,7 +52,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       return;
     }
 
-    _isSubmitting = true;
+    setState(() => _isSubmitting = true);
     try {
       await context.read<OdooApiClient>().changePin(
             currentPin: _currentController.text.trim(),
@@ -64,7 +64,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     } on AppError catch (e) {
       if (mounted) AppMessenger.showError(context, e, onRetry: _submit);
     } finally {
-      _isSubmitting = false;
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 

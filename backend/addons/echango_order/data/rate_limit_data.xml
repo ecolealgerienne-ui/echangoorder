@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Purge quotidienne des compteurs de rate limiting (x_rate_limit)
+         de plus d'un jour — voir models/rate_limit.py. -->
+    <record id="ir_cron_rate_limit_gc" model="ir.cron">
+        <field name="name">Echango Order : purge des compteurs de rate limiting</field>
+        <field name="model_id" ref="model_x_rate_limit"/>
+        <field name="state">code</field>
+        <field name="code">model._gc()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

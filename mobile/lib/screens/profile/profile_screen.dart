@@ -7,6 +7,8 @@ import '../../errors/app_messenger.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/logout.dart';
+import '../../utils/require_account.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/delete_account_dialog.dart';
 import '../../widgets/screen_placeholder.dart';
@@ -40,20 +42,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _editName(String currentName) async {
-    final controller = TextEditingController(text: currentName);
     final newName = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('profile.editNameTitle'.tr()),
-        content: TextField(controller: controller, autofocus: true),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text('common.cancel'.tr())),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
-            child: Text('common.confirm'.tr()),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => _EditNameDialog(currentName: currentName),
     );
     if (newName == null || newName.isEmpty || newName == currentName || !mounted) return;
 
@@ -67,9 +58,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _logout(BuildContext context) {
-    context.read<OdooApiClient>().clearSession();
-    context.read<AuthState>().logout();
+  void _logout(BuildContext context) => fullLogout(context);
+
+  /// Un invité (mode "Continuer sans compte", F02) n'a pas de session Odoo
+  /// réelle : ces écrans/actions appellent tous des endpoints `auth="user"`
+  /// qui échoueraient silencieusement en session expirée puis
+  /// déconnecteraient l'invité de son propre parcours (bug trouvé à l'audit
+  /// du 2026-07-19, cf. status-V1.md). Même garde que pour le panier
+  /// ([requireAccount]) plutôt que de laisser chaque écran découvrir
+  /// l'absence de session à ses dépens.
+  Future<void> _requireAccountThen(BuildContext context, VoidCallback action) async {
+    if (!await requireAccount(context)) return;
+    if (!context.mounted) return;
+    action();
   }
 
   @override
@@ -81,17 +82,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       actions: [
         PlaceholderAction(
           label: 'screens.Addresses.title'.tr(),
-          onPressed: () => context.push('/profile/addresses'),
+          onPressed: () => _requireAccountThen(context, () => context.push('/profile/addresses')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
           label: 'screens.Favorites.title'.tr(),
-          onPressed: () => context.push('/profile/favorites'),
+          onPressed: () => _requireAccountThen(context, () => context.push('/profile/favorites')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
           label: 'screens.ChangePin.title'.tr(),
-          onPressed: () => context.push('/profile/change-pin'),
+          onPressed: () => _requireAccountThen(context, () => context.push('/profile/change-pin')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
@@ -120,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         PlaceholderAction(
           label: 'actions.deleteAccount'.tr(),
-          onPressed: () => showDeleteAccountDialog(context),
+          onPressed: () => _requireAccountThen(context, () => showDeleteAccountDialog(context)),
           variant: AppButtonVariant.danger,
         ),
       ],
@@ -165,6 +166,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Contenu du dialog d'édition du nom, extrait en `StatefulWidget` dédié
+/// plutôt qu'un `TextEditingController` créé directement dans `_editName`
+/// (crash trouvé côté utilisateur : `.whenComplete(controller.dispose)`
+/// dispose trop tôt, pendant que le `TextField` est encore dans l'arbre le
+/// temps de l'animation de fermeture du dialog — "A TextEditingController
+/// was used after being disposed"). Un vrai `State.dispose()` est appelé
+/// par Flutter au bon moment, une fois le widget réellement retiré.
+class _EditNameDialog extends StatefulWidget {
+  final String currentName;
+
+  const _EditNameDialog({required this.currentName});
+
+  @override
+  State<_EditNameDialog> createState() => _EditNameDialogState();
+}
+
+class _EditNameDialogState extends State<_EditNameDialog> {
+  late final _controller = TextEditingController(text: widget.currentName);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('profile.editNameTitle'.tr()),
+      content: TextField(controller: _controller, autofocus: true),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('common.cancel'.tr())),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: Text('common.confirm'.tr()),
+        ),
+      ],
     );
   }
 }

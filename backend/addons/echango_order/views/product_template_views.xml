@@ -13,4 +13,25 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Produits de substitution — curation manuelle admin (décision
+         produit 2026-07, remplace F17). Exclut le produit courant du choix
+         (`id != id` n'a pas de sens, exclusion sur le domaine du widget) et
+         se limite aux produits vendables, cohérent avec le reste du
+         catalogue exposé côté app. -->
+    <record id="view_product_template_form_x_substitute" model="ir.ui.view">
+        <field name="name">product.template.form.x.substitute</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='x_vitrine_publique']" position="after">
+                <field
+                    name="x_substitute_product_ids"
+                    widget="many2many_tags"
+                    domain="[('sale_ok', '=', True), ('id', '!=', id)]"
+                    options="{'no_create': True}"
+                />
+            </xpath>
+        </field>
+    </record>
 </odoo>

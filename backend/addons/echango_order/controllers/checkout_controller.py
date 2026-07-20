@@ -2,6 +2,7 @@ from odoo import fields, http
 from odoo.http import request
 
 from .cart_controller import EchangoCartController
+from .session_utils import require_fresh_session
 
 
 def _resolve_promo_error(order, code):
@@ -46,6 +47,7 @@ class EchangoCheckoutController(http.Controller):
     """
 
     @http.route("/echango/checkout/check_zone", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def check_zone(self, city=None, zip_code=None, **kw):
         city = (city or "").strip()
         zip_code = (zip_code or "").strip()
@@ -56,7 +58,51 @@ class EchangoCheckoutController(http.Controller):
         ], limit=1)
         return {"covered": bool(zone)}
 
+    @http.route("/echango/checkout/timeslots", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
+    def timeslots(self, reception_mode=None, slots=None, **kw):
+        """F07 — capacité des créneaux ("créneau complet grisé", specs QA).
+        `slots` = créneaux candidats déjà générés côté client
+        (`utils/timeslots.dart`, seule source de vérité pour les horaires
+        proposés) : une liste de `{"start": <datetime Odoo, déjà en UTC via
+        formatOdooDatetime>, "hour": <heure locale affichée, 0-23>}`. La
+        capacité (`x_timeslot_capacity.hour`) est exprimée en heure locale
+        (celle que voit un utilisateur back-office, "10h"/"14h"/"16h"...),
+        pas en UTC — d'où l'heure locale transmise séparément plutôt que
+        déduite de `start`, qui a pu changer de fuseau à la conversion
+        (cf. status-V1.md § fuseau horaire x_creneau). Pas de capacité
+        configurée pour une heure donnée -> jamais complet (comportement
+        par défaut inchangé).
+        """
+        if reception_mode not in ("home_delivery", "pickup") or not slots:
+            return {"full": []}
+        full = [
+            item["start"] for item in slots
+            if item.get("start") and self._slot_is_full(reception_mode, item.get("hour"), item["start"])
+        ]
+        return {"full": full}
+
+    @staticmethod
+    def _slot_is_full(reception_mode, hour, start):
+        """Partagé entre `timeslots()` (grisage côté app) et `confirm()`
+        (vérification qui compte réellement, côté serveur — même logique
+        que `x_verification_state` ci-dessous). `hour` = heure locale
+        (voir docstring de `timeslots`), `start` = valeur de `x_creneau`
+        au format Odoo (déjà en UTC)."""
+        capacity = request.env["x_timeslot_capacity"].sudo().search([
+            ("reception_mode", "=", reception_mode), ("hour", "=", hour),
+        ], limit=1)
+        if not capacity:
+            return False
+        count = request.env["sale.order"].sudo().search_count([
+            ("x_reception_mode", "=", reception_mode),
+            ("x_creneau", "=", start),
+            ("state", "!=", "cancel"),
+        ])
+        return count >= capacity.max_orders
+
     @http.route("/echango/checkout/apply_promo", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def apply_promo(self, code=None, **kw):
         code = (code or "").strip()
         if not code:
@@ -97,11 +143,23 @@ class EchangoCheckoutController(http.Controller):
 
         return EchangoCartController()._cart_payload(order)
 
+    @staticmethod
+    def _zone_covers(city, zip_code):
+        return bool(request.env["x_delivery_zone"].sudo().search([
+            "|", ("city", "=ilike", (city or "").strip()), ("zip_code", "=", (zip_code or "").strip()),
+        ], limit=1))
+
     @http.route("/echango/checkout/confirm", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
-    def confirm(self, reception_mode=None, slot_start=None, street=None, city=None,
-                zip_code=None, notes=None, **kw):
+    @require_fresh_session
+    def confirm(self, reception_mode=None, slot_start=None, slot_hour=None, address_id=None, street=None,
+                city=None, zip_code=None, notes=None, **kw):
         if reception_mode not in ("home_delivery", "pickup"):
             return {"error": "validation.required"}
+        # Capacité des créneaux — la vérification qui compte réellement
+        # est ici, pas seulement le grisage côté app (`timeslots()`) qu'un
+        # appel direct à cet endpoint contournerait sinon.
+        if slot_start and self._slot_is_full(reception_mode, slot_hour, slot_start):
+            return {"error": "checkout.slot_full"}
 
         partner = request.env.user.partner_id
         # Qualité clients — un compte pas encore validé par un modérateur
@@ -113,37 +171,106 @@ class EchangoCheckoutController(http.Controller):
         if partner.x_verification_state == "rejected":
             return {"error": "auth.account_rejected"}
 
+        # `sent` inclus (F08, décision produit 2026-07 — voir CLAUDE.md §
+        # Statuts de commande) : une commande déjà "confirmée" côté client
+        # (en attente de prise en charge par un opérateur) reste modifiable
+        # via ce même endpoint — ex. le client ajoute une adresse/un
+        # créneau différent avant que l'opérateur ne l'ait prise en main.
         order = request.env["sale.order"].sudo().search(
-            [("partner_id", "=", partner.id), ("state", "=", "draft")],
+            [("partner_id", "=", partner.id), ("state", "in", ("draft", "sent"))],
             order="id desc", limit=1,
         )
         if not order or not order.order_line:
             return {"error": "not_found"}
+        # Stock revérifié à la confirmation, pas seulement à l'ajout au
+        # panier (`cart_controller.add`) : un panier laissé en brouillon
+        # plusieurs jours peut être confirmé alors qu'un produit est
+        # entre-temps devenu indisponible — même principe que la
+        # revérification de la capacité des créneaux ci-dessus (trouvé à
+        # l'audit technique du 2026-07-19). Ne bloque plus sur un message
+        # générique dès la première ligne en rupture (décision produit
+        # 2026-07, remplace F17) : toutes les lignes indisponibles sont
+        # remontées d'un coup, avec pour chacune les produits de
+        # substitution pré-définis par l'admin (`x_substitute_product_ids`)
+        # — c'est au client de remplacer ou de supprimer chaque ligne
+        # (jamais le préparateur), voir `mobile/lib/screens/checkout/
+        # checkout_resolve_unavailable_screen.dart`.
+        unavailable_lines = []
+        for line in order.order_line.filtered(lambda l: not l.is_reward_line):
+            # Stock de la variante précise de la ligne (`product.product.
+            # qty_available`), pas l'agrégat du template (toutes variantes
+            # confondues, F05) — une variante peut être en rupture pendant
+            # qu'une autre du même produit est disponible ; vérifier au
+            # niveau template laisserait passer une commande sur une
+            # variante réellement épuisée tant qu'une variante sœur a du
+            # stock.
+            template = line.product_id.product_tmpl_id
+            if line.product_id.qty_available <= 0:
+                substitutes = template.x_substitute_product_ids.filtered(
+                    lambda t: t.sale_ok and t.qty_available > 0
+                )
+                unavailable_lines.append({
+                    "line_id": line.id,
+                    "product_name": line.product_id.display_name,
+                    "qty": line.product_uom_qty,
+                    "substitutes": [
+                        {
+                            "id": t.id,
+                            "name": t.display_name,
+                            "list_price": t.list_price,
+                            "image_128": t.image_128.decode() if t.image_128 else None,
+                        }
+                        for t in substitutes
+                    ],
+                })
+        if unavailable_lines:
+            return {"error": "cart.unavailable_products", "unavailable_lines": unavailable_lines}
 
         vals = {"x_reception_mode": reception_mode}
         if slot_start:
             vals["x_creneau"] = slot_start
 
         if reception_mode == "home_delivery":
-            zone = request.env["x_delivery_zone"].sudo().search([
-                "|", ("city", "=ilike", (city or "").strip()), ("zip_code", "=", (zip_code or "").strip()),
-            ], limit=1)
-            if not zone:
-                return {"error": "checkout.out_of_delivery_zone"}
-            shipping = request.env["res.partner"].sudo().create({
-                "name": partner.name,
-                "parent_id": partner.id,
-                "type": "delivery",
-                "street": street,
-                "city": city,
-                "zip": zip_code,
-                "comment": notes,
-            })
+            if address_id:
+                # F10 — adresse sauvegardée (`res.partner` enfant type
+                # 'delivery') choisie au checkout plutôt qu'une adresse
+                # ressaisie à chaque commande (cf. status-V1.md § Points
+                # de vigilance). Réutilisée telle quelle comme
+                # partner_shipping_id, pas de recréation de contact.
+                shipping = request.env["res.partner"].sudo().search([
+                    ("id", "=", address_id), ("parent_id", "=", partner.id), ("type", "=", "delivery"),
+                ], limit=1)
+                if not shipping:
+                    return {"error": "not_found"}
+                if not self._zone_covers(shipping.city, shipping.zip):
+                    return {"error": "checkout.out_of_delivery_zone"}
+            else:
+                if not self._zone_covers(city, zip_code):
+                    return {"error": "checkout.out_of_delivery_zone"}
+                shipping = request.env["res.partner"].sudo().create({
+                    "name": partner.name,
+                    "parent_id": partner.id,
+                    "type": "delivery",
+                    "street": street,
+                    "city": city,
+                    "zip": zip_code,
+                    "comment": notes,
+                })
             vals["partner_shipping_id"] = shipping.id
 
         order.sudo().write(vals)
-        order.sudo().action_confirm()
-        self._seed_favorites(partner, order)
+        # F08 — décision produit 2026-07 (voir CLAUDE.md § Statuts de
+        # commande) : la commande n'est plus verrouillée/envoyée en
+        # préparation directement ici. Elle passe en `sent` ("En attente
+        # de prise en charge") — reste modifiable (voir domaine ci-dessus
+        # et `cart_controller.py`) jusqu'à ce qu'un opérateur clique sur le
+        # bouton standard "Confirmer" en back-office (`action_confirm()`,
+        # qui verrouille le portail et génère le `stock.picking`). Écriture
+        # directe plutôt qu'un appel à `action_quotation_sent()` : cette
+        # dernière ouvre l'assistant d'envoi par email, pensé pour
+        # l'interaction humaine back-office, pas pour un simple changement
+        # d'état déclenché par l'app.
+        order.sudo().write({"state": "sent"})
 
         return {
             "order_ref": order.name,
@@ -151,16 +278,3 @@ class EchangoCheckoutController(http.Controller):
             "reception_mode": order.x_reception_mode,
             "slot_start": order.x_creneau.isoformat() if order.x_creneau else None,
         }
-
-    def _seed_favorites(self, partner, order):
-        """Liste de favoris (`x_product_favorite`) initialisée
-        automatiquement par les produits achetés — dédupliqué, le client
-        peut ensuite en retirer/ajouter manuellement
-        (`controllers/favorites_controller.py`)."""
-        favorite = request.env["x_product_favorite"].sudo()
-        existing = set(favorite.search([("partner_id", "=", partner.id)]).product_tmpl_id.ids)
-        for line in order.order_line.filtered(lambda l: not l.is_reward_line):
-            tmpl_id = line.product_id.product_tmpl_id.id
-            if tmpl_id not in existing:
-                favorite.create({"partner_id": partner.id, "product_tmpl_id": tmpl_id})
-                existing.add(tmpl_id)

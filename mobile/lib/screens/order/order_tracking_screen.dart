@@ -1,6 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../errors/app_error.dart';
 import '../../errors/app_messenger.dart';
@@ -8,8 +7,8 @@ import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
+import '../../utils/order_status.dart';
 import '../../widgets/app_button.dart';
-import '../../widgets/screen_placeholder.dart';
 
 /// F09 (détail) — données réelles de la commande (`sale.order` + ses
 /// lignes). Le suivi temps réel complet (statuts `stock.picking`
@@ -42,27 +41,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Future<_OrderDetail> _fetchDetail() async {
     final api = context.read<OdooApiClient>();
-    final orders = await api.searchRead(
-      model: 'sale.order',
-      domain: [
-        ['name', '=', widget.orderRef],
-      ],
-      fields: const ['name', 'amount_total', 'state', 'x_reception_mode', 'x_creneau'],
-      limit: 1,
-    );
-    if (orders.isEmpty) {
-      throw const AppError(AppError.notFound);
-    }
-    final order = orders.first;
-    final lines = await api.searchRead(
-      model: 'sale.order.line',
-      domain: [
-        ['order_id', '=', order['id']],
-      ],
-      fields: const ['name', 'product_uom_qty'],
-    );
-    final substitution = await api.getSubstitution(orderId: order['id'] as int);
-    return _OrderDetail(order: order, lines: lines, hasSubstitution: substitution['pending'] == true);
+    final detail = await api.getOrderDetail(orderRef: widget.orderRef);
+    final order = detail['order'] as Map<String, dynamic>;
+    final lines = (detail['lines'] as List).cast<Map<String, dynamic>>();
+    return _OrderDetail(order: order, lines: lines);
   }
 
   Future<void> _confirmCancel(BuildContext context, int orderId) async {
@@ -116,38 +98,49 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             final order = detail.order;
             final state = order['state'] as String?;
             final receptionMode = order['x_reception_mode'] as String?;
-            final creneau = DateTime.tryParse(order['x_creneau'] as String? ?? '');
+            final creneau = parseOdooDatetime(order['x_creneau'] as String?);
             final modeLabel = receptionMode == 'home_delivery'
                 ? 'checkout.deliveryHome'.tr()
                 : receptionMode == 'pickup'
                     ? 'checkout.pickupStore'.tr()
                     : null;
-            final statusLabel = state == 'cancel' ? 'order.statusCancelled'.tr() : 'order.statusConfirmed'.tr();
+            final statusLabel = switch (state) {
+              'cancel' => 'order.statusCancelled'.tr(),
+              // F08 — en attente de prise en charge par un opérateur (voir
+              // CLAUDE.md § Statuts de commande) : pas encore de stock.
+              // picking à ce stade, prepStatusLabel() ne renverrait rien.
+              'sent' => 'order.statusPendingReview'.tr(),
+              _ => prepStatusLabel(order) ?? 'order.statusConfirmed'.tr(),
+            };
 
-            return ScreenPlaceholder(
-              screenKey: 'OrderTracking',
-              actions: [
-                // F17 — visible seulement si le préparateur a signalé une
-                // rupture avec suggestion en back-office. En réel, cet écran
-                // serait plutôt ouvert depuis une notification push (F11,
-                // pas encore fait) ; ce bouton reste le point d'entrée en
-                // attendant.
-                if (detail.hasSubstitution)
-                  PlaceholderAction(
-                    label: 'screens.Substitution.title'.tr(),
-                    onPressed: () => context.push('/profile/orders/${widget.orderRef}/substitution'),
-                    variant: AppButtonVariant.secondary,
-                  ),
-                // F16 — visible uniquement tant que la commande est
-                // "Confirmée" (state == 'sale'), pas de suivi
-                // stock.picking pour distinguer "préparation commencée".
-                if (state == 'sale')
-                  PlaceholderAction(
-                    label: 'actions.cancelOrder'.tr(),
-                    onPressed: () => _confirmCancel(context, order['id'] as int),
-                    variant: AppButtonVariant.danger,
-                  ),
-              ],
+            // F16 — décision produit 2026-07 (revue suite à un bug signalé :
+            // le bouton restait affiché même pour une commande déjà
+            // livrée/récupérée). `state == 'sale'` ne suffit plus comme
+            // critère depuis la refonte du cycle de vie (F08) : il reste
+            // `sale` de la prise en charge jusqu'à la livraison, sans se
+            // remettre à jour ensuite. Le vrai critère est `prep_status` —
+            // annulable pendant "en attente de prise en charge" (`sent`) et
+            // pendant la préparation, y compris "en cours" (`in_progress`,
+            // un opérateur a commencé mais peut toujours reposer les
+            // articles), bloqué dès que la commande est prête/livrée/
+            // récupérée (`completed`). Même logique que `order_controller.
+            // py._can_cancel()`, dupliquée ici pour l'affichage — la
+            // vérification qui compte reste côté serveur.
+            final prepStatus = order['prep_status'] as String?;
+            final canCancel = state == 'sent' ||
+                (state == 'sale' &&
+                    (prepStatus == null || prepStatus == 'pending' || prepStatus == 'in_progress'));
+
+            // `ScreenPlaceholder` construit son propre Scaffold/AppBar (voir
+            // widgets/screen_placeholder.dart) — cet écran a déjà le sien
+            // au-dessus (pour garder l'AppBar visible pendant le
+            // chargement/en cas d'erreur, avant que `order` ne soit connu).
+            // L'utiliser ici aussi empilait 2 AppBar "Suivi de commande"
+            // l'une sous l'autre (bug signalé par l'utilisateur, capture
+            // d'écran) — reproduit ici la même mise en page (padding,
+            // espacement) sans le Scaffold/AppBar en double.
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -171,6 +164,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                   for (final line in detail.lines)
                     Text('• ${line['name']} x${line['product_uom_qty']}'),
+                  if (canCancel) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    AppButton(
+                      label: 'actions.cancelOrder'.tr(),
+                      onPressed: () => _confirmCancel(context, order['id'] as int),
+                      variant: AppButtonVariant.danger,
+                    ),
+                  ],
                 ],
               ),
             );
@@ -184,7 +185,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 class _OrderDetail {
   final Map<String, dynamic> order;
   final List<Map<String, dynamic>> lines;
-  final bool hasSubstitution;
 
-  const _OrderDetail({required this.order, required this.lines, required this.hasSubstitution});
+  const _OrderDetail({required this.order, required this.lines});
 }
