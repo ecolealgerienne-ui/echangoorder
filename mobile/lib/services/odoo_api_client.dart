@@ -21,12 +21,27 @@ const _errorCodeMap = <String, String>{
   'auth.phone_already_registered': AppError.authPhoneAlreadyUsed,
   'auth.invalid_credentials': AppError.authInvalidCredentials,
   'auth.account_locked': AppError.authPinLocked,
+  // Renvoyé par require_fresh_session (controllers/session_utils.py) sur
+  // les endpoints /echango/* — même code que l'expiration détectée au
+  // niveau JSON-RPC (_mapRpcFault), doit déclencher la même bascule vers
+  // ReauthPinScreen (voir _throwIfOwnError ci-dessous).
+  'auth.session_expired': AppError.authSessionExpired,
   // Réutilise le code checkout existant : même message ("produit non
   // disponible") que le cas F07, pas la peine d'un nouveau domaine/2
   // traductions supplémentaires pour la même idée.
   'cart.product_unavailable': AppError.checkoutOutOfStock,
+  // Cas normalement intercepté avant ce mapping générique par
+  // [OdooApiClient.confirmOrder] (voir plus bas, [CartUnavailableProductsError]
+  // porte la liste structurée des lignes) — gardé ici en repli défensif
+  // seulement, pour ne jamais tomber sur `AppError.unknown` si ce code
+  // apparaissait ailleurs un jour.
+  'cart.unavailable_products': AppError.checkoutUnavailableProducts,
   'not_found': AppError.notFound,
+  // Renvoyé par rate_limited (controllers/rate_limit.py) sur les
+  // endpoints publics (auth/login, auth/register, currency, vitrine).
+  'rate_limited': AppError.serverRateLimited,
   'checkout.out_of_delivery_zone': AppError.checkoutOutOfDeliveryZone,
+  'checkout.slot_full': AppError.checkoutSlotFull,
   'order.cannot_cancel': AppError.orderCannotCancel,
   'promo.invalid': AppError.promoInvalid,
   'promo.expired': AppError.promoExpired,
@@ -51,15 +66,30 @@ const _errorCodeMap = <String, String>{
 /// premier appel réel échoue avec [AppError.authSessionExpired], ce qui
 /// déclenche [onSessionExpired].
 class OdooApiClient {
-  OdooApiClient({http.Client? httpClient, FlutterSecureStorage? secureStorage, this.onSessionExpired})
-      : _http = httpClient ?? http.Client(),
-        _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  OdooApiClient({
+    http.Client? httpClient,
+    FlutterSecureStorage? secureStorage,
+    this.onSessionExpired,
+    this.onActivity,
+  })  : _http = httpClient ?? http.Client(),
+        // `encryptedSharedPreferences: true` explicite sur Android (recommandé
+        // par le package pour garantir EncryptedSharedPreferences/Keystore
+        // plutôt qu'une configuration par défaut moins robuste selon la
+        // version — trouvé à l'audit sécurité du 2026-07-19). Sans effet sur
+        // iOS, qui utilise déjà le Keychain nativement.
+        _secureStorage = secureStorage ??
+            const FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
 
   static const _cookieStorageKey = 'echango_session_cookie';
 
   final http.Client _http;
   final FlutterSecureStorage _secureStorage;
   final VoidCallback? onSessionExpired;
+  // Session expirée après 24h d'inactivité (CLAUDE.md § Exigences
+  // transversales) : appelé après chaque appel réussi pour que
+  // `AuthState.checkInactivity()` (vérifiée au lancement/retour au premier
+  // plan) dispose d'un horodatage fiable de dernière activité.
+  final VoidCallback? onActivity;
   String? _sessionCookie;
 
   Future<void> restoreSession() async {
@@ -92,6 +122,17 @@ class OdooApiClient {
         await _rpc('/echango/auth/login', {'phone': phone, 'pin': pin}) as Map<String, dynamic>;
     _throwIfOwnError(result);
     return result['uid'] as int;
+  }
+
+  /// F02 — "PIN oublié" : pas de fournisseur SMS choisi (voir
+  /// status-V1.md), donc pas de réinitialisation en libre-service. La
+  /// demande crée une activité pour un modérateur back-office (même
+  /// mécanisme que la validation de compte), qui recontacte le client par
+  /// téléphone et réinitialise son PIN depuis Odoo. Réponse toujours
+  /// générique côté serveur, que le numéro existe ou non — évite de
+  /// pouvoir vérifier si un numéro est inscrit (énumération de comptes).
+  Future<void> requestPinReset({required String phone}) async {
+    await _rpc('/echango/auth/request_pin_reset', {'phone': phone});
   }
 
   /// `search_read` standard via `/web/dataset/call_kw` — pas de contrôleur
@@ -184,9 +225,16 @@ class OdooApiClient {
     return result;
   }
 
-  Future<Map<String, dynamic>> addToCart({required int productId, num qty = 1}) async {
-    final result =
-        await _rpc('/echango/cart/add', {'product_id': productId, 'qty': qty}) as Map<String, dynamic>;
+  /// [variantId] — variante précise choisie (F05, couleur/taille...),
+  /// résolue côté app depuis [getVariants]. Omis pour un produit sans
+  /// variante (ou tant qu'on veut la variante par défaut Odoo) — comporte-
+  /// ment inchangé dans ce cas.
+  Future<Map<String, dynamic>> addToCart({required int productId, num qty = 1, int? variantId}) async {
+    final result = await _rpc('/echango/cart/add', {
+      'product_id': productId,
+      'qty': qty,
+      if (variantId != null) 'variant_id': variantId,
+    }) as Map<String, dynamic>;
     _throwIfOwnError(result);
     return result;
   }
@@ -262,6 +310,27 @@ class OdooApiClient {
     return result['covered'] as bool? ?? false;
   }
 
+  /// F07 — capacité des créneaux ("créneau complet grisé", specs QA).
+  /// `slots` = créneaux candidats déjà générés côté client
+  /// (`utils/timeslots.dart`, seule source de vérité pour les horaires
+  /// proposés) — l'heure locale (`slot.hour`) est transmise séparément du
+  /// datetime déjà converti en UTC (`formatOdooDatetime`), la capacité
+  /// back-office étant exprimée en heure locale (voir
+  /// `checkout_controller.py.timeslots`). Renvoie le sous-ensemble complet.
+  Future<Set<DateTime>> fetchFullTimeslots({
+    required String receptionMode,
+    required List<DateTime> slots,
+  }) async {
+    final result = await _rpc('/echango/checkout/timeslots', {
+      'reception_mode': receptionMode,
+      'slots': [
+        for (final slot in slots) {'start': formatOdooDatetime(slot), 'hour': slot.hour},
+      ],
+    }) as Map<String, dynamic>;
+    final fullStarts = (result['full'] as List).cast<String>().toSet();
+    return slots.where((s) => fullStarts.contains(formatOdooDatetime(s))).toSet();
+  }
+
   /// F07 — fixe le mode de réception/l'adresse/le créneau sur le devis en
   /// cours et le confirme (`action_confirm`, `state` -> `sale`). Le panier
   /// (F06) redevient vide juste après, puisqu'il n'y a alors plus de devis
@@ -269,6 +338,7 @@ class OdooApiClient {
   Future<Map<String, dynamic>> confirmOrder({
     required String receptionMode,
     required DateTime slotStart,
+    int? addressId,
     String? street,
     String? city,
     String? zipCode,
@@ -277,11 +347,33 @@ class OdooApiClient {
     final result = await _rpc('/echango/checkout/confirm', {
       'reception_mode': receptionMode,
       'slot_start': formatOdooDatetime(slotStart),
+      // Heure locale du créneau (voir fetchFullTimeslots) : nécessaire
+      // pour que la vérification de capacité côté serveur regarde la
+      // bonne configuration (`x_timeslot_capacity.hour`, exprimée en
+      // heure locale, pas en UTC).
+      'slot_hour': slotStart.hour,
+      // Adresse sauvegardée (F10) : addressId prioritaire côté serveur,
+      // street/city/zipCode/notes ignorés dans ce cas (voir
+      // checkout_controller.py.confirm) mais transmis quand même, sans
+      // effet, pour garder confirmOrder() simple à appeler dans les deux
+      // cas plutôt que deux méthodes distinctes.
+      if (addressId != null) 'address_id': addressId,
       if (street != null) 'street': street,
       if (city != null) 'city': city,
       if (zipCode != null) 'zip_code': zipCode,
       if (notes != null) 'notes': notes,
     }) as Map<String, dynamic>;
+    // Un ou plusieurs produits sont devenus indisponibles entre l'ajout au
+    // panier et la confirmation (voir checkout_controller.py.confirm()) :
+    // intercepté avant `_throwIfOwnError` (générique) pour porter la liste
+    // structurée des lignes/substituts jusqu'à l'écran de résolution
+    // (`CheckoutResolveUnavailableScreen`) plutôt qu'un simple message
+    // d'erreur.
+    if (result['error'] == 'cart.unavailable_products') {
+      throw CartUnavailableProductsError(
+        (result['unavailable_lines'] as List).cast<Map<String, dynamic>>(),
+      );
+    }
     _throwIfOwnError(result);
     return result;
   }
@@ -387,6 +479,28 @@ class OdooApiClient {
     _throwIfOwnError(result);
   }
 
+  /// F09 — historique des commandes du client connecté. Endpoint custom
+  /// plutôt qu'un `search_read` direct sur `sale.order` : ce dernier
+  /// échappe à la politique "session expirée après 24h d'inactivité"
+  /// (`require_fresh_session` ne couvre que les contrôleurs `/echango/*`,
+  /// trouvé à l'audit sécurité du 2026-07-19 — voir status-V1.md), alors
+  /// que l'historique de commandes reste une donnée personnelle.
+  Future<List<Map<String, dynamic>>> listOrders({int offset = 0, int? limit}) async {
+    final result = await _rpc('/echango/order/list', {
+      'offset': offset,
+      if (limit != null) 'limit': limit,
+    }) as Map<String, dynamic>;
+    return (result['orders'] as List).cast<Map<String, dynamic>>();
+  }
+
+  /// F08/F09 — détail + lignes d'une commande (suivi). Même raison que
+  /// [listOrders] ci-dessus.
+  Future<Map<String, dynamic>> getOrderDetail({required String orderRef}) async {
+    final result = await _rpc('/echango/order/detail', {'order_ref': orderRef}) as Map<String, dynamic>;
+    _throwIfOwnError(result);
+    return result;
+  }
+
   /// F16 — annulation, uniquement tant que la commande est "Confirmée"
   /// (voir `controllers/order_controller.py` pour la règle exacte).
   Future<void> cancelOrder({required int orderId}) async {
@@ -394,26 +508,26 @@ class OdooApiClient {
     _throwIfOwnError(result);
   }
 
-  /// F17 — la substitution est signalée manuellement par le préparateur en
-  /// back-office (`x_substitution_produit`, voir `models/sale_order.py`) ;
-  /// `pending: false` si aucune substitution n'est en attente pour cette
-  /// commande.
-  Future<Map<String, dynamic>> getSubstitution({required int orderId}) async {
-    final result = await _rpc('/echango/order/substitution', {'order_id': orderId}) as Map<String, dynamic>;
-    _throwIfOwnError(result);
+  /// F05 — produits de substitution affichés sur la fiche produit
+  /// (curation manuelle admin, `x_substitute_product_ids` — voir
+  /// `models/product_template.py`, décision produit qui remplace l'ancien
+  /// F17). Résolution en `sudo()` côté serveur (nom/prix/image), pas juste
+  /// les ids du champ Many2many.
+  Future<List<Map<String, dynamic>>> getSubstitutes({required int productId}) async {
+    final result =
+        await _rpc('/echango/catalog/substitutes', {'product_id': productId}) as Map<String, dynamic>;
+    return (result['substitutes'] as List).cast<Map<String, dynamic>>();
+  }
+
+  /// F05 — attributs (couleur/taille...) et variantes d'un produit
+  /// (mécanisme standard Odoo, `attribute_line_ids`/`product_variant_ids`
+  /// — jusqu'ici ignoré par l'app, qui n'ajoutait toujours que la variante
+  /// par défaut). `attributes` vide = produit sans variante, rien à
+  /// afficher. Voir `catalog_controller.py.variants()`.
+  Future<Map<String, dynamic>> getVariants({required int productId}) async {
+    final result =
+        await _rpc('/echango/catalog/variants', {'product_id': productId}) as Map<String, dynamic>;
     return result;
-  }
-
-  Future<void> acceptSubstitution({required int lineId}) async {
-    final result =
-        await _rpc('/echango/order/substitution/accept', {'line_id': lineId}) as Map<String, dynamic>;
-    _throwIfOwnError(result);
-  }
-
-  Future<void> refuseSubstitution({required int lineId}) async {
-    final result =
-        await _rpc('/echango/order/substitution/refuse', {'line_id': lineId}) as Map<String, dynamic>;
-    _throwIfOwnError(result);
   }
 
   /// F00 — vitrine publique, aucune session requise (`auth='public'` côté
@@ -457,7 +571,11 @@ class OdooApiClient {
   void _throwIfOwnError(Map<String, dynamic> result) {
     final errorCode = result['error'] as String?;
     if (errorCode != null) {
-      throw AppError(_errorCodeMap[errorCode] ?? AppError.unknown, cause: errorCode);
+      final mapped = _errorCodeMap[errorCode] ?? AppError.unknown;
+      if (mapped == AppError.authSessionExpired) {
+        onSessionExpired?.call();
+      }
+      throw AppError(mapped, cause: errorCode);
     }
   }
 
@@ -498,6 +616,7 @@ class OdooApiClient {
       }
       throw AppError(code, cause: body['error']);
     }
+    onActivity?.call();
     return body['result'];
   }
 
@@ -514,11 +633,27 @@ class OdooApiClient {
 }
 
 /// `DateTime` -> format attendu par les champs `Datetime` d'Odoo côté
-/// JSON-RPC (`YYYY-MM-DD HH:MM:SS`, pas de `T` ni de fuseau — `toIso8601String()`
-/// ne convient pas). Simplification MVP : pas de conversion UTC, on
-/// suppose serveur et client dans le même fuseau horaire (déploiement
-/// régional) — à revoir avant une release multi-fuseaux.
+/// JSON-RPC (`YYYY-MM-DD HH:MM:SS`, pas de `T` ni de fuseau). Les champs
+/// `Datetime` d'Odoo sont toujours stockés en UTC côté serveur : on
+/// convertit donc explicitement `dt` (heure locale de l'appareil, ex.
+/// créneau choisi par l'utilisateur) en UTC avant de le formater, sinon
+/// Odoo stocke l'heure locale telle quelle en la traitant comme de l'UTC
+/// (décalage silencieux égal au fuseau du serveur/appareil). Symétrique de
+/// [parseOdooDatetime].
 String formatOdooDatetime(DateTime dt) {
+  final utc = dt.toUtc();
   String two(int n) => n.toString().padLeft(2, '0');
-  return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
+  return '${utc.year}-${two(utc.month)}-${two(utc.day)} ${two(utc.hour)}:${two(utc.minute)}:${two(utc.second)}';
+}
+
+/// Inverse de [formatOdooDatetime] : parse une chaîne `Datetime` renvoyée
+/// par Odoo (toujours en UTC, sans suffixe de fuseau — format serveur
+/// `YYYY-MM-DD HH:MM:SS` ou `isoformat()` avec `T`) et renvoie l'heure
+/// locale de l'appareil. `DateTime.parse`/`tryParse` traiterait une chaîne
+/// sans fuseau comme déjà locale, d'où le suffixe `Z` ajouté explicitement
+/// avant parsing.
+DateTime? parseOdooDatetime(String? value) {
+  if (value == null || value.isEmpty) return null;
+  final normalized = value.contains('T') ? value : value.replaceFirst(' ', 'T');
+  return DateTime.tryParse('${normalized}Z')?.toLocal();
 }

@@ -92,8 +92,8 @@ class CartState extends ChangeNotifier {
   /// ailleurs dans l'app (cf. CLAUDE.md § Gestion des erreurs).
   Future<void> refresh() async => _applyPayload(await _api.getCart());
 
-  Future<void> add({required int productId, num qty = 1}) async =>
-      _applyPayload(await _api.addToCart(productId: productId, qty: qty));
+  Future<void> add({required int productId, num qty = 1, int? variantId}) async =>
+      _applyPayload(await _api.addToCart(productId: productId, qty: qty, variantId: variantId));
 
   Future<void> updateQuantity({required int lineId, required num qty}) async =>
       _applyPayload(await _api.updateCartLine(lineId: lineId, qty: qty));

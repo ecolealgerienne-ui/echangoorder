@@ -10,17 +10,17 @@ import 'require_account.dart';
 /// la gestion d'erreur commune aux écrans qui déclenchent un ajout (fiche
 /// produit, catalogue par catégorie, recherche) pour éviter de dupliquer
 /// le même try/catch trois fois.
-Future<void> addProductToCart(BuildContext context, int productId, {num qty = 1}) async {
+Future<void> addProductToCart(BuildContext context, int productId, {num qty = 1, int? variantId}) async {
   if (!await requireAccount(context)) return;
   if (!context.mounted) return;
   try {
-    await context.read<CartState>().add(productId: productId, qty: qty);
+    await context.read<CartState>().add(productId: productId, qty: qty, variantId: variantId);
   } on AppError catch (error) {
     if (context.mounted) {
       AppMessenger.showError(
         context,
         error,
-        onRetry: () => addProductToCart(context, productId, qty: qty),
+        onRetry: () => addProductToCart(context, productId, qty: qty, variantId: variantId),
       );
     }
   }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_x_timeslot_capacity_list" model="ir.ui.view">
+        <field name="name">x_timeslot_capacity.list</field>
+        <field name="model">x_timeslot_capacity</field>
+        <field name="arch" type="xml">
+            <list string="Capacité des créneaux" editable="bottom">
+                <field name="reception_mode"/>
+                <field name="hour"/>
+                <field name="max_orders"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_x_timeslot_capacity" model="ir.actions.act_window">
+        <field name="name">Capacité des créneaux</field>
+        <field name="res_model">x_timeslot_capacity</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem id="menu_x_timeslot_capacity" name="Capacité des créneaux"
+              parent="menu_echango_order_root" action="action_x_timeslot_capacity" sequence="15"/>
+</odoo>

@@ -11,14 +11,26 @@
     "reference": "Réf :"
   },
   "auth": {
+    "nameLabel": "Nom et prénom",
+    "languageLabel": "Langue",
     "phoneLabel": "Téléphone",
     "pinLabel": "Code PIN",
     "pinHint": "6 à 12 chiffres",
     "pinConfirmLabel": "Confirmez le code PIN",
     "currentPinLabel": "PIN actuel",
     "newPinLabel": "Nouveau PIN",
-    "smsCodeLabel": "Code reçu par SMS",
-    "termsNotice": "En créant un compte, vous acceptez :"
+    "termsNotice": "En créant un compte, vous acceptez :",
+    "pinResetExplanation": "Indiquez votre numéro de téléphone. Notre équipe vous recontactera pour réinitialiser votre code PIN.",
+    "pinResetRequestSentTitle": "Demande envoyée",
+    "pinResetRequestSentMessage": "Si ce numéro correspond à un compte, notre équipe vous recontactera prochainement par téléphone pour réinitialiser votre code PIN."
+  },
+  "onboarding": {
+    "slide1Title": "Commandez vos produits locaux",
+    "slide1Subtitle": "Parcourez le catalogue et commandez en quelques clics.",
+    "slide2Title": "Livraison ou retrait, comme vous voulez",
+    "slide2Subtitle": "Choisissez de vous faire livrer à domicile ou de retirer votre commande en magasin.",
+    "slide3Title": "Suivez votre commande en temps réel",
+    "slide3Subtitle": "Restez informé à chaque étape, de la confirmation à la réception."
   },
   "nav": {
     "home": "Accueil",
@@ -30,6 +42,7 @@
     "deliveryHome": "🏠 Livraison à domicile",
     "pickupStore": "🏪 Retrait en magasin",
     "modifyAddress": "Modifier l'adresse",
+    "newAddressOption": "Nouvelle adresse pour cette commande",
     "streetLabel": "Rue",
     "cityLabel": "Ville",
     "zipLabel": "Code postal",
@@ -40,7 +53,11 @@
     "itemsLabel": "articles",
     "promoCodeLabel": "Code promo",
     "promoAppliedPrefix": "✅ Code appliqué :",
-    "discountLabel": "Réduction"
+    "discountLabel": "Réduction",
+    "resolveUnavailableTitle": "Produits indisponibles",
+    "resolveUnavailableIntro": "Certains produits ne sont plus disponibles. Choisissez un remplacement ou supprimez-les avant de continuer.",
+    "noSubstituteAvailable": "Aucun produit de remplacement disponible.",
+    "removeLine": "Supprimer cet article"
   },
   "cart": {
     "subtotal": "Sous-total",
@@ -54,13 +71,15 @@
     "cancelled": "Votre commande a bien été annulée.",
     "reorderTitle": "🛒 Commander à nouveau ?",
     "reorderMessage": "Les articles de cette commande seront ajoutés à votre panier.",
-    "reorderUnavailableWarning": "⚠️ Certains produits ne sont plus disponibles et n'ont pas été ajoutés."
-  },
-  "substitution": {
-    "original": "Produit original",
-    "suggested": "Suggestion",
-    "accept": "Accepter",
-    "refuse": "Refuser — Supprimer cet article"
+    "reorderUnavailableWarning": "⚠️ Certains produits ne sont plus disponibles et n'ont pas été ajoutés.",
+    "prepPending": "En préparation",
+    "prepInProgress": "En cours de préparation",
+    "prepReadyDelivery": "Prête pour la livraison",
+    "prepReadyPickup": "Prête à récupérer",
+    "prepCompletedPickup": "Récupérée",
+    "statusPendingReview": "En attente de prise en charge",
+    "outForDelivery": "En cours de livraison",
+    "delivered": "Livrée"
   },
   "permissions": {
     "locationTitle": "Votre localisation",
@@ -81,7 +100,8 @@
     },
     "server": {
       "unavailable": "Service momentanément indisponible.",
-      "unknown": "Erreur serveur. Réessayez plus tard."
+      "unknown": "Erreur serveur. Réessayez plus tard.",
+      "rate_limited": "Trop de tentatives. Merci de patienter quelques instants avant de réessayer."
     },
     "auth": {
       "invalid_credentials": "Numéro de téléphone ou code PIN incorrect.",
@@ -100,7 +120,8 @@
     "checkout": {
       "out_of_stock": "Ce produit n'est plus disponible.",
       "slot_full": "Ce créneau est complet.",
-      "out_of_delivery_zone": "Votre adresse n'est pas dans notre zone de livraison."
+      "out_of_delivery_zone": "Votre adresse n'est pas dans notre zone de livraison.",
+      "unavailable_products": "Certains produits de votre commande ne sont plus disponibles."
     },
     "promo": {
       "invalid": "Code promo invalide.",
@@ -126,6 +147,12 @@
   "vitrine": {
     "popupTitle": "🛒 Envie de commander ?",
     "popupBody": "Créez votre compte gratuitement pour profiter de nos meilleurs prix !"
+  },
+  "about": {
+    "versionLabel": "Version : {version}"
+  },
+  "product": {
+    "substitutesTitle": "Produits de substitution"
   },
   "legal": {
     "cgu": "CGU",
@@ -160,7 +187,7 @@
     "forgotPin": "PIN oublié ?",
     "useGpsLocation": "Utiliser ma position GPS",
     "retry": "Réessayer",
-    "receiveSms": "Recevoir un SMS",
+    "sendPinResetRequest": "Envoyer la demande",
     "browseCatalog": "Voir le catalogue",
     "loadMore": "Charger plus"
   },
@@ -212,13 +239,13 @@
   },
   "screens": {
     "Vitrine": { "title": "Nos meilleurs prix", "subtitle": "Vitrine publique — F00" },
-    "Onboarding": { "title": "Commandez vos produits locaux", "subtitle": "Onboarding — F01" },
     "AuthWelcome": { "title": "Bienvenue", "subtitle": "Authentification — F02" },
     "RegisterStep1": { "title": "Créer un compte — Infos", "subtitle": "Inscription étape 1 — F02" },
     "RegisterStep2": { "title": "Adresse de livraison", "subtitle": "Inscription étape 2 — F02" },
     "RegisterStep3": { "title": "Créez votre code PIN", "subtitle": "Inscription étape 3 — F02" },
     "Login": { "title": "Se connecter", "subtitle": "Connexion — F02" },
     "ForgotPin": { "title": "PIN oublié", "subtitle": "Réinitialisation PIN — F02" },
+    "Reauth": { "title": "Session expirée", "subtitle": "Ré-authentification par PIN — sécurité" },
     "Home": { "title": "Accueil", "subtitle": "Accueil — F03" },
     "Catalog": { "title": "Catalogue", "subtitle": "Catégories — F04" },
     "CategoryProducts": { "title": "Produits", "subtitle": "Produits par catégorie — F04" },
@@ -230,10 +257,9 @@
     "CheckoutOutOfZone": { "title": "Zone non couverte", "subtitle": "Hors zone de livraison — F07" },
     "CheckoutTimeslot": { "title": "Créneau", "subtitle": "Choix du créneau — F07" },
     "CheckoutSummary": { "title": "Récapitulatif", "subtitle": "Récapitulatif & code promo — F07 / F15" },
-    "OrderConfirmation": { "title": "Commande confirmée !", "subtitle": "Confirmation — F08" },
+    "OrderConfirmation": { "title": "Commande envoyée !", "subtitle": "Confirmation — F08" },
     "OrderHistory": { "title": "Mes commandes", "subtitle": "Historique & reorder — F09" },
-    "OrderTracking": { "title": "Suivi de commande", "subtitle": "Suivi, annulation, substitution — F08 / F16 / F17" },
-    "Substitution": { "title": "Produit indisponible", "subtitle": "Substitution produit — F17" },
+    "OrderTracking": { "title": "Suivi de commande", "subtitle": "Suivi, annulation — F08 / F16" },
     "Profile": { "title": "Mon Profil", "subtitle": "Profil utilisateur — F10" },
     "Addresses": { "title": "Mes adresses", "subtitle": "Adresses sauvegardées — F10" },
     "Favorites": { "title": "Mes favoris", "subtitle": "Produits favoris" },

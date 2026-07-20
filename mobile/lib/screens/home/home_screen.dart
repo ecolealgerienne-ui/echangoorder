@@ -11,6 +11,7 @@ import '../../state/favorites_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/add_to_cart.dart';
 import '../../utils/pagination.dart';
+import '../../utils/product_enrichment.dart';
 import '../../utils/toggle_favorite.dart';
 import '../../widgets/load_more_button.dart';
 import '../../widgets/product_grid_tile.dart';
@@ -38,6 +39,12 @@ class _HomeScreenState extends State<HomeScreen> {
   int _offset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
+  // Incrémenté à chaque _loadProducts() (init, tirer-pour-rafraîchir) :
+  // permet à _loadMore() de détecter qu'une nouvelle page 1 a démarré
+  // pendant son propre appel réseau et d'ignorer son résultat devenu
+  // obsolète, plutôt que de mélanger les deux listes (race condition
+  // trouvée à l'audit technique du 2026-07-19).
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -50,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _loadProducts() {
+    _loadGeneration++;
     _extraProducts.clear();
     _offset = 0;
     _hasMore = true;
@@ -71,31 +79,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     _hasMore = products.length == kListPageSize;
     _offset = offset + products.length;
-    // Disponibilité stock récupérée à part (contrôleur dédié, sudo() côté
-    // serveur) — même logique que Catalogue/Recherche (F04), manquait ici.
-    final ids = products.map((p) => p['id'] as int).toList();
-    final stock = await api.getStock(productIds: ids);
-    final promotions = await api.getPromotions(productIds: ids);
-    for (final product in products) {
-      final id = product['id'] as int;
-      final qty = stock[id];
-      if (qty != null) product['qty_available'] = qty;
-      product['on_promo'] = promotions.containsKey(id);
-      product['promo_percent'] = promotions[id];
-    }
+    // Disponibilité stock + promotions récupérées à part (contrôleurs
+    // dédiés, sudo() côté serveur) — même logique que Catalogue/Recherche
+    // (F04), manquait ici.
+    await enrichProductsWithStockAndPromotions(api, products);
     return products;
   }
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
+    final generation = _loadGeneration;
     setState(() => _isLoadingMore = true);
     try {
       final more = await _fetchProducts(offset: _offset);
+      if (!mounted || generation != _loadGeneration) return;
       setState(() => _extraProducts.addAll(more));
     } on AppError catch (e) {
-      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+      if (mounted && generation == _loadGeneration) AppMessenger.showError(context, e, onRetry: _loadMore);
     } finally {
-      if (mounted) setState(() => _isLoadingMore = false);
+      if (mounted && generation == _loadGeneration) setState(() => _isLoadingMore = false);
     }
   }
 

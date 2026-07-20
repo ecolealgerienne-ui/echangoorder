@@ -49,8 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      await api.login(phone: _phoneController.text.trim(), pin: _pinController.text.trim());
-      authState.loginAsUser();
+      final phone = _phoneController.text.trim();
+      await api.login(phone: phone, pin: _pinController.text.trim());
+      authState.loginAsUser(phone: phone);
     } on AppError catch (error) {
       if (!mounted) return;
       AppMessenger.showError(context, error, onRetry: () => _submit(authState, api));

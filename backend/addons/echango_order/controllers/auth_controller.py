@@ -4,6 +4,8 @@ from odoo import fields, http
 from odoo.exceptions import AccessDenied
 from odoo.http import request
 
+from .rate_limit import rate_limited
+
 PIN_RE = re.compile(r"^\d{6,12}$")
 
 
@@ -17,6 +19,7 @@ class EchangoAuthController(http.Controller):
     """
 
     @http.route("/echango/auth/register", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    @rate_limited("auth.register", limit=5, window_minutes=60)
     def register(self, phone=None, pin=None, name=None, lang=None, **kw):
         phone = (phone or "").strip()
         pin = (pin or "").strip()
@@ -51,6 +54,7 @@ class EchangoAuthController(http.Controller):
             # controllers/checkout_controller.py.
             "x_verification_state": "pending",
         })
+        partner._notify_verification_pending()
         user = users.create({
             "name": partner.name,
             "login": phone,
@@ -62,11 +66,24 @@ class EchangoAuthController(http.Controller):
         return {"success": True, "user_id": user.id}
 
     @http.route("/echango/auth/login", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    @rate_limited("auth.login", limit=10, window_minutes=5)
     def login(self, phone=None, pin=None, **kw):
         phone = (phone or "").strip()
         pin = (pin or "").strip()
         if not phone or not pin:
             return {"error": "validation.required"}
+
+        # Rate limiting par IP (décorateur ci-dessus) contournable en
+        # multipliant les IP (proxy/VPN) pour cibler un seul numéro —
+        # limite supplémentaire par numéro de téléphone, plus permissive
+        # en apparence mais qui ne peut pas être diluée sur plusieurs IP,
+        # pour ralentir ce cas précis (trouvé à l'audit sécurité du
+        # 2026-07-19 : les codes d'erreur distincts account_locked/
+        # invalid_credentials permettent aussi de deviner si un numéro
+        # est inscrit — non résolu ici, dégraderait l'UX sans réel
+        # bénéfice contre un attaquant déterminé, voir status-V1.md).
+        if request.env["x_rate_limit"].sudo()._hit(f"auth.login.phone:{phone}", 10, 15):
+            return {"error": "rate_limited"}
 
         # Odoo's AccessDenied écrase volontairement son message par "Access
         # Denied" (anti fuite d'info) : impossible d'y lire un code d'erreur
@@ -83,4 +100,27 @@ class EchangoAuthController(http.Controller):
             return {"error": "auth.invalid_credentials"}
 
         uid = auth_info.get("uid") if isinstance(auth_info, dict) else request.session.uid
+        # Point de départ de la politique "24h d'inactivité" (voir
+        # controllers/session_utils.py) : sans ça, x_last_activity reste
+        # vide jusqu'au premier appel à un endpoint /echango/* décoré,
+        # laissant une fenêtre où l'expiration n'est pas encore vérifiée.
+        request.env["res.users"].sudo().browse(uid).write({"x_last_activity": fields.Datetime.now()})
         return {"success": True, "uid": uid}
+
+    @http.route("/echango/auth/request_pin_reset", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    @rate_limited("auth.request_pin_reset", limit=5, window_minutes=60)
+    def request_pin_reset(self, phone=None, **kw):
+        """F02 — "PIN oublié" : aucun fournisseur SMS choisi (cf.
+        status-V1.md), la demande crée une activité pour un modérateur
+        back-office (voir res_partner._notify_pin_reset_requested), qui
+        recontacte le client par téléphone. Réponse toujours générique
+        (`{"success": True}`), que le numéro existe ou non — sinon cet
+        endpoint deviendrait un oracle pour savoir si un numéro de
+        téléphone est inscrit (énumération de comptes).
+        """
+        phone = (phone or "").strip()
+        if phone:
+            user = request.env["res.users"].sudo().search([("login", "=", phone)], limit=1)
+            if user:
+                user.partner_id._notify_pin_reset_requested()
+        return {"success": True}

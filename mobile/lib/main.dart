@@ -20,17 +20,21 @@ Future<void> main() async {
   final authState = AuthState(prefs);
   late final OdooApiClient apiClient;
   apiClient = OdooApiClient(
-    // Session Odoo expirée côté serveur (24h d'inactivité, cf. CLAUDE.md) :
-    // on se déconnecte localement plutôt que de laisser chaque écran
-    // gérer ce cas séparément — go_router redirige alors automatiquement
-    // vers les routes publiques via le `redirect` déjà branché sur
-    // AuthState (voir navigation/app_router.dart).
+    // Session Odoo expirée côté serveur (rejet explicite, ou 24h
+    // d'inactivité détectées côté client via checkInactivity()) :
+    // expireSession() (pas logout()) conserve le téléphone connu pour
+    // permettre une ré-authentification par PIN seul (ReauthPinScreen) au
+    // lieu de renvoyer tout l'écran de connexion — go_router redirige
+    // automatiquement vers /reauth via le `redirect` branché sur AuthState
+    // (voir navigation/app_router.dart).
     onSessionExpired: () {
-      authState.logout();
       apiClient.clearSession();
+      authState.expireSession();
     },
+    onActivity: authState.touchActivity,
   );
   await apiClient.restoreSession();
+  authState.checkInactivity();
 
   runApp(
     EasyLocalization(
@@ -53,7 +57,7 @@ class EchangoOrderApp extends StatefulWidget {
   State<EchangoOrderApp> createState() => _EchangoOrderAppState();
 }
 
-class _EchangoOrderAppState extends State<EchangoOrderApp> {
+class _EchangoOrderAppState extends State<EchangoOrderApp> with WidgetsBindingObserver {
   late final CartState _cartState;
   late final CheckoutState _checkoutState;
   late final FavoritesState _favoritesState;
@@ -63,6 +67,7 @@ class _EchangoOrderAppState extends State<EchangoOrderApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _cartState = CartState(widget.apiClient);
     _checkoutState = CheckoutState();
     _favoritesState = FavoritesState(widget.apiClient);
@@ -75,7 +80,18 @@ class _EchangoOrderAppState extends State<EchangoOrderApp> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Session expirée après 24h d'inactivité (CLAUDE.md) : le retour au
+    // premier plan est le point de contrôle réaliste, l'app passant le
+    // plus clair de ces 24h en arrière-plan ou fermée.
+    if (state == AppLifecycleState.resumed) {
+      widget.authState.checkInactivity();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.authState.dispose();
     super.dispose();
   }

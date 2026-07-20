@@ -10,6 +10,7 @@ import '../../state/auth_state.dart';
 import '../../state/cart_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
+import '../../utils/order_status.dart';
 import '../../utils/pagination.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/load_more_button.dart';
@@ -36,6 +37,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   int _offset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
+  // Cf. home_screen.dart : détecte qu'un rechargement complet a démarré
+  // pendant l'appel réseau de _loadMore() (race condition trouvée à
+  // l'audit technique du 2026-07-19).
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -46,6 +51,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   void _load() {
+    _loadGeneration++;
     _extraOrders.clear();
     _offset = 0;
     _hasMore = true;
@@ -55,16 +61,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchOrders({required int offset}) async {
-    final orders = await context.read<OdooApiClient>().searchRead(
-          model: 'sale.order',
-          domain: const [
-            ['state', '!=', 'draft'],
-          ],
-          fields: const ['name', 'date_order', 'amount_total', 'state'],
-          order: 'date_order desc',
-          limit: kListPageSize,
-          offset: offset,
-        );
+    final orders = await context.read<OdooApiClient>().listOrders(offset: offset, limit: kListPageSize);
     _hasMore = orders.length == kListPageSize;
     _offset = offset + orders.length;
     return orders;
@@ -72,14 +69,16 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
+    final generation = _loadGeneration;
     setState(() => _isLoadingMore = true);
     try {
       final more = await _fetchOrders(offset: _offset);
+      if (!mounted || generation != _loadGeneration) return;
       setState(() => _extraOrders.addAll(more));
     } on AppError catch (e) {
-      if (mounted) AppMessenger.showError(context, e, onRetry: _loadMore);
+      if (mounted && generation == _loadGeneration) AppMessenger.showError(context, e, onRetry: _loadMore);
     } finally {
-      if (mounted) setState(() => _isLoadingMore = false);
+      if (mounted && generation == _loadGeneration) setState(() => _isLoadingMore = false);
     }
   }
 
@@ -176,9 +175,16 @@ class _OrderCard extends StatelessWidget {
     final name = order['name'] as String? ?? '';
     final amount = (order['amount_total'] as num?)?.toDouble() ?? 0;
     final state = order['state'] as String?;
-    final date = DateTime.tryParse(order['date_order'] as String? ?? '');
+    final date = parseOdooDatetime(order['date_order'] as String?);
     final isConfirmed = state == 'sale';
-    final statusLabel = state == 'cancel' ? 'order.statusCancelled'.tr() : 'order.statusConfirmed'.tr();
+    final statusLabel = switch (state) {
+      'cancel' => 'order.statusCancelled'.tr(),
+      // F08 — en attente de prise en charge par un opérateur (voir
+      // CLAUDE.md § Statuts de commande) : pas encore de stock.picking à
+      // ce stade, prepStatusLabel() ne renverrait rien d'utile.
+      'sent' => 'order.statusPendingReview'.tr(),
+      _ => prepStatusLabel(order) ?? 'order.statusConfirmed'.tr(),
+    };
 
     return Card(
       child: InkWell(

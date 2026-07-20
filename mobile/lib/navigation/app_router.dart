@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/auth/auth_welcome_screen.dart';
 import '../screens/auth/forgot_pin_screen.dart';
 import '../screens/auth/login_screen.dart';
+import '../screens/auth/reauth_pin_screen.dart';
 import '../screens/auth/register_step1_screen.dart';
 import '../screens/auth/register_step2_screen.dart';
 import '../screens/auth/register_step3_screen.dart';
@@ -13,6 +14,7 @@ import '../screens/catalog/search_screen.dart';
 import '../screens/checkout/checkout_address_screen.dart';
 import '../screens/checkout/checkout_out_of_zone_screen.dart';
 import '../screens/checkout/checkout_reception_mode_screen.dart';
+import '../screens/checkout/checkout_resolve_unavailable_screen.dart';
 import '../screens/checkout/checkout_summary_screen.dart';
 import '../screens/checkout/checkout_timeslot_screen.dart';
 import '../screens/checkout/order_confirmation_screen.dart';
@@ -22,7 +24,6 @@ import '../screens/legal/legal_document_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/order/order_history_screen.dart';
 import '../screens/order/order_tracking_screen.dart';
-import '../screens/order/substitution_screen.dart';
 import '../screens/product/product_detail_screen.dart';
 import '../screens/profile/addresses_screen.dart';
 import '../screens/profile/change_pin_screen.dart';
@@ -55,11 +56,18 @@ GoRouter buildAppRouter(AuthState authState) {
     initialLocation: '/vitrine',
     refreshListenable: authState,
     redirect: (context, state) {
-      final isPublicRoute = _publicPaths.any((p) => state.matchedLocation.startsWith(p));
-      if (!authState.isAuthenticated && !isPublicRoute && state.matchedLocation != '/maintenance') {
+      final loc = state.matchedLocation;
+      // Session expirée (24h d'inactivité ou rejet serveur) : imposé avant
+      // tout le reste, quelle que soit la route visée, jusqu'à ce que
+      // ReauthPinScreen fasse repasser AuthState en `authenticated`.
+      if (authState.isSessionExpired) {
+        return loc == '/reauth' ? null : '/reauth';
+      }
+      final isPublicRoute = _publicPaths.any((p) => loc.startsWith(p));
+      if (!authState.isAuthenticated && !isPublicRoute && loc != '/maintenance') {
         return '/vitrine';
       }
-      if (authState.isAuthenticated && isPublicRoute) {
+      if (authState.isAuthenticated && (isPublicRoute || loc == '/reauth')) {
         return '/home';
       }
       return null;
@@ -71,14 +79,29 @@ GoRouter buildAppRouter(AuthState authState) {
       GoRoute(path: '/register/step1', builder: (context, state) => const RegisterStep1Screen()),
       GoRoute(
         path: '/register/step2',
-        builder: (context, state) => RegisterStep2Screen(phone: (state.extra as String?) ?? ''),
+        builder: (context, state) {
+          final draft = (state.extra as Map<String, dynamic>?) ?? const {};
+          return RegisterStep2Screen(
+            phone: draft['phone'] as String? ?? '',
+            name: draft['name'] as String? ?? '',
+            lang: draft['lang'] as String? ?? '',
+          );
+        },
       ),
       GoRoute(
         path: '/register/step3',
-        builder: (context, state) => RegisterStep3Screen(phone: (state.extra as String?) ?? ''),
+        builder: (context, state) {
+          final draft = (state.extra as Map<String, dynamic>?) ?? const {};
+          return RegisterStep3Screen(
+            phone: draft['phone'] as String? ?? '',
+            name: draft['name'] as String? ?? '',
+            lang: draft['lang'] as String? ?? '',
+          );
+        },
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/forgot-pin', builder: (context, state) => const ForgotPinScreen()),
+      GoRoute(path: '/reauth', builder: (context, state) => const ReauthPinScreen()),
       GoRoute(
         path: '/legal/:docType',
         builder: (context, state) => LegalDocumentScreen(docType: state.pathParameters['docType']!),
@@ -148,6 +171,12 @@ GoRouter buildAppRouter(AuthState authState) {
                   builder: (context, state) => const CheckoutSummaryScreen(),
                 ),
                 GoRoute(
+                  path: 'checkout/resolve-unavailable',
+                  builder: (context, state) => CheckoutResolveUnavailableScreen(
+                    lines: (state.extra as List).cast<Map<String, dynamic>>(),
+                  ),
+                ),
+                GoRoute(
                   path: 'checkout/confirmation/:orderRef',
                   builder: (context, state) {
                     final extra = state.extra as Map<String, dynamic>?;
@@ -185,13 +214,6 @@ GoRouter buildAppRouter(AuthState authState) {
                   path: 'orders/:orderRef',
                   builder: (context, state) =>
                       OrderTrackingScreen(orderRef: state.pathParameters['orderRef']!),
-                  routes: [
-                    GoRoute(
-                      path: 'substitution',
-                      builder: (context, state) =>
-                          SubstitutionScreen(orderRef: state.pathParameters['orderRef']!),
-                    ),
-                  ],
                 ),
                 GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
                 GoRoute(

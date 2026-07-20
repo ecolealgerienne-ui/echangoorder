@@ -1,6 +1,8 @@
 from odoo import http
 from odoo.http import request
 
+from .session_utils import require_fresh_session
+
 
 class EchangoFavoritesController(http.Controller):
     """Liste de produits favoris (`x_product_favorite`) : initialisée
@@ -11,6 +13,7 @@ class EchangoFavoritesController(http.Controller):
     """
 
     @http.route("/echango/favorites", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def list_favorites(self, offset=0, limit=None, **kw):
         # `limit=None` (défaut) : comportement inchangé pour `FavoritesState`
         # (a besoin de l'ensemble complet des ids favoris, pas d'une page,
@@ -41,6 +44,7 @@ class EchangoFavoritesController(http.Controller):
         }
 
     @http.route("/echango/favorites/add", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def add_favorite(self, product_id=None, **kw):
         partner = request.env.user.partner_id
         template = request.env["product.template"].sudo().search(
@@ -54,6 +58,7 @@ class EchangoFavoritesController(http.Controller):
         return {"success": True}
 
     @http.route("/echango/favorites/remove", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def remove_favorite(self, product_id=None, **kw):
         partner = request.env.user.partner_id
         request.env["x_product_favorite"].sudo().search([

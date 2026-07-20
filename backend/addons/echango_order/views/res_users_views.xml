@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- F02 — "PIN oublié" : assistant + bouton pour le modérateur qui a
+         recontacté le client suite à une demande de réinitialisation
+         (voir models/res_partner.py._notify_pin_reset_requested). -->
+    <record id="view_x_pin_reset_wizard_form" model="ir.ui.view">
+        <field name="name">x_pin_reset_wizard.form</field>
+        <field name="model">x_pin_reset_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Réinitialiser le PIN">
+                <group>
+                    <field name="user_id" readonly="1"/>
+                    <field name="new_pin"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Confirmer" class="oe_highlight"/>
+                    <button string="Annuler" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_x_pin_reset_wizard" model="ir.actions.act_window">
+        <field name="name">Réinitialiser le PIN</field>
+        <field name="res_model">x_pin_reset_wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- La fiche utilisateur (Réglages > Utilisateurs) est déjà réservée
+         aux administrateurs par Odoo — pas de restriction de groupe
+         supplémentaire nécessaire sur le bouton lui-même. -->
+    <record id="view_users_form_x_pin_reset" model="ir.ui.view">
+        <field name="name">res.users.form.x.pin.reset</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="%(action_x_pin_reset_wizard)d" type="action" string="Réinitialiser le PIN"
+                            context="{'default_user_id': id}"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+</odoo>

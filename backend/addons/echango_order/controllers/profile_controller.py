@@ -1,8 +1,11 @@
 import re
+import secrets
 
 from odoo import http
 from odoo.exceptions import AccessDenied
 from odoo.http import request
+
+from .session_utils import require_fresh_session
 
 PIN_RE = re.compile(r"^\d{6,12}$")
 
@@ -16,6 +19,7 @@ class EchangoProfileController(http.Controller):
     """
 
     @http.route("/echango/profile", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def get_profile(self, **kw):
         partner = request.env.user.partner_id
         return {
@@ -25,6 +29,7 @@ class EchangoProfileController(http.Controller):
         }
 
     @http.route("/echango/profile/update_name", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def update_name(self, name=None, **kw):
         name = (name or "").strip()
         if not name:
@@ -33,6 +38,7 @@ class EchangoProfileController(http.Controller):
         return {"success": True}
 
     @http.route("/echango/profile/change_pin", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def change_pin(self, current_pin=None, new_pin=None, **kw):
         if not new_pin or not PIN_RE.match(new_pin):
             return {"error": "validation.pin_format"}
@@ -48,6 +54,7 @@ class EchangoProfileController(http.Controller):
         return {"success": True}
 
     @http.route("/echango/profile/delete_account", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def delete_account(self, pin=None, **kw):
         user = request.env.user
         try:
@@ -59,7 +66,18 @@ class EchangoProfileController(http.Controller):
         # Les données (partner, commandes) sont conservées, seul le compte
         # est désactivé — la SMS de confirmation (specs QA) est hors scope,
         # aucun fournisseur SMS choisi (cf. status-V1.md).
-        user.sudo().write({"active": False})
+        #
+        # `active=False` seul n'invalide pas forcément une session déjà
+        # ouverte sur un autre appareil (le cookie de session reste valide
+        # tant que le token de sécurité calculé par Odoo ne change pas).
+        # On rend aussi le champ standard `password` inutilisable avec une
+        # valeur aléatoire : ce champ fait partie des champs de sécurité
+        # dont dépend le calcul du token de session côté Odoo (mécanisme
+        # standard documenté : changer le mot de passe invalide les autres
+        # sessions), donc l'écrire force l'expiration immédiate de toute
+        # session existante, même si l'app n'utilise jamais l'authentification
+        # par mot de passe (uniquement le PIN custom, cf. res_users.py).
+        user.sudo().write({"active": False, "password": secrets.token_urlsafe(32)})
         return {"success": True}
 
     def _address_payload(self, address):
@@ -68,8 +86,16 @@ class EchangoProfileController(http.Controller):
             "name": address.name,
             "street": address.street,
             "city": address.city,
-            "zip": address.zip,
-            "comment": address.comment,
+            # `zip`/`comment` ne sont jamais requis (contrairement à
+            # street/city, validés avant création/mise à jour) — un Char
+            # non renseigné vaut `False` côté ORM Odoo, pas `None`, donc
+            # `False` une fois sérialisé en JSON. Normalisé ici : sinon
+            # `as String?` côté Flutter (`addresses_screen.dart`,
+            # `checkout_address_screen.dart`) plante dès qu'une adresse n'a
+            # pas de code postal/note (trouvé par audit suite au bug
+            # identique sur `x_delivery_status`).
+            "zip": address.zip or None,
+            "comment": address.comment or None,
             "favorite": address.x_adresse_favorite,
             # "Ma localisation" (ex-menu séparé) fusionnée dans les adresses :
             # champs standards du module base, déjà utilisés pour F10 avant
@@ -93,6 +119,7 @@ class EchangoProfileController(http.Controller):
         request.env["res.partner"].sudo().search(domain).write({"x_adresse_favorite": False})
 
     @http.route("/echango/profile/addresses", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def list_addresses(self, **kw):
         partner = request.env.user.partner_id
         addresses = request.env["res.partner"].sudo().search([
@@ -113,6 +140,7 @@ class EchangoProfileController(http.Controller):
             return {}
 
     @http.route("/echango/profile/addresses/add", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def add_address(self, name=None, street=None, city=None, zip_code=None, comment=None, favorite=False,
                      latitude=None, longitude=None, **kw):
         partner = request.env.user.partner_id
@@ -134,6 +162,7 @@ class EchangoProfileController(http.Controller):
         return self._address_payload(address)
 
     @http.route("/echango/profile/addresses/update", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def update_address(self, address_id=None, name=None, street=None, city=None, zip_code=None, comment=None,
                         favorite=None, latitude=None, longitude=None, **kw):
         address = self._owned_address(address_id)
@@ -157,6 +186,7 @@ class EchangoProfileController(http.Controller):
         return self._address_payload(address)
 
     @http.route("/echango/profile/addresses/remove", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
     def remove_address(self, address_id=None, **kw):
         address = self._owned_address(address_id)
         if not address:

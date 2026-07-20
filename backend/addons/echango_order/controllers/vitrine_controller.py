@@ -1,6 +1,8 @@
 from odoo import http
 from odoo.http import request
 
+from .rate_limit import rate_limited
+
 
 class EchangoVitrineController(http.Controller):
     """F00 — vitrine publique (visiteur sans compte, aucune session Odoo).
@@ -14,6 +16,7 @@ class EchangoVitrineController(http.Controller):
     """
 
     @http.route("/echango/vitrine/products", type="jsonrpc", auth="public", methods=["POST"], csrf=False)
+    @rate_limited("vitrine.products", limit=120, window_minutes=1)
     def products(self, **kw):
         templates = request.env["product.template"].sudo().search([
             ("sale_ok", "=", True), ("x_vitrine_publique", "=", True),

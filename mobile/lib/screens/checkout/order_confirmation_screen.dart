@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../services/odoo_api_client.dart';
 import '../../services/permission_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
@@ -41,7 +42,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final slot = widget.slotStart != null ? DateTime.tryParse(widget.slotStart!) : null;
+    final slot = parseOdooDatetime(widget.slotStart);
     final modeLabel = widget.receptionMode == 'home_delivery'
         ? 'checkout.deliveryHome'.tr()
         : widget.receptionMode == 'pickup'
