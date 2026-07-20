@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import '../../errors/app_error.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/shimmer_loader.dart';
 
 /// F04 — Catalogue : catégories dérivées des produits réellement visibles
 /// (`formatted_read_group` sur `product.template` par `categ_id`), pas
@@ -75,7 +77,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
             future: _categoriesFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
+                return const _CategoryListSkeleton();
               }
               if (snapshot.hasError) {
                 final error =
@@ -122,6 +124,34 @@ class _CatalogScreenState extends State<CatalogScreen> {
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Squelette chatoyant pendant le chargement des catégories (direction
+/// Casbah, phase C) — remplace le spinner générique, silhouette proche du
+/// `ListTile` réel pour un rendu plus lisible pendant l'attente.
+class _CategoryListSkeleton extends StatelessWidget {
+  const _CategoryListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: 6,
+      separatorBuilder: (context, index) => const Divider(height: 1),
+      itemBuilder: (context, index) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        child: Row(
+          children: [
+            const ShimmerBox(width: 24, height: 24, borderRadius: BorderRadius.all(Radius.circular(6))),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: ShimmerBox(width: double.infinity, height: 16)),
+            const SizedBox(width: AppSpacing.md),
+            const ShimmerBox(width: 28, height: 16),
+          ],
         ),
       ),
     );
