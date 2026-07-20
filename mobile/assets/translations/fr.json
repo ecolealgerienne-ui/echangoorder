@@ -76,7 +76,9 @@
     "prepReadyPickup": "Prête à récupérer",
     "prepReadyDelivery": "Prête pour la livraison",
     "prepCompletedPickup": "Récupérée",
-    "prepCompletedDelivery": "Livrée"
+    "statusPendingReview": "En attente de prise en charge",
+    "outForDelivery": "En cours de livraison",
+    "delivered": "Livrée"
   },
   "permissions": {
     "locationTitle": "Votre localisation",
@@ -254,7 +256,7 @@
     "CheckoutOutOfZone": { "title": "Zone non couverte", "subtitle": "Hors zone de livraison — F07" },
     "CheckoutTimeslot": { "title": "Créneau", "subtitle": "Choix du créneau — F07" },
     "CheckoutSummary": { "title": "Récapitulatif", "subtitle": "Récapitulatif & code promo — F07 / F15" },
-    "OrderConfirmation": { "title": "Commande confirmée !", "subtitle": "Confirmation — F08" },
+    "OrderConfirmation": { "title": "Commande envoyée !", "subtitle": "Confirmation — F08" },
     "OrderHistory": { "title": "Mes commandes", "subtitle": "Historique & reorder — F09" },
     "OrderTracking": { "title": "Suivi de commande", "subtitle": "Suivi, annulation — F08 / F16" },
     "Profile": { "title": "Mon Profil", "subtitle": "Profil utilisateur — F10" },

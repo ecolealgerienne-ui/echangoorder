@@ -76,7 +76,9 @@
     "prepReadyPickup": "جاهز للاستلام",
     "prepReadyDelivery": "جاهز للتوصيل",
     "prepCompletedPickup": "تم الاستلام",
-    "prepCompletedDelivery": "تم التوصيل"
+    "statusPendingReview": "بانتظار المعالجة",
+    "outForDelivery": "قيد التوصيل",
+    "delivered": "تم التوصيل"
   },
   "permissions": {
     "locationTitle": "موقعك",
@@ -254,7 +256,7 @@
     "CheckoutOutOfZone": { "title": "المنطقة غير مشمولة", "subtitle": "خارج منطقة التوصيل — F07" },
     "CheckoutTimeslot": { "title": "الفترة الزمنية", "subtitle": "اختيار الفترة الزمنية — F07" },
     "CheckoutSummary": { "title": "ملخص الطلب", "subtitle": "الملخص وكود الخصم — F07 / F15" },
-    "OrderConfirmation": { "title": "تم تأكيد الطلب!", "subtitle": "التأكيد — F08" },
+    "OrderConfirmation": { "title": "تم إرسال الطلب!", "subtitle": "التأكيد — F08" },
     "OrderHistory": { "title": "طلباتي", "subtitle": "السجل وإعادة الطلب — F09" },
     "OrderTracking": { "title": "تتبع الطلب", "subtitle": "التتبع، الإلغاء — F08 / F16" },
     "Profile": { "title": "ملفي الشخصي", "subtitle": "الملف الشخصي — F10" },

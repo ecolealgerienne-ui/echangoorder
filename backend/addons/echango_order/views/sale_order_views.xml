@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- F08 — statut de livraison (décision produit 2026-07, voir
+         CLAUDE.md § Statuts de commande). x_reception_mode/x_delivery_
+         status ajoutés à la vue pour que les boutons puissent évaluer
+         leurs conditions `invisible` (pas des champs natifs de
+         sale.view_order_form). Les 2 boutons ne remplacent aucun
+         mécanisme standard : aucun équivalent Odoo pour "un livreur est
+         en route" sans intégration transport réelle (hors périmètre
+         Phase 1). Le "Confirmer" standard (déjà présent, aucun ajout ici)
+         reste le geste de l'opérateur qui prend la commande en charge
+         (`sent` -> `sale`, voir models/sale_order.py). -->
+    <record id="view_order_form_x_delivery_status" model="ir.ui.view">
+        <field name="name">sale.order.form.x.delivery.status</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_mark_out_for_delivery"
+                    type="object"
+                    string="Marquer en cours de livraison"
+                    class="oe_highlight"
+                    invisible="state != 'sale' or x_reception_mode != 'home_delivery' or x_delivery_status"
+                />
+                <button
+                    name="action_mark_delivered"
+                    type="object"
+                    string="Marquer livrée"
+                    class="oe_highlight"
+                    invisible="state != 'sale' or x_reception_mode != 'home_delivery' or x_delivery_status != 'out_for_delivery'"
+                />
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="x_reception_mode"/>
+                <field name="x_delivery_status" invisible="x_reception_mode != 'home_delivery'" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

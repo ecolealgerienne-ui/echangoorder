@@ -24,6 +24,7 @@ mesure du branchement de chaque écran (F02 auth en premier).
         "views/delivery_zone_views.xml",
         "views/timeslot_capacity_views.xml",
         "views/product_template_views.xml",
+        "views/sale_order_views.xml",
         "views/res_partner_views.xml",
         "views/res_users_views.xml",
     ],

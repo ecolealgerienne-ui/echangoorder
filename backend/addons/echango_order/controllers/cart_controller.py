@@ -25,9 +25,18 @@ class EchangoCartController(http.Controller):
     """
 
     def _cart_order(self, create=False):
+        # `sent` inclus (F08, décision produit 2026-07 — voir CLAUDE.md §
+        # Statuts de commande) : une commande déjà "confirmée" côté client
+        # mais pas encore prise en charge par un opérateur (`action_
+        # confirm()` toujours pas appelé, voir `models/sale_order.py`)
+        # reste la commande courante — le client peut continuer à y
+        # ajouter des produits depuis le catalogue, pas seulement pendant
+        # qu'elle est en brouillon. Une fois prise en charge (`state ==
+        # 'sale'`), elle sort de ce domaine et un nouvel achat démarre un
+        # nouveau panier `draft`, comme avant.
         partner = request.env.user.partner_id
         order = request.env["sale.order"].sudo().search(
-            [("partner_id", "=", partner.id), ("state", "=", "draft")],
+            [("partner_id", "=", partner.id), ("state", "in", ("draft", "sent"))],
             order="id desc", limit=1,
         )
         if not order and create:
@@ -41,7 +50,7 @@ class EchangoCartController(http.Controller):
         return request.env["sale.order.line"].sudo().search([
             ("id", "=", line_id),
             ("order_id.partner_id", "=", partner.id),
-            ("order_id.state", "=", "draft"),
+            ("order_id.state", "in", ("draft", "sent")),
         ], limit=1)
 
     def _cart_payload(self, order):

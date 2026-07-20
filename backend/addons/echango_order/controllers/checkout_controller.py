@@ -171,8 +171,13 @@ class EchangoCheckoutController(http.Controller):
         if partner.x_verification_state == "rejected":
             return {"error": "auth.account_rejected"}
 
+        # `sent` inclus (F08, décision produit 2026-07 — voir CLAUDE.md §
+        # Statuts de commande) : une commande déjà "confirmée" côté client
+        # (en attente de prise en charge par un opérateur) reste modifiable
+        # via ce même endpoint — ex. le client ajoute une adresse/un
+        # créneau différent avant que l'opérateur ne l'ait prise en main.
         order = request.env["sale.order"].sudo().search(
-            [("partner_id", "=", partner.id), ("state", "=", "draft")],
+            [("partner_id", "=", partner.id), ("state", "in", ("draft", "sent"))],
             order="id desc", limit=1,
         )
         if not order or not order.order_line:
@@ -254,8 +259,18 @@ class EchangoCheckoutController(http.Controller):
             vals["partner_shipping_id"] = shipping.id
 
         order.sudo().write(vals)
-        order.sudo().action_confirm()
-        self._seed_favorites(partner, order)
+        # F08 — décision produit 2026-07 (voir CLAUDE.md § Statuts de
+        # commande) : la commande n'est plus verrouillée/envoyée en
+        # préparation directement ici. Elle passe en `sent` ("En attente
+        # de prise en charge") — reste modifiable (voir domaine ci-dessus
+        # et `cart_controller.py`) jusqu'à ce qu'un opérateur clique sur le
+        # bouton standard "Confirmer" en back-office (`action_confirm()`,
+        # qui verrouille le portail et génère le `stock.picking`). Écriture
+        # directe plutôt qu'un appel à `action_quotation_sent()` : cette
+        # dernière ouvre l'assistant d'envoi par email, pensé pour
+        # l'interaction humaine back-office, pas pour un simple changement
+        # d'état déclenché par l'app.
+        order.sudo().write({"state": "sent"})
 
         return {
             "order_ref": order.name,
@@ -263,16 +278,3 @@ class EchangoCheckoutController(http.Controller):
             "reception_mode": order.x_reception_mode,
             "slot_start": order.x_creneau.isoformat() if order.x_creneau else None,
         }
-
-    def _seed_favorites(self, partner, order):
-        """Liste de favoris (`x_product_favorite`) initialisée
-        automatiquement par les produits achetés — dédupliqué, le client
-        peut ensuite en retirer/ajouter manuellement
-        (`controllers/favorites_controller.py`)."""
-        favorite = request.env["x_product_favorite"].sudo()
-        existing = set(favorite.search([("partner_id", "=", partner.id)]).product_tmpl_id.ids)
-        for line in order.order_line.filtered(lambda l: not l.is_reward_line):
-            tmpl_id = line.product_id.product_tmpl_id.id
-            if tmpl_id not in existing:
-                favorite.create({"partner_id": partner.id, "product_tmpl_id": tmpl_id})
-                existing.add(tmpl_id)

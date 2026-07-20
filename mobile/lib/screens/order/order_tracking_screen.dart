@@ -105,9 +105,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 : receptionMode == 'pickup'
                     ? 'checkout.pickupStore'.tr()
                     : null;
-            final statusLabel = state == 'cancel'
-                ? 'order.statusCancelled'.tr()
-                : (prepStatusLabel(order) ?? 'order.statusConfirmed'.tr());
+            final statusLabel = switch (state) {
+              'cancel' => 'order.statusCancelled'.tr(),
+              // F08 — en attente de prise en charge par un opérateur (voir
+              // CLAUDE.md § Statuts de commande) : pas encore de stock.
+              // picking à ce stade, prepStatusLabel() ne renverrait rien.
+              'sent' => 'order.statusPendingReview'.tr(),
+              _ => prepStatusLabel(order) ?? 'order.statusConfirmed'.tr(),
+            };
 
             return ScreenPlaceholder(
               screenKey: 'OrderTracking',

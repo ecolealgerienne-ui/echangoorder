@@ -88,6 +88,7 @@ class EchangoOrderController(http.Controller):
                     "state": o.state,
                     "x_reception_mode": o.x_reception_mode,
                     "prep_status": self._prep_status(o),
+                    "x_delivery_status": o.x_delivery_status,
                 }
                 for o in orders
             ]
@@ -113,6 +114,7 @@ class EchangoOrderController(http.Controller):
                 "x_reception_mode": order.x_reception_mode,
                 "x_creneau": order.x_creneau.isoformat() if order.x_creneau else None,
                 "prep_status": self._prep_status(order),
+                "x_delivery_status": order.x_delivery_status,
             },
             "lines": [
                 {"name": line.name, "product_uom_qty": line.product_uom_qty}

@@ -177,9 +177,14 @@ class _OrderCard extends StatelessWidget {
     final state = order['state'] as String?;
     final date = parseOdooDatetime(order['date_order'] as String?);
     final isConfirmed = state == 'sale';
-    final statusLabel = state == 'cancel'
-        ? 'order.statusCancelled'.tr()
-        : (prepStatusLabel(order) ?? 'order.statusConfirmed'.tr());
+    final statusLabel = switch (state) {
+      'cancel' => 'order.statusCancelled'.tr(),
+      // F08 — en attente de prise en charge par un opérateur (voir
+      // CLAUDE.md § Statuts de commande) : pas encore de stock.picking à
+      // ce stade, prepStatusLabel() ne renverrait rien d'utile.
+      'sent' => 'order.statusPendingReview'.tr(),
+      _ => prepStatusLabel(order) ?? 'order.statusConfirmed'.tr(),
+    };
 
     return Card(
       child: InkWell(
