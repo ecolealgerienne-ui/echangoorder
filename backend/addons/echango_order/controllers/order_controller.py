@@ -6,10 +6,16 @@ from .session_utils import require_fresh_session
 
 
 class EchangoOrderController(http.Controller):
-    """F16/F17 — actions sur une commande déjà confirmée (annulation,
-    substitution). `sale.order`/`sale.order.line` restent en lecture seule
-    pour le portail (voir F06/F09) : toute écriture passe ici, en `sudo()`,
-    avec vérification explicite de propriété (`partner_id`).
+    """F16 — actions sur une commande déjà confirmée (annulation).
+    `sale.order`/`sale.order.line` restent en lecture seule pour le portail
+    (voir F06/F09) : toute écriture passe ici, en `sudo()`, avec
+    vérification explicite de propriété (`partner_id`).
+
+    F17 (substitution post-confirmation par le préparateur) supprimé —
+    décision produit 2026-07, remplacé par la résolution côté client au
+    moment de `/echango/checkout/confirm` (voir `checkout_controller.py` et
+    CLAUDE.md § Produits de substitution) : le client choisit toujours,
+    jamais le préparateur, donc plus besoin d'un flux post-confirmation.
     """
 
     def _owned_order(self, order_id=None, order_ref=None):
@@ -99,61 +105,3 @@ class EchangoOrderController(http.Controller):
             return {"error": "order.cannot_cancel"}
         return {"success": True}
 
-    def _owned_line(self, line_id):
-        partner = request.env.user.partner_id
-        return request.env["sale.order.line"].sudo().search([
-            ("id", "=", line_id), ("order_id.partner_id", "=", partner.id),
-        ], limit=1)
-
-    @http.route("/echango/order/substitution", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
-    @require_fresh_session
-    def get_substitution(self, order_id=None, order_ref=None, **kw):
-        # F17 — le signalement de rupture + la suggestion sont saisis
-        # manuellement par le préparateur en back-office (`x_substitution_
-        # produit` sur la ligne, voir `views/sale_order_views.xml`) : côté
-        # app, on se contente de lire s'il y en a une en attente pour cette
-        # commande. `product.product` n'étant pas exposé au portail (voir
-        # CLAUDE.md § Sécurité / F04), la résolution du nom/prix se fait ici
-        # en `sudo()`, pas via un `search_read` direct côté client.
-        # `order_ref` (nom de commande) accepté en plus de `order_id` :
-        # évite à `SubstitutionScreen` de devoir d'abord résoudre l'id via
-        # un `search_read` séparé (non couvert par `require_fresh_session`,
-        # voir `list_orders` ci-dessus).
-        order = self._owned_order(order_id=order_id, order_ref=order_ref)
-        if not order:
-            return {"error": "not_found"}
-        line = order.order_line.filtered(lambda l: l.x_substitution_produit)[:1]
-        if not line:
-            return {"pending": False}
-        substitute = line.x_substitution_produit
-        return {
-            "pending": True,
-            "line_id": line.id,
-            "original_name": line.product_id.display_name,
-            "substitute_name": substitute.display_name,
-            "substitute_price": substitute.lst_price,
-        }
-
-    @http.route("/echango/order/substitution/accept", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
-    @require_fresh_session
-    def accept_substitution(self, line_id=None, **kw):
-        line = self._owned_line(line_id)
-        if not line or not line.x_substitution_produit:
-            return {"error": "not_found"}
-        # Remplace le produit de la ligne — price_unit/name sont des champs
-        # calculés stockés qui se recalculent automatiquement (dépendent de
-        # product_id, vérifié contre le code source Odoo 19).
-        line.sudo().write({
-            "product_id": line.x_substitution_produit.id,
-            "x_substitution_produit": False,
-        })
-        return {"success": True}
-
-    @http.route("/echango/order/substitution/refuse", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
-    @require_fresh_session
-    def refuse_substitution(self, line_id=None, **kw):
-        line = self._owned_line(line_id)
-        if not line or not line.x_substitution_produit:
-            return {"error": "not_found"}
-        line.sudo().unlink()
-        return {"success": True}

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../errors/app_error.dart';
@@ -51,7 +52,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final stock = await api.getStock(productIds: [id]);
     final qty = stock[id];
     if (qty != null) product['qty_available'] = qty;
+    // Produits de substitution (décision produit 2026-07) — curation
+    // manuelle admin (`x_substitute_product_ids`), affichés ici pour que le
+    // client les découvre en amont, pas seulement au checkout en cas de
+    // rupture (voir CheckoutResolveUnavailableScreen).
+    product['substitutes'] = await api.getSubstitutes(productId: id);
     return product;
+  }
+
+  /// Les 3 branches (Accueil/Catalogue/Profil) exposent chacune leur propre
+  /// route `product/:productId` (voir app_router.dart) — cet écran ne sait
+  /// pas statiquement sous laquelle il est monté. `matchedLocation` donne
+  /// le chemin complet (ex. `/catalog/product/42`) : on en déduit le
+  /// préfixe de branche pour pousser un autre produit sur la même pile,
+  /// plutôt que de coder en dur une seule branche.
+  void _openProduct(int productId) {
+    final location = GoRouterState.of(context).matchedLocation;
+    final branch = location.split('/product/').first;
+    context.push('$branch/product/$productId');
   }
 
   void _share() {
@@ -102,6 +120,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             final uomName = uomField is List && uomField.length > 1 ? uomField[1] as String : '';
             final qtyAvailable = (product['qty_available'] as num?)?.toDouble();
             final outOfStock = qtyAvailable != null && qtyAvailable <= 0;
+            final substitutes = (product['substitutes'] as List? ?? const []).cast<Map<String, dynamic>>();
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -170,10 +189,76 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ? null
                         : () => addProductToCart(context, product['id'] as int, qty: _quantity),
                   ),
+                  if (substitutes.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Text('product.substitutesTitle'.tr(), style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(
+                      height: 96,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: substitutes.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+                        itemBuilder: (context, index) => _SubstituteTile(
+                          substitute: substitutes[index],
+                          onTap: () => _openProduct(substitutes[index]['id'] as int),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _SubstituteTile extends StatelessWidget {
+  final Map<String, dynamic> substitute;
+  final VoidCallback onTap;
+
+  const _SubstituteTile({required this.substitute, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final imageBase64 = substitute['image_128'];
+    final qtyAvailable = (substitute['qty_available'] as num?)?.toDouble();
+    final outOfStock = qtyAvailable != null && qtyAvailable <= 0;
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppLayout.radius),
+      onTap: onTap,
+      child: SizedBox(
+        width: 84,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppLayout.radius),
+                ),
+                child: imageBase64 is String
+                    ? Opacity(
+                        opacity: outOfStock ? 0.4 : 1,
+                        child: Image.memory(base64Decode(imageBase64), fit: BoxFit.cover),
+                      )
+                    : const Icon(Icons.image_not_supported_outlined, size: 28, color: AppColors.textMuted),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              substitute['name'] as String? ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
         ),
       ),
     );

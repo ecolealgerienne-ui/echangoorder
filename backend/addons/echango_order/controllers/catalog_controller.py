@@ -84,3 +84,30 @@ class EchangoCatalogController(http.Controller):
                 if tmpl_id not in promotions or (percent or 0) > (current or 0):
                     promotions[tmpl_id] = percent
         return {"promotions": {str(tmpl_id): percent for tmpl_id, percent in promotions.items()}}
+
+    @http.route("/echango/catalog/substitutes", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
+    @require_fresh_session
+    def substitutes(self, product_id=None, **kw):
+        """F05 — produits de substitution affichés sur la fiche produit
+        (`x_substitute_product_ids`, curation manuelle admin — voir
+        `models/product_template.py`). Même raison que `stock()`/
+        `promotions()` ci-dessus : résolution en `sudo()` plutôt qu'un
+        `search_read` portail sur le champ Many2many brut (juste des ids,
+        pas de nom/prix/image sans un second appel).
+        """
+        template = request.env["product.template"].sudo().search([("id", "=", product_id)], limit=1)
+        if not template:
+            return {"substitutes": []}
+        substitutes = template.x_substitute_product_ids.filtered(lambda t: t.sale_ok)
+        return {
+            "substitutes": [
+                {
+                    "id": t.id,
+                    "name": t.display_name,
+                    "list_price": t.list_price,
+                    "image_128": t.image_128.decode() if t.image_128 else None,
+                    "qty_available": t.qty_available,
+                }
+                for t in substitutes
+            ]
+        }

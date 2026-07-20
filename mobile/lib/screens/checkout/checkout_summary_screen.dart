@@ -57,12 +57,26 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
 
   Future<void> _confirm() async {
     if (_isConfirming) return;
+    setState(() => _isConfirming = true);
+    try {
+      await _attemptConfirm();
+    } finally {
+      if (mounted) setState(() => _isConfirming = false);
+    }
+  }
+
+  /// Logique de confirmation sans le garde-fou anti double-soumission
+  /// (porté par [_confirm]) : se rappelle elle-même après résolution des
+  /// produits indisponibles (voir plus bas), ce qui serait bloqué par le
+  /// garde-fou si celui-ci vivait ici — `_isConfirming` reste vrai pendant
+  /// toute la boucle résolution/nouvelle tentative, pas seulement le
+  /// premier essai.
+  Future<void> _attemptConfirm() async {
     final checkout = context.read<CheckoutState>();
     final mode = checkout.receptionMode;
     final slot = checkout.slotStart;
     if (mode == null || slot == null) return;
 
-    setState(() => _isConfirming = true);
     try {
       final result = await context.read<OdooApiClient>().confirmOrder(
             receptionMode: mode == ReceptionMode.delivery ? 'home_delivery' : 'pickup',
@@ -78,10 +92,19 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
       if (!mounted) return;
       context.read<CheckoutState>().reset();
       context.go('/cart/checkout/confirmation/${result['order_ref']}', extra: result);
+    } on CartUnavailableProductsError catch (e) {
+      // Doit être attrapé avant `on AppError` (dont elle hérite) : porte la
+      // liste structurée des lignes/substituts jusqu'à l'écran de
+      // résolution plutôt qu'un simple message d'erreur (décision produit
+      // 2026-07, remplace F17 — voir CLAUDE.md § Produits de substitution).
+      if (!mounted) return;
+      final resolved = await context.push<bool>('/cart/checkout/resolve-unavailable', extra: e.lines);
+      if (resolved == true && mounted) {
+        await context.read<CartState>().refresh();
+        if (mounted) await _attemptConfirm();
+      }
     } on AppError catch (e) {
       if (mounted) AppMessenger.showError(context, e, onRetry: _confirm);
-    } finally {
-      if (mounted) setState(() => _isConfirming = false);
     }
   }
 

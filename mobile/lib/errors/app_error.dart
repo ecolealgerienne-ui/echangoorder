@@ -52,6 +52,7 @@ class AppError implements Exception {
   static const checkoutOutOfStock = 'checkout.out_of_stock';
   static const checkoutSlotFull = 'checkout.slot_full';
   static const checkoutOutOfDeliveryZone = 'checkout.out_of_delivery_zone';
+  static const checkoutUnavailableProducts = 'checkout.unavailable_products';
 
   // --- Code promo (F15) ---
   static const promoInvalid = 'promo.invalid';
@@ -65,4 +66,20 @@ class AppError implements Exception {
   static const permissionDenied = 'permissions.denied';
 
   static const unknown = 'unknown';
+}
+
+/// F07 — un ou plusieurs produits du panier sont devenus indisponibles à la
+/// confirmation (voir `checkout_controller.py.confirm()`). Contrairement
+/// aux autres erreurs, celle-ci porte les données nécessaires pour que le
+/// client résolve directement (remplacer par un substitut pré-défini par
+/// l'admin, ou supprimer la ligne — jamais le préparateur, décision produit
+/// qui remplace l'ancien F17) au lieu d'un simple message d'erreur. Étend
+/// [AppError] pour rester compatible avec le code existant qui n'attrape
+/// que `on AppError` ; les écrans qui doivent gérer la résolution
+/// attrapent `on CartUnavailableProductsError` explicitement, avant le
+/// `catch` générique.
+class CartUnavailableProductsError extends AppError {
+  final List<Map<String, dynamic>> lines;
+
+  const CartUnavailableProductsError(this.lines) : super(AppError.checkoutUnavailableProducts);
 }

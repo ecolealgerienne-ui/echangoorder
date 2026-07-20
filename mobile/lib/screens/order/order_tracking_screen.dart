@@ -45,8 +45,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final detail = await api.getOrderDetail(orderRef: widget.orderRef);
     final order = detail['order'] as Map<String, dynamic>;
     final lines = (detail['lines'] as List).cast<Map<String, dynamic>>();
-    final substitution = await api.getSubstitution(orderId: order['id'] as int);
-    return _OrderDetail(order: order, lines: lines, hasSubstitution: substitution['pending'] == true);
+    return _OrderDetail(order: order, lines: lines);
   }
 
   Future<void> _confirmCancel(BuildContext context, int orderId) async {
@@ -111,17 +110,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             return ScreenPlaceholder(
               screenKey: 'OrderTracking',
               actions: [
-                // F17 — visible seulement si le préparateur a signalé une
-                // rupture avec suggestion en back-office. En réel, cet écran
-                // serait plutôt ouvert depuis une notification push (F11,
-                // pas encore fait) ; ce bouton reste le point d'entrée en
-                // attendant.
-                if (detail.hasSubstitution)
-                  PlaceholderAction(
-                    label: 'screens.Substitution.title'.tr(),
-                    onPressed: () => context.push('/profile/orders/${widget.orderRef}/substitution'),
-                    variant: AppButtonVariant.secondary,
-                  ),
                 // F16 — visible uniquement tant que la commande est
                 // "Confirmée" (state == 'sale'), pas de suivi
                 // stock.picking pour distinguer "préparation commencée".
@@ -168,7 +156,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 class _OrderDetail {
   final Map<String, dynamic> order;
   final List<Map<String, dynamic>> lines;
-  final bool hasSubstitution;
 
-  const _OrderDetail({required this.order, required this.lines, required this.hasSubstitution});
+  const _OrderDetail({required this.order, required this.lines});
 }

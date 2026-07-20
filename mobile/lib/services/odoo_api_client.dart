@@ -30,6 +30,12 @@ const _errorCodeMap = <String, String>{
   // disponible") que le cas F07, pas la peine d'un nouveau domaine/2
   // traductions supplémentaires pour la même idée.
   'cart.product_unavailable': AppError.checkoutOutOfStock,
+  // Cas normalement intercepté avant ce mapping générique par
+  // [OdooApiClient.confirmOrder] (voir plus bas, [CartUnavailableProductsError]
+  // porte la liste structurée des lignes) — gardé ici en repli défensif
+  // seulement, pour ne jamais tomber sur `AppError.unknown` si ce code
+  // apparaissait ailleurs un jour.
+  'cart.unavailable_products': AppError.checkoutUnavailableProducts,
   'not_found': AppError.notFound,
   // Renvoyé par rate_limited (controllers/rate_limit.py) sur les
   // endpoints publics (auth/login, auth/register, currency, vitrine).
@@ -350,6 +356,17 @@ class OdooApiClient {
       if (zipCode != null) 'zip_code': zipCode,
       if (notes != null) 'notes': notes,
     }) as Map<String, dynamic>;
+    // Un ou plusieurs produits sont devenus indisponibles entre l'ajout au
+    // panier et la confirmation (voir checkout_controller.py.confirm()) :
+    // intercepté avant `_throwIfOwnError` (générique) pour porter la liste
+    // structurée des lignes/substituts jusqu'à l'écran de résolution
+    // (`CheckoutResolveUnavailableScreen`) plutôt qu'un simple message
+    // d'erreur.
+    if (result['error'] == 'cart.unavailable_products') {
+      throw CartUnavailableProductsError(
+        (result['unavailable_lines'] as List).cast<Map<String, dynamic>>(),
+      );
+    }
     _throwIfOwnError(result);
     return result;
   }
@@ -484,32 +501,15 @@ class OdooApiClient {
     _throwIfOwnError(result);
   }
 
-  /// F17 — la substitution est signalée manuellement par le préparateur en
-  /// back-office (`x_substitution_produit`, voir `models/sale_order.py`) ;
-  /// `pending: false` si aucune substitution n'est en attente pour cette
-  /// commande. `orderRef` (nom, ex. "S00042") accepté en plus de `orderId`
-  /// — évite un `search_read` séparé juste pour résoudre l'id (voir
-  /// [listOrders]).
-  Future<Map<String, dynamic>> getSubstitution({int? orderId, String? orderRef}) async {
-    assert(orderId != null || orderRef != null);
-    final result = await _rpc('/echango/order/substitution', {
-      if (orderId != null) 'order_id': orderId,
-      if (orderRef != null) 'order_ref': orderRef,
-    }) as Map<String, dynamic>;
-    _throwIfOwnError(result);
-    return result;
-  }
-
-  Future<void> acceptSubstitution({required int lineId}) async {
+  /// F05 — produits de substitution affichés sur la fiche produit
+  /// (curation manuelle admin, `x_substitute_product_ids` — voir
+  /// `models/product_template.py`, décision produit qui remplace l'ancien
+  /// F17). Résolution en `sudo()` côté serveur (nom/prix/image), pas juste
+  /// les ids du champ Many2many.
+  Future<List<Map<String, dynamic>>> getSubstitutes({required int productId}) async {
     final result =
-        await _rpc('/echango/order/substitution/accept', {'line_id': lineId}) as Map<String, dynamic>;
-    _throwIfOwnError(result);
-  }
-
-  Future<void> refuseSubstitution({required int lineId}) async {
-    final result =
-        await _rpc('/echango/order/substitution/refuse', {'line_id': lineId}) as Map<String, dynamic>;
-    _throwIfOwnError(result);
+        await _rpc('/echango/catalog/substitutes', {'product_id': productId}) as Map<String, dynamic>;
+    return (result['substitutes'] as List).cast<Map<String, dynamic>>();
   }
 
   /// F00 — vitrine publique, aucune session requise (`auth='public'` côté

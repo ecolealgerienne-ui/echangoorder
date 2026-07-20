@@ -22,6 +22,24 @@ class ProductTemplate(models.Model):
     # ici plutôt qu'un champ dupliqué, seul l'attribut `groups` change.
     standard_price = fields.Float(groups="base.group_user")
 
+    # Produits de substitution (décision produit 2026-07, remplace F17 —
+    # voir CLAUDE.md § Produits de substitution). Aucun équivalent standard :
+    # le module OCA `stock_picking_product_interchangeable` a été vérifié
+    # avant de créer ce champ (recherche faite, pas juste supposée) mais ne
+    # convient pas — relation symétrique, substitution automatique côté
+    # entrepôt sans interaction client, alors qu'ici c'est le client qui
+    # choisit, sur la fiche produit et/ou au checkout. Curation manuelle
+    # admin uniquement (jamais par le préparateur), relation volontairement
+    # asymétrique (`relation`/`column1`/`column2` explicites : self-m2m sans
+    # champ "inverse" correspondant).
+    x_substitute_product_ids = fields.Many2many(
+        "product.template",
+        relation="x_product_template_substitute_rel",
+        column1="product_tmpl_id",
+        column2="substitute_tmpl_id",
+        string="Produits de substitution",
+    )
+
 
 class ProductProduct(models.Model):
     _inherit = "product.product"

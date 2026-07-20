@@ -14,6 +14,7 @@ import '../screens/catalog/search_screen.dart';
 import '../screens/checkout/checkout_address_screen.dart';
 import '../screens/checkout/checkout_out_of_zone_screen.dart';
 import '../screens/checkout/checkout_reception_mode_screen.dart';
+import '../screens/checkout/checkout_resolve_unavailable_screen.dart';
 import '../screens/checkout/checkout_summary_screen.dart';
 import '../screens/checkout/checkout_timeslot_screen.dart';
 import '../screens/checkout/order_confirmation_screen.dart';
@@ -23,7 +24,6 @@ import '../screens/legal/legal_document_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/order/order_history_screen.dart';
 import '../screens/order/order_tracking_screen.dart';
-import '../screens/order/substitution_screen.dart';
 import '../screens/product/product_detail_screen.dart';
 import '../screens/profile/addresses_screen.dart';
 import '../screens/profile/change_pin_screen.dart';
@@ -171,6 +171,12 @@ GoRouter buildAppRouter(AuthState authState) {
                   builder: (context, state) => const CheckoutSummaryScreen(),
                 ),
                 GoRoute(
+                  path: 'checkout/resolve-unavailable',
+                  builder: (context, state) => CheckoutResolveUnavailableScreen(
+                    lines: (state.extra as List).cast<Map<String, dynamic>>(),
+                  ),
+                ),
+                GoRoute(
                   path: 'checkout/confirmation/:orderRef',
                   builder: (context, state) {
                     final extra = state.extra as Map<String, dynamic>?;
@@ -208,13 +214,6 @@ GoRouter buildAppRouter(AuthState authState) {
                   path: 'orders/:orderRef',
                   builder: (context, state) =>
                       OrderTrackingScreen(orderRef: state.pathParameters['orderRef']!),
-                  routes: [
-                    GoRoute(
-                      path: 'substitution',
-                      builder: (context, state) =>
-                          SubstitutionScreen(orderRef: state.pathParameters['orderRef']!),
-                    ),
-                  ],
                 ),
                 GoRoute(path: 'about', builder: (context, state) => const AboutScreen()),
                 GoRoute(

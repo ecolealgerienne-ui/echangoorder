@@ -53,7 +53,11 @@
     "itemsLabel": "articles",
     "promoCodeLabel": "Code promo",
     "promoAppliedPrefix": "✅ Code appliqué :",
-    "discountLabel": "Réduction"
+    "discountLabel": "Réduction",
+    "resolveUnavailableTitle": "Produits indisponibles",
+    "resolveUnavailableIntro": "Certains produits ne sont plus disponibles. Choisissez un remplacement ou supprimez-les avant de continuer.",
+    "noSubstituteAvailable": "Aucun produit de remplacement disponible.",
+    "removeLine": "Supprimer cet article"
   },
   "cart": {
     "subtotal": "Sous-total",
@@ -68,12 +72,6 @@
     "reorderTitle": "🛒 Commander à nouveau ?",
     "reorderMessage": "Les articles de cette commande seront ajoutés à votre panier.",
     "reorderUnavailableWarning": "⚠️ Certains produits ne sont plus disponibles et n'ont pas été ajoutés."
-  },
-  "substitution": {
-    "original": "Produit original",
-    "suggested": "Suggestion",
-    "accept": "Accepter",
-    "refuse": "Refuser — Supprimer cet article"
   },
   "permissions": {
     "locationTitle": "Votre localisation",
@@ -114,7 +112,8 @@
     "checkout": {
       "out_of_stock": "Ce produit n'est plus disponible.",
       "slot_full": "Ce créneau est complet.",
-      "out_of_delivery_zone": "Votre adresse n'est pas dans notre zone de livraison."
+      "out_of_delivery_zone": "Votre adresse n'est pas dans notre zone de livraison.",
+      "unavailable_products": "Certains produits de votre commande ne sont plus disponibles."
     },
     "promo": {
       "invalid": "Code promo invalide.",
@@ -143,6 +142,9 @@
   },
   "about": {
     "versionLabel": "Version : {version}"
+  },
+  "product": {
+    "substitutesTitle": "Produits de substitution"
   },
   "legal": {
     "cgu": "CGU",
@@ -249,8 +251,7 @@
     "CheckoutSummary": { "title": "Récapitulatif", "subtitle": "Récapitulatif & code promo — F07 / F15" },
     "OrderConfirmation": { "title": "Commande confirmée !", "subtitle": "Confirmation — F08" },
     "OrderHistory": { "title": "Mes commandes", "subtitle": "Historique & reorder — F09" },
-    "OrderTracking": { "title": "Suivi de commande", "subtitle": "Suivi, annulation, substitution — F08 / F16 / F17" },
-    "Substitution": { "title": "Produit indisponible", "subtitle": "Substitution produit — F17" },
+    "OrderTracking": { "title": "Suivi de commande", "subtitle": "Suivi, annulation — F08 / F16" },
     "Profile": { "title": "Mon Profil", "subtitle": "Profil utilisateur — F10" },
     "Addresses": { "title": "Mes adresses", "subtitle": "Adresses sauvegardées — F10" },
     "Favorites": { "title": "Mes favoris", "subtitle": "Produits favoris" },

@@ -182,10 +182,37 @@ class EchangoCheckoutController(http.Controller):
         # plusieurs jours peut être confirmé alors qu'un produit est
         # entre-temps devenu indisponible — même principe que la
         # revérification de la capacité des créneaux ci-dessus (trouvé à
-        # l'audit technique du 2026-07-19).
+        # l'audit technique du 2026-07-19). Ne bloque plus sur un message
+        # générique dès la première ligne en rupture (décision produit
+        # 2026-07, remplace F17) : toutes les lignes indisponibles sont
+        # remontées d'un coup, avec pour chacune les produits de
+        # substitution pré-définis par l'admin (`x_substitute_product_ids`)
+        # — c'est au client de remplacer ou de supprimer chaque ligne
+        # (jamais le préparateur), voir `mobile/lib/screens/checkout/
+        # checkout_resolve_unavailable_screen.dart`.
+        unavailable_lines = []
         for line in order.order_line.filtered(lambda l: not l.is_reward_line):
-            if line.product_id.product_tmpl_id.qty_available <= 0:
-                return {"error": "cart.product_unavailable"}
+            template = line.product_id.product_tmpl_id
+            if template.qty_available <= 0:
+                substitutes = template.x_substitute_product_ids.filtered(
+                    lambda t: t.sale_ok and t.qty_available > 0
+                )
+                unavailable_lines.append({
+                    "line_id": line.id,
+                    "product_name": line.product_id.display_name,
+                    "qty": line.product_uom_qty,
+                    "substitutes": [
+                        {
+                            "id": t.id,
+                            "name": t.display_name,
+                            "list_price": t.list_price,
+                            "image_128": t.image_128.decode() if t.image_128 else None,
+                        }
+                        for t in substitutes
+                    ],
+                })
+        if unavailable_lines:
+            return {"error": "cart.unavailable_products", "unavailable_lines": unavailable_lines}
 
         vals = {"x_reception_mode": reception_mode}
         if slot_start:
