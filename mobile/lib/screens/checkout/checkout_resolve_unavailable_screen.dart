@@ -15,11 +15,14 @@ import '../../widgets/app_button.dart';
 /// confirmation (`checkout_controller.py.confirm()`). Décision produit
 /// 2026-07 (remplace F17) : c'est toujours le client qui choisit, jamais le
 /// préparateur — pour chaque ligne, un des substituts pré-définis par
-/// l'admin (`x_substitute_product_ids`) ou la suppression de la ligne.
+/// l'admin (`x_substitute_product_ids`, quantité ajustable) ou la
+/// suppression de la ligne.
 ///
-/// Remplace la ligne en supprimant l'ancienne et en ajoutant le substitut
-/// (même quantité) via les endpoints panier existants — pas de contrôleur
-/// dédié, `cart_controller.py` suffit déjà.
+/// Remplace la ligne en ajoutant d'abord le substitut puis en supprimant
+/// l'ancienne (plutôt que l'inverse) — si l'ajout échoue (ex. le substitut
+/// devient lui-même indisponible entre-temps), la ligne d'origine reste en
+/// place au lieu de disparaître du panier sans rien la remplacer. Endpoints
+/// panier existants (`cart/add` + `cart/remove`) — pas de contrôleur dédié.
 class CheckoutResolveUnavailableScreen extends StatefulWidget {
   final List<Map<String, dynamic>> lines;
 
@@ -33,10 +36,27 @@ class _CheckoutResolveUnavailableScreenState extends State<CheckoutResolveUnavai
   // line_id -> id du substitut choisi, ou _removeChoice pour "supprimer".
   static const _removeChoice = -1;
   final Map<int, int> _decisions = {};
+  // line_id -> quantité choisie pour le substitut (pertinent seulement si
+  // la décision n'est pas _removeChoice) — initialisée à la quantité de la
+  // ligne d'origine au moment de la sélection, ajustable ensuite.
+  final Map<int, num> _quantities = {};
   bool _isSubmitting = false;
 
   bool get _allResolved =>
       widget.lines.every((line) => _decisions.containsKey(line['line_id'] as int));
+
+  void _onSelect(int lineId, int value, num defaultQty) {
+    setState(() {
+      _decisions[lineId] = value;
+      if (value != _removeChoice) {
+        _quantities.putIfAbsent(lineId, () => defaultQty);
+      }
+    });
+  }
+
+  void _onQtyChange(int lineId, num qty) {
+    setState(() => _quantities[lineId] = qty < 1 ? 1 : qty);
+  }
 
   Future<void> _apply() async {
     if (_isSubmitting || !_allResolved) return;
@@ -46,10 +66,12 @@ class _CheckoutResolveUnavailableScreenState extends State<CheckoutResolveUnavai
       for (final line in widget.lines) {
         final lineId = line['line_id'] as int;
         final decision = _decisions[lineId]!;
-        await api.removeCartLine(lineId: lineId);
-        if (decision != _removeChoice) {
-          final qty = (line['qty'] as num?) ?? 1;
+        if (decision == _removeChoice) {
+          await api.removeCartLine(lineId: lineId);
+        } else {
+          final qty = _quantities[lineId] ?? (line['qty'] as num?) ?? 1;
           await api.addToCart(productId: decision, qty: qty);
+          await api.removeCartLine(lineId: lineId);
         }
       }
       if (!mounted) return;
@@ -78,8 +100,11 @@ class _CheckoutResolveUnavailableScreenState extends State<CheckoutResolveUnavai
               _UnavailableLineCard(
                 line: line,
                 removeChoice: _removeChoice,
-                selected: _decisions[line['line_id'] as int],
-                onSelect: (value) => setState(() => _decisions[line['line_id'] as int] = value),
+                selectedDecision: _decisions[line['line_id'] as int],
+                selectedQty: _quantities[line['line_id'] as int],
+                onSelect: (value) =>
+                    _onSelect(line['line_id'] as int, value, (line['qty'] as num?) ?? 1),
+                onQtyChange: (qty) => _onQtyChange(line['line_id'] as int, qty),
               ),
             const SizedBox(height: AppSpacing.md),
             AppButton(
@@ -96,19 +121,24 @@ class _CheckoutResolveUnavailableScreenState extends State<CheckoutResolveUnavai
 class _UnavailableLineCard extends StatelessWidget {
   final Map<String, dynamic> line;
   final int removeChoice;
-  final int? selected;
+  final int? selectedDecision;
+  final num? selectedQty;
   final ValueChanged<int> onSelect;
+  final ValueChanged<num> onQtyChange;
 
   const _UnavailableLineCard({
     required this.line,
     required this.removeChoice,
-    required this.selected,
+    required this.selectedDecision,
+    required this.selectedQty,
     required this.onSelect,
+    required this.onQtyChange,
   });
 
   @override
   Widget build(BuildContext context) {
     final substitutes = (line['substitutes'] as List).cast<Map<String, dynamic>>();
+    final showQtyStepper = selectedDecision != null && selectedDecision != removeChoice;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -121,7 +151,7 @@ class _UnavailableLineCard extends StatelessWidget {
         // descendants (individuels dépréciés depuis Flutter 3.32, cf.
         // CheckoutTimeslotScreen) — un groupe par ligne, indépendant des
         // autres lignes de la liste.
-        groupValue: selected ?? -2,
+        groupValue: selectedDecision ?? -2,
         onChanged: (value) => onSelect(value!),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,6 +180,25 @@ class _UnavailableLineCard extends StatelessWidget {
               value: removeChoice,
               title: Text('checkout.removeLine'.tr(), style: const TextStyle(color: AppColors.danger)),
             ),
+            if (showQtyStepper) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: (selectedQty ?? 1) > 1
+                        ? () => onQtyChange((selectedQty ?? 1) - 1)
+                        : null,
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                  Text('${selectedQty ?? 1}', style: Theme.of(context).textTheme.titleMedium),
+                  IconButton(
+                    onPressed: () => onQtyChange((selectedQty ?? 1) + 1),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
