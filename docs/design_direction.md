@@ -31,9 +31,29 @@ Le vert actuel (`AppColors.primary` dans `app_theme.dart`) devient `AppColors.se
 
 ### Typographie
 
-- **Affichage (titres, marque)** : cible *Iowan Old Style / Palatino* — serif chaleureuse, esprit enseigne peinte à la main. À intégrer comme asset Flutter (police embarquée, aucune dépendance réseau) plutôt qu'un `google_fonts` chargé à la volée — cohérent avec le principe déjà en place d'éviter les dépendances externes évitables.
-- **Arabe (titres)** : cible *El Messiri* — rond, chaleureux, bonne lisibilité écran, pairing naturel avec la serif ci-dessus en registre.
+- **Affichage (titres, marque)** : cible *Lora* (licence OFL, Google Fonts) — serif chaleureuse, même esprit "enseigne peinte à la main" que la référence initiale *Iowan Old Style/Palatino* évoquée lors de la présentation des 3 pistes, mais celle-ci est une police système propriétaire Apple/Linotype **non redistribuable** comme asset Flutter (pas de licence d'intégration) — corrigé ici pour une famille réellement embarquable.
+- **Arabe (titres)** : cible *El Messiri* (licence OFL, Google Fonts) — rond, chaleureux, bonne lisibilité écran, pairing naturel avec *Lora* en registre.
 - **Corps de texte (FR + AR)** : police système par défaut de Flutter (Roboto/San Francisco selon plateforme) — la personnalité typographique reste réservée aux titres, pas au texte courant, pour ne pas complexifier le rendu RTL sur les écrans denses (checkout, profil).
+
+#### Étape locale requise (ce sandbox n'a pas accès réseau)
+
+`app_theme.dart` référence déjà deux familles sur les styles de titre (`titleLarge`/`titleMedium`) : `'CasbahDisplay'` (latin, `fontFamily`) avec `'CasbahDisplayArabic'` en repli (`fontFamilyFallback`) — Flutter ne fusionne pas deux polices de scripts différents sous un seul nom de famille (contrairement à plusieurs graisses d'une même police), d'où deux familles déclarées séparément et reliées par le mécanisme de repli. Tant qu'elles ne sont pas déclarées dans `pubspec.yaml`, Flutter retombe silencieusement sur la police système par défaut (aucun risque de casse). Pour les activer :
+
+1. Télécharger les fichiers statiques (`.ttf`) de [Lora](https://fonts.google.com/specimen/Lora) (poids SemiBold/Bold) et de [El Messiri](https://fonts.google.com/specimen/El+Messiri) (poids SemiBold/Bold) depuis Google Fonts.
+2. Les placer dans `mobile/assets/fonts/` (nouveau dossier à créer).
+3. Ajouter dans `mobile/pubspec.yaml`, sous `flutter:` :
+   ```yaml
+   fonts:
+     - family: CasbahDisplay
+       fonts:
+         - asset: assets/fonts/Lora-SemiBold.ttf
+           weight: 600
+     - family: CasbahDisplayArabic
+       fonts:
+         - asset: assets/fonts/ElMessiri-SemiBold.ttf
+           weight: 600
+   ```
+4. `flutter pub get` puis relancer l'app (pas juste hot reload — un changement de `pubspec.yaml` nécessite un restart complet).
 
 ### Langage de formes
 
@@ -42,7 +62,7 @@ Le vert actuel (`AppColors.primary` dans `app_theme.dart`) devient `AppColors.se
 
 ### Mode sombre
 
-Prévu dès cette passe (pas ajouté après coup) : `ColorScheme.dark` complet dans `buildAppTheme()`, bascule via `ThemeMode.system` par défaut (à confirmer — écran de réglage dédié hors scope sauf demande explicite).
+**Fait (Phase A, 2026-07-20)** : `AppColorsDark` (tons sombres pour chaque rôle) + `buildAppDarkTheme()` dans `app_theme.dart`, branché dans `main.dart` via `darkTheme:`/`themeMode: ThemeMode.system` (suit le réglage système, pas d'écran de préférence dédié — hors scope sauf demande explicite). Couverture actuelle : le chrome Material standard (AppBar, boutons, `Scaffold`, texte via `TextTheme`) bascule déjà correctement. Les widgets qui référencent `AppColors.*` directement (`ProductGridTile`, écrans panier/checkout/profil...) ne suivent pas encore le mode sombre — bascule progressive prévue phase par phase (B-E) à mesure que chaque composant/écran est retouché.
 
 ## Pistes archivées (non retenues pour l'identité permanente)
 

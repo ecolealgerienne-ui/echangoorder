@@ -111,6 +111,8 @@ class _EchangoOrderAppState extends State<EchangoOrderApp> with WidgetsBindingOb
         title: 'Echango Order',
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(),
+        darkTheme: buildAppDarkTheme(),
+        themeMode: ThemeMode.system,
         routerConfig: _router,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
