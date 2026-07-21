@@ -187,8 +187,16 @@ GoRouter buildAppRouter(AuthState authState) {
               routes: [
                 GoRoute(
                   path: 'product/:productId',
-                  builder: (context, state) =>
-                      ProductDetailScreen(productId: state.pathParameters['productId']!),
+                  // `extra` (2026-07-21, demande utilisateur) : données déjà
+                  // chargées par l'écran d'origine (grille produits,
+                  // substitut...) transmises pour un affichage instantané —
+                  // voir `ProductDetailScreen.initialData`. `null` si accès
+                  // sans donnée préalable (ex. futur deep link F12) : l'écran
+                  // gère déjà ce cas (spinner classique).
+                  builder: (context, state) => ProductDetailScreen(
+                    productId: state.pathParameters['productId']!,
+                    initialData: state.extra as Map<String, dynamic>?,
+                  ),
                 ),
               ],
             ),
@@ -202,8 +210,16 @@ GoRouter buildAppRouter(AuthState authState) {
                 GoRoute(path: 'favorites', builder: (context, state) => const FavoritesScreen()),
                 GoRoute(
                   path: 'product/:productId',
-                  builder: (context, state) =>
-                      ProductDetailScreen(productId: state.pathParameters['productId']!),
+                  // `extra` (2026-07-21, demande utilisateur) : données déjà
+                  // chargées par l'écran d'origine (grille produits,
+                  // substitut...) transmises pour un affichage instantané —
+                  // voir `ProductDetailScreen.initialData`. `null` si accès
+                  // sans donnée préalable (ex. futur deep link F12) : l'écran
+                  // gère déjà ce cas (spinner classique).
+                  builder: (context, state) => ProductDetailScreen(
+                    productId: state.pathParameters['productId']!,
+                    initialData: state.extra as Map<String, dynamic>?,
+                  ),
                 ),
                 GoRoute(path: 'change-pin', builder: (context, state) => const ChangePinScreen()),
                 GoRoute(

@@ -46,7 +46,10 @@ Future<void> addProductOrOpenDetail(
 ) async {
   final variantCount = (product['product_variant_count'] as num?)?.toInt() ?? 1;
   if (variantCount > 1) {
-    context.push(detailRoute);
+    // `extra: product` (2026-07-21, demande utilisateur) : la grille a déjà
+    // nom/prix/image/stock, transmis pour un affichage instantané de la
+    // fiche produit — voir `ProductDetailScreen.initialData`.
+    context.push(detailRoute, extra: product);
     return;
   }
   await addProductToCart(context, product['id'] as int);

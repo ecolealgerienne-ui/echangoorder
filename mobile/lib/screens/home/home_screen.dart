@@ -219,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             final productId = product['id'] as int;
                             return ProductGridTile(
                               product: product,
-                              onTap: () => context.push('/home/product/$productId'),
+                              onTap: () => context.push('/home/product/$productId', extra: product),
                               cartQty: cart.quantityFor(productId),
                               onIncrement: () =>
                                   addProductOrOpenDetail(context, product, '/home/product/$productId'),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
@@ -6,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../errors/app_error.dart';
+import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../theme/app_theme.dart';
@@ -16,10 +18,23 @@ import '../../widgets/app_button.dart';
 /// F05 — Fiche produit : `product.template` par id (`read` standard, pas
 /// de contrôleur custom). Disponibilité stock récupérée à part via
 /// `OdooApiClient.getStock()` (contrôleur dédié en `sudo()`, voir F04).
+///
+/// [initialData] (2026-07-21, demande utilisateur) : données déjà
+/// disponibles côté appelant (grille produits, tuile de substitut...) —
+/// nom/prix/image/stock, transmises via `extra` du `GoRoute` (voir
+/// `app_router.dart`). Affichées immédiatement pendant que le chargement
+/// complet (description, variantes, substituts, stock à jour) se fait en
+/// arrière-plan, plutôt qu'un écran vide + spinner à chaque ouverture —
+/// gênant signalé par l'utilisateur, chaque visite refaisant l'appel
+/// réseau en entier (comportement délibéré, le stock pouvant changer,
+/// mais sans retour visuel immédiat auparavant). `null` si l'écran est
+/// atteint sans donnée préalable (ex. futur deep link F12) : repli sur le
+/// spinner classique, comportement inchangé dans ce cas.
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
+  final Map<String, dynamic>? initialData;
 
-  const ProductDetailScreen({super.key, required this.productId});
+  const ProductDetailScreen({super.key, required this.productId, this.initialData});
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -42,9 +57,29 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   void _loadProduct() {
     final id = int.tryParse(widget.productId);
+    final future =
+        id == null ? Future<Map<String, dynamic>>.error(const AppError(AppError.notFound)) : _fetchProduct(id);
     setState(() {
-      _productFuture = id == null ? Future.error(const AppError(AppError.notFound)) : _fetchProduct(id);
+      _productFuture = future;
     });
+    // Si une donnée initiale est déjà affichée (voir [ProductDetailScreen.
+    // initialData]), un échec du chargement complet ne doit pas remplacer un
+    // contenu déjà visible par un écran d'erreur plein (voir `build()`) —
+    // juste prévenir sans bloquer (snackbar + retry), conforme à CLAUDE.md
+    // § Gestion des erreurs ("aucune erreur silencieuse"). Écouteur séparé
+    // (`unawaited`) : ne change rien à la façon dont `FutureBuilder` observe
+    // `future` par ailleurs.
+    if (widget.initialData != null) {
+      unawaited(
+        future.catchError((error) {
+          if (mounted) {
+            final appError = error is AppError ? error : const AppError(AppError.unknown);
+            AppMessenger.showError(context, appError, onRetry: _loadProduct);
+          }
+          return <String, dynamic>{};
+        }),
+      );
+    }
   }
 
   Future<Map<String, dynamic>> _fetchProduct(int id) async {
@@ -103,10 +138,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   /// le chemin complet (ex. `/catalog/product/42`) : on en déduit le
   /// préfixe de branche pour pousser un autre produit sur la même pile,
   /// plutôt que de coder en dur une seule branche.
-  void _openProduct(int productId) {
+  void _openProduct(Map<String, dynamic> product) {
+    final productId = product['id'] as int;
     final location = GoRouterState.of(context).matchedLocation;
     final branch = location.split('/product/').first;
-    context.push('$branch/product/$productId');
+    context.push('$branch/product/$productId', extra: product);
   }
 
   void _share() {
@@ -128,7 +164,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         // affichée dans le corps.
         title: FutureBuilder<Map<String, dynamic>>(
           future: _productFuture,
-          builder: (context, snapshot) => Text(snapshot.data?['name'] as String? ?? ''),
+          builder: (context, snapshot) =>
+              Text((snapshot.data ?? widget.initialData)?['name'] as String? ?? ''),
         ),
         actions: [
           IconButton(icon: const Icon(Icons.ios_share), onPressed: _share),
@@ -138,18 +175,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         child: FutureBuilder<Map<String, dynamic>>(
           future: _productFuture,
           builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
+            // `snapshot.data` (chargement complet terminé) prime sur
+            // `widget.initialData` (donnée partielle affichée en attendant) —
+            // voir la doc de [ProductDetailScreen.initialData]. Si aucun des
+            // deux n'est disponible, repli sur le spinner/écran d'erreur
+            // classique (comportement inchangé pour un accès sans donnée
+            // préalable, ex. futur deep link F12).
+            final product = snapshot.data ?? widget.initialData;
+            if (product == null) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
               final error =
                   snapshot.error is AppError ? snapshot.error as AppError : const AppError(AppError.unknown);
               return ErrorStateView.forError(error, onRetry: _loadProduct);
             }
 
-            final product = snapshot.data!;
             final name = product['name'] as String? ?? '';
-            final imageBase64 = product['image_1920'];
+            // `image_1920` (haute résolution) vient du chargement complet
+            // seul — repli sur la vignette `image_128` déjà connue de la
+            // grille pendant l'attente, plutôt qu'une icône vide.
+            final imageBase64 = product['image_1920'] ?? product['image_128'];
             final descriptionRaw = product['description'];
             final description = descriptionRaw is String ? _stripHtml(descriptionRaw) : '';
             final uomField = product['uom_id'];
@@ -267,7 +313,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
                         itemBuilder: (context, index) => _SubstituteTile(
                           substitute: substitutes[index],
-                          onTap: () => _openProduct(substitutes[index]['id'] as int),
+                          onTap: () => _openProduct(substitutes[index]),
                         ),
                       ),
                     ),

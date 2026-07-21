@@ -160,7 +160,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                           final productId = product['id'] as int;
                                           return ProductGridTile(
                                             product: product,
-                                            onTap: () => context.push('/profile/product/$productId'),
+                                            onTap: () =>
+                                                context.push('/profile/product/$productId', extra: product),
                                             cartQty: cart.quantityFor(productId),
                                             onIncrement: () => addProductOrOpenDetail(
                                               context,
@@ -342,7 +343,10 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
                           delegate: SliverChildBuilderDelegate(
                             (context, index) => ProductGridTile(
                               product: results[index],
-                              onTap: () => context.push('/profile/product/${results[index]['id']}'),
+                              onTap: () => context.push(
+                                '/profile/product/${results[index]['id']}',
+                                extra: results[index],
+                              ),
                               onAdd: () => _add(results[index]),
                             ),
                             childCount: results.length,
