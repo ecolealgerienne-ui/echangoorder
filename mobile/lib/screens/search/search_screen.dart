@@ -86,7 +86,7 @@ class _SearchScreenState extends State<SearchScreen> {
       domain: [
         ['name', 'ilike', query],
       ],
-      fields: const ['name', 'list_price', 'image_128', 'product_variant_count'],
+      fields: const ['name', 'list_price', 'image_128'],
       limit: kListPageSize,
       offset: offset,
     );

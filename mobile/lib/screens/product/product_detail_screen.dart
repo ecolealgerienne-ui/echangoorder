@@ -55,7 +55,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       fields: const ['name', 'description', 'list_price', 'image_1920', 'uom_id'],
     );
     final stock = await api.getStock(productIds: [id]);
-    final qty = stock[id];
+    final qty = stock.stock[id];
     if (qty != null) product['qty_available'] = qty;
     // Produits de substitution (décision produit 2026-07) — curation
     // manuelle admin (`x_substitute_product_ids`), affichés ici pour que le
