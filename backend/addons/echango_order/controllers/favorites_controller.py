@@ -38,6 +38,12 @@ class EchangoFavoritesController(http.Controller):
                     "name": t.name,
                     "list_price": t.list_price,
                     "image_128": t.image_128.decode() if t.image_128 else None,
+                    # F05 — > 1 signifie que le produit a des variantes
+                    # (couleur/taille...) à choisir avant l'ajout au panier,
+                    # champ standard déjà utilisé côté `search_read` pour le
+                    # même besoin sur Accueil/Recherche (voir
+                    # `product_grid_tile.dart`/`add_to_cart.dart`).
+                    "product_variant_count": t.product_variant_count,
                 }
                 for t in templates
             ]

@@ -162,7 +162,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                             product: product,
                                             onTap: () => context.push('/profile/product/$productId'),
                                             cartQty: cart.quantityFor(productId),
-                                            onIncrement: () => addProductToCart(context, productId),
+                                            onIncrement: () => addProductOrOpenDetail(
+                                              context,
+                                              product,
+                                              '/profile/product/$productId',
+                                            ),
                                             onDecrement: () => decrementCartProduct(context, productId),
                                             isFavorite: true,
                                             onToggleFavorite: () => _toggleFavorite(productId),

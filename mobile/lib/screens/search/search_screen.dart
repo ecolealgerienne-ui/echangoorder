@@ -86,7 +86,7 @@ class _SearchScreenState extends State<SearchScreen> {
       domain: [
         ['name', 'ilike', query],
       ],
-      fields: const ['name', 'list_price', 'image_128'],
+      fields: const ['name', 'list_price', 'image_128', 'product_variant_count'],
       limit: kListPageSize,
       offset: offset,
     );
@@ -191,7 +191,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                 product: product,
                                 onTap: () => context.push('/home/product/$productId'),
                                 cartQty: cart.quantityFor(productId),
-                                onIncrement: () => addProductToCart(context, productId),
+                                onIncrement: () =>
+                                    addProductOrOpenDetail(context, product, '/home/product/$productId'),
                                 onDecrement: () => decrementCartProduct(context, productId),
                                 isFavorite: favorites.isFavorite(productId),
                                 onToggleFavorite: () => toggleFavorite(context, productId),
