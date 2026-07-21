@@ -194,9 +194,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 }
 
-/// Recherche + ajout de produits aux favoris (`name ilike`, même
-/// anti-rebond que `SearchScreen` F04). Le "+" de `ProductGridTile` prend
-/// ici le sens "ajouter aux favoris" plutôt que "ajouter au panier".
+/// Recherche + ajout de produits aux favoris (`name ilike`, même anti-rebond
+/// que la recherche générale de l'Accueil avait — F04, écran supprimé le
+/// 2026-07-21, catalogue plafonné à ~300 produits). Le "+" de
+/// `ProductGridTile` prend ici le sens "ajouter aux favoris" plutôt que
+/// "ajouter au panier".
 class _FavoritesAddScreen extends StatefulWidget {
   const _FavoritesAddScreen();
 
@@ -213,9 +215,9 @@ class _FavoritesAddScreenState extends State<_FavoritesAddScreen> {
   int _offset = 0;
   bool _hasMore = true;
   bool _isLoadingMore = false;
-  // Cf. home_screen.dart / SearchScreen : détecte qu'une nouvelle
-  // recherche a démarré pendant l'appel réseau de _loadMore() (race
-  // condition trouvée à l'audit technique du 2026-07-19).
+  // Cf. home_screen.dart : détecte qu'une nouvelle recherche a démarré
+  // pendant l'appel réseau de _loadMore() (race condition trouvée à
+  // l'audit technique du 2026-07-19).
   int _loadGeneration = 0;
 
   @override

@@ -79,6 +79,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return ScreenPlaceholder(
       screenKey: 'Profile',
+      // `showAppBar: false` (2026-07-21, demande utilisateur) : l'AppBar
+      // est désormais commune aux 2 onglets (`MainTabScaffold`, toujours
+      // "Echango Order" + bouton de bascule) — le titre "Profil" reste
+      // affiché en en-tête de contenu (voir `ScreenPlaceholder`) plutôt que
+      // dans une 2e AppBar redondante.
+      showAppBar: false,
       actions: [
         PlaceholderAction(
           label: () => 'screens.Addresses.title'.tr(),

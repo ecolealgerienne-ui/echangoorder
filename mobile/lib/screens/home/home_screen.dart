@@ -29,13 +29,18 @@ import '../../widgets/shimmer_loader.dart';
 /// chargement à la demande via `LoadMoreButton` plutôt que tout afficher
 /// d'un coup — voir `utils/pagination.dart`.
 ///
-/// Bandeau recherche + catégories (direction Casbah, phase C). Recherche :
-/// navigue vers `SearchScreen` (`/home/search`, une vraie recherche texte
-/// mérite son propre écran). Catégories : filtrent directement la grille
-/// ci-dessous plutôt que de naviguer vers un écran dédié — décision
-/// produit du 2026-07-20 (demande utilisateur) qui a fait disparaître
-/// l'ancien onglet/écran Catalogue (`CatalogScreen`/`CategoryProductsScreen`
-/// supprimés, leur rôle est repris ici).
+/// Bandeau catégories (direction Casbah, phase C) : filtrent directement
+/// la grille ci-dessous plutôt que de naviguer vers un écran dédié —
+/// décision produit du 2026-07-20 (demande utilisateur) qui a fait
+/// disparaître l'ancien onglet/écran Catalogue (`CatalogScreen`/
+/// `CategoryProductsScreen` supprimés, leur rôle est repris ici).
+///
+/// Pas de barre de recherche ni d'`AppBar` propre (décision produit du
+/// 2026-07-21, demande utilisateur) : catalogue plafonné à ~300 produits,
+/// le bandeau catégories suffit à filtrer sans une recherche texte dédiée
+/// (`SearchScreen`/`/home/search` supprimés) ; le titre/la marque de l'app
+/// est désormais affiché une fois pour toutes dans `MainTabScaffold`,
+/// partagé avec l'onglet Profil, plutôt que répété par écran.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -161,7 +166,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final favorites = context.watch<FavoritesState>();
 
     return Scaffold(
-      appBar: AppBar(title: Text('screens.Home.title'.tr())),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _handleRefresh,
@@ -172,7 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 return CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    SliverToBoxAdapter(child: _SearchBar(onTap: () => context.push('/home/search'))),
                     SliverToBoxAdapter(child: _buildCategoryChips(context)),
                     const SliverPadding(
                       padding: EdgeInsets.all(AppSpacing.lg),
@@ -190,7 +193,6 @@ class _HomeScreenState extends State<HomeScreen> {
               return CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  SliverToBoxAdapter(child: _SearchBar(onTap: () => context.push('/home/search'))),
                   SliverToBoxAdapter(child: _buildCategoryChips(context)),
                   if (products.isEmpty)
                     const SliverFillRemaining(
@@ -287,38 +289,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-class _SearchBar extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _SearchBar({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppColorTokens.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
-      child: Material(
-        color: tokens.surface,
-        borderRadius: BorderRadius.circular(AppLayout.radius),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppLayout.radius),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-            child: Row(
-              children: [
-                Icon(Icons.search, color: tokens.textMuted, size: 20),
-                const SizedBox(width: AppSpacing.sm),
-                Text('${'screens.Search.title'.tr()}...', style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

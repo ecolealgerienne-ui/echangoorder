@@ -28,7 +28,6 @@ import '../screens/profile/favorites_screen.dart';
 import '../screens/profile/language_settings_screen.dart';
 import '../screens/profile/notification_settings_screen.dart';
 import '../screens/profile/profile_screen.dart';
-import '../screens/search/search_screen.dart';
 import '../screens/system/maintenance_screen.dart';
 import '../screens/vitrine/vitrine_screen.dart';
 import '../state/auth_state.dart';
@@ -177,9 +176,10 @@ GoRouter buildAppRouter(AuthState authState) {
           // utilisateur) : le bandeau catégories de HomeScreen filtre
           // directement sa propre grille au lieu de naviguer vers un écran
           // dédié — CatalogScreen/CategoryProductsScreen supprimés (rôle
-          // repris par HomeScreen). SearchScreen reste un écran à part
-          // entière (une vraie recherche texte mérite sa propre UI), déplacé
-          // sous l'onglet Accueil.
+          // repris par HomeScreen). SearchScreen supprimé à son tour
+          // (2026-07-21, demande utilisateur) : catalogue plafonné à ~300
+          // produits, le bandeau catégories suffit à filtrer sans recherche
+          // texte dédiée.
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home',
@@ -190,7 +190,6 @@ GoRouter buildAppRouter(AuthState authState) {
                   builder: (context, state) =>
                       ProductDetailScreen(productId: state.pathParameters['productId']!),
                 ),
-                GoRoute(path: 'search', builder: (context, state) => const SearchScreen()),
               ],
             ),
           ]),

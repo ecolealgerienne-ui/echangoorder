@@ -9,10 +9,11 @@ import 'pressable_scale.dart';
 
 /// Barre flottante persistante (direction Casbah, décision produit du
 /// 2026-07-20 — voir `docs/design_direction.md` § Phase D) : remplace
-/// l'onglet Panier de la barre de navigation. Affichée au-dessus de la
-/// `NavigationBar` (voir `navigation/main_tab_scaffold.dart`), visible sur
-/// tous les onglets restants tant que le panier n'est pas vide — masquée
-/// sinon plutôt que d'afficher une barre "0 article, 0 DA" sans utilité.
+/// l'onglet Panier de la barre de navigation. `bottomNavigationBar` de
+/// `MainTabScaffold` (la barre de navigation à onglets elle-même a été
+/// retirée le 2026-07-21, voir ce fichier) — visible sur les 2 onglets
+/// restants tant que le panier n'est pas vide, masquée sinon plutôt que
+/// d'afficher une barre "0 article, 0 DA" sans utilité.
 class CartBar extends StatelessWidget {
   const CartBar({super.key});
 

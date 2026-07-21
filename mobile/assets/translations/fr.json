@@ -1,5 +1,6 @@
 {
   "common": {
+    "appName": "Echango Order",
     "next": "Suivant",
     "back": "Retour",
     "skip": "Passer",
@@ -243,8 +244,6 @@
     "Login": { "title": "Se connecter", "subtitle": "Connexion — F02" },
     "ForgotPin": { "title": "PIN oublié", "subtitle": "Réinitialisation PIN — F02" },
     "Reauth": { "title": "Session expirée", "subtitle": "Ré-authentification par PIN — sécurité" },
-    "Home": { "title": "Accueil", "subtitle": "Accueil — F03" },
-    "Search": { "title": "Rechercher", "subtitle": "Recherche — F04" },
     "ProductDetail": { "title": "Fiche produit", "subtitle": "Fiche produit — F05" },
     "Cart": { "title": "Mon Panier", "subtitle": "Panier — F06" },
     "CheckoutReceptionMode": { "title": "Réception", "subtitle": "Mode de réception — F07" },
