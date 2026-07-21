@@ -64,6 +64,12 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 
 Reprises dès le déploiement VPS + soumission aux stores. Voir `status-V1.md` § 1bis pour le détail de suivi.
 
+### Images produit — S3 au déploiement VPS (décision utilisateur, 2026-07-21)
+
+Actuellement, les images produit (`image_128`/`image_1920`) transitent en **base64 dans le JSON** des réponses (`search_read`, contrôleurs custom) et sont affichées côté app via `Image.memory(base64Decode(...))` — identifié comme un point de performance à revoir (voir `status-V1.md` § 4, audit du 2026-07-21).
+
+**Au déploiement VPS, ces images seront hébergées sur S3.** Toute future refonte du chargement d'image doit donc viser directement une **URL S3** (champ URL côté Odoo, ou module de stockage S3 pour les attachments/champs binaires — mécanisme exact à choisir au moment du déploiement) + un vrai widget d'image réseau avec cache disque côté Flutter — **pas** une étape intermédiaire par l'endpoint local Odoo `/web/image/<model>/<id>/<field>` qu'il faudrait ensuite re-migrer.
+
 ## Exigences transversales (non négociables)
 
 - **Sécurité** : HTTPS/TLS 1.3 obligatoire partout, PIN jamais stocké en clair (Keychain/Keystore uniquement), session expirée après 24h d'inactivité, délai progressif anti brute-force sur le PIN (1s/2s/4s/8s puis blocage après 5 échecs), endpoints publics filtrés + rate limités.
