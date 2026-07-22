@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_x_batch_picking_wizard_form" model="ir.ui.view">
+        <field name="name">x_batch_picking_wizard.form</field>
+        <field name="model">x_batch_picking_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Suggérer des lots de préparation groupée">
+                <p>
+                    Chaque ligne est une commande confirmée dont la collecte n'est pas
+                    encore lancée. Le numéro de lot est une suggestion calculée par
+                    similarité de produits — ajustez-le librement avant de créer les
+                    lots (0 ou vide = commande exclue de ce cycle).
+                </p>
+                <field name="line_ids">
+                    <list string="Commandes candidates" editable="bottom">
+                        <field name="order_id" readonly="1"/>
+                        <field name="line_count" readonly="1"/>
+                        <field name="qty_total" readonly="1"/>
+                        <field name="batch_index"/>
+                        <field name="picking_id" column_invisible="1"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_refresh" type="object" string="Recalculer les suggestions"/>
+                    <button name="action_create_batches" type="object" string="Créer les lots" class="btn-primary"/>
+                    <button string="Fermer" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_x_batch_picking_wizard" model="ir.actions.act_window">
+        <field name="name">Suggérer des lots de préparation</field>
+        <field name="res_model">x_batch_picking_wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_x_batch_picking_wizard" name="Préparation groupée"
+              parent="menu_echango_order_root" action="action_x_batch_picking_wizard" sequence="20"/>
+</odoo>

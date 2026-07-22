@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Préparation groupée (batch picking + zone de tri) — paramètres
+         réglables sans nouveau modèle (ir.config_parameter, principe
+         "standard avant custom"), modifiables sous Réglages > Technique >
+         Paramètres système (mode développeur). Voir
+         models/batch_picking_wizard.py et CLAUDE.md § Préparation groupée
+         pour la justification de chaque valeur par défaut. noupdate="1" :
+         ne pas écraser une valeur déjà ajustée par un utilisateur lors
+         d'une mise à jour du module. -->
+    <data noupdate="1">
+        <record id="param_batch_max_orders" model="ir.config_parameter">
+            <field name="key">echango_order.batch_max_orders</field>
+            <field name="value">6</field>
+        </record>
+        <record id="param_batch_max_qty" model="ir.config_parameter">
+            <field name="key">echango_order.batch_max_qty</field>
+            <field name="value">100</field>
+        </record>
+        <record id="param_batch_max_lines" model="ir.config_parameter">
+            <field name="key">echango_order.batch_max_lines</field>
+            <field name="value">40</field>
+        </record>
+        <record id="param_batch_min_similarity" model="ir.config_parameter">
+            <field name="key">echango_order.batch_min_similarity</field>
+            <field name="value">0.10</field>
+        </record>
+        <record id="param_batch_sla_hours" model="ir.config_parameter">
+            <field name="key">echango_order.batch_sla_hours</field>
+            <field name="value">4</field>
+        </record>
+    </data>
+</odoo>
