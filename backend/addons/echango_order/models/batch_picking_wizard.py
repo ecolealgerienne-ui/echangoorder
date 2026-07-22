@@ -173,12 +173,15 @@ class BatchPickingWizard(models.TransientModel):
 
     def action_create_batches(self):
         """Matérialise les lots validés (ou ajustés) par l'opérateur en
-        vrais `stock.picking.batch` — un batch par valeur distincte de
-        `batch_index` parmi les lignes non exclues (0/vide = exclue).
-        Crée aussi un `stock.package` par commande, nommé d'après sa
-        référence (`order.name`) — convention plutôt qu'un nouveau champ
-        de liaison (aucun champ standard ne relie `stock.package` à
-        `sale.order`, voir CLAUDE.md § Préparation groupée). **Écart Odoo
+        vrais `stock.picking.batch` — un batch Pick par valeur distincte de
+        `batch_index` parmi les lignes non exclues (0/vide = exclue), PLUS
+        un 2e batch (Pack) sur les mêmes commandes (voir
+        `_pack_batch_vals` ci-dessous — trouvaille en test réel, aucun
+        mécanisme standard ne relie Pick et Pack d'un même regroupement,
+        voir CLAUDE.md § Préparation groupée). Crée aussi un `stock.package`
+        par commande, nommé d'après sa référence (`order.name`) —
+        convention plutôt qu'un nouveau champ de liaison (aucun champ
+        standard ne relie `stock.package` à `sale.order`). **Écart Odoo
         19** : ce modèle s'appelait `stock.quant.package` dans toutes les
         versions précédentes — renommé `stock.package` en 19 (confirmé
         contre le code source), aucune notion d'`stock.quant.package` ne
@@ -198,9 +201,16 @@ class BatchPickingWizard(models.TransientModel):
         batches = Batch
         for index in sorted(groups):
             lines = groups[index]
-            batch = Batch.create({})
-            lines.mapped("picking_id").write({"batch_id": batch.id})
-            batches |= batch
+            pick_batch = Batch.create({"name": f"Collecte — lot {index}"})
+            lines.mapped("picking_id").write({"batch_id": pick_batch.id})
+            batches |= pick_batch
+
+            pack_pickings = self._pack_pickings(lines)
+            if pack_pickings:
+                pack_batch = Batch.create({"name": f"Tri — lot {index}"})
+                pack_pickings.write({"batch_id": pack_batch.id})
+                batches |= pack_batch
+
             for line in lines:
                 if not Package.search([("name", "=", line.order_id.name)], limit=1):
                     Package.create({"name": line.order_id.name})
@@ -211,6 +221,28 @@ class BatchPickingWizard(models.TransientModel):
             "view_mode": "list,form",
             "domain": [("id", "in", batches.ids)],
         }
+
+    def _pack_pickings(self, lines):
+        """Résout les transferts Pack correspondant aux commandes d'un
+        même lot, pour les regrouper dans un 2e `stock.picking.batch` —
+        trouvaille en test réel (2026-07-22) : aucun mécanisme standard
+        (ni Batch, ni Wave — confirmé contre la doc Odoo : les transferts
+        par vague ne mélangent jamais deux types d'opération différents)
+        ne relie le lot de collecte au lot de tri correspondant. Sans ce
+        2e lot, l'opérateur de tri devait retrouver chaque commande une
+        par une (via la commande elle-même), perdant tout l'intérêt du
+        regroupement. Toujours du standard : une 2e utilisation de
+        `stock.picking.batch`, pas de nouveau modèle."""
+        pack_pickings = self.env["stock.picking"]
+        for line in lines:
+            pack_type = line.order_id.warehouse_id.pack_type_id
+            if not pack_type:
+                continue
+            pack = line.order_id.picking_ids.filtered(
+                lambda p, pack_type=pack_type: p.picking_type_id == pack_type and p.state not in ("done", "cancel")
+            )[:1]
+            pack_pickings |= pack
+        return pack_pickings
 
 
 class BatchPickingWizardLine(models.TransientModel):

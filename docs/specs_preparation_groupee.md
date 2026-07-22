@@ -128,6 +128,25 @@ totale et silencieuse est jugée risquée. Bouton "Créer les lots" :
 matérialise les `stock.picking.batch` réels (un par valeur distincte de
 `batch_index`) + un `stock.package` par commande.
 
+**Trouvaille en test réel (2026-07-22) — 2e lot pour l'étape Pack** :
+en testant le parcours de bout en bout, aucun mécanisme standard ne relie
+le lot de collecte (Pick) à ses transferts Pack correspondants une fois
+la collecte validée — ni Batch ni Wave Transfers (confirmé contre la doc
+Odoo officielle : "Wave transfers can only contain product lines from
+transfers of the same operation type", donc jamais Pick+Pack mélangés).
+Sans correctif, l'opérateur de tri devait retrouver chaque commande une
+par une via la commande elle-même (`sale.order` → smart button
+"Livraison"), perdant tout l'intérêt du regroupement pour cette 2e étape.
+**Corrigé** : `action_create_batches()` résout aussi, pour les mêmes
+commandes, leurs transferts Pack (via `order.warehouse_id.pack_type_id`,
+même schéma que `pick_type_id`) et les regroupe dans un **second**
+`stock.picking.batch` ("Tri — lot N", vs "Collecte — lot N" pour le Pick)
+— toujours du standard, une 2e utilisation de `stock.picking.batch`, pas
+de nouveau modèle. Un module OCA (`stock_picking_show_linked`,
+`stock-logistics-warehouse`) existe pour naviguer d'un picking chaîné à
+l'autre via un bouton, mais reste une navigation commande par commande —
+ne remplace pas la vue de liste par lot recherchée ici.
+
 **Paramètres réglables** (`ir.config_parameter`, `data/batch_picking_data.xml`
 — pas de nouveau modèle pour quelques scalaires) :
 

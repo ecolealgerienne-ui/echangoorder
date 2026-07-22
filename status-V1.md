@@ -51,8 +51,9 @@ Voir `CLAUDE.md` § Préparation groupée et `docs/specs_preparation_groupee.md`
 - `stock.quant.package` renommé `stock.package` en Odoo 19 (`KeyError` au clic sur "Créer les lots") — corrigé.
 - "Recalculer les suggestions" écrasait les numéros de lot déjà ajustés à la main — corrigé (n'ajoute plus que les commandes pas encore listées).
 - Paramètres réglables : `res.config.settings` abandonné (Odoo l'ouvre dans la coquille complète de l'app Réglages, impossible de revenir en arrière) — remplacé par un assistant dédié (`x_batch_picking_settings_wizard`).
+- Aucun mécanisme standard ne reliait le lot Pick à ses transferts Pack (ni Batch ni Wave Transfers) — l'opérateur de tri devait repasser par chaque commande individuellement. Corrigé : un 2e `stock.picking.batch` ("Tri — lot N") est désormais créé automatiquement pour les transferts Pack des mêmes commandes.
 
-**Reste à faire** : valider le parcours Pick → Pack (zone de tri) → Ship en conditions réelles (processus détaillé donné à l'utilisateur, pas encore testé de bout en bout) ; calibrer les paramètres par défaut avec des données réelles.
+**Reste à faire** : valider le parcours Pick → Pack (zone de tri, avec le 2e lot) → Ship en conditions réelles (processus détaillé donné à l'utilisateur, pas encore testé de bout en bout avec ce dernier correctif) ; calibrer les paramètres par défaut avec des données réelles.
 
 ## 5. Sécurité (transversal — bloquant pour release)
 
