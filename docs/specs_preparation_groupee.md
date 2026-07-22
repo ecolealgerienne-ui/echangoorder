@@ -143,18 +143,26 @@ Valeurs par défaut arbitraires, non calibrées sur des données réelles — à
 ajuster une fois le volume réel de commandes observé (point explicitement
 laissé ouvert avec l'utilisateur, "ajuster plus tard").
 
-**Réglables depuis l'UI Odoo** (`models/res_config_settings.py`, extension
-de `res.config.settings` — mécanisme standard `config_parameter=...` sur
-chaque champ, aucun code de lecture/écriture custom) : formulaire dédié
-(`views/batch_picking_settings_views.xml`) sous un menu "Paramètres de
-préparation groupée", en dehors du formulaire général de l'app Réglages
-(pas nécessaire d'y intégrer une section pour 5 champs). Ajouté suite à un
-retour utilisateur en test réel : le mode développeur (Réglages >
-Technique > Paramètres système) était jugé peu accessible pour un usage
-courant. **Point de vigilance non vérifié en réel** : `res.config.settings`
-est par défaut réservé au groupe Réglages (`base.group_system`) côté Odoo
-standard — à confirmer qu'un opérateur sans ce groupe voit bien le menu,
-sinon lui accorder ce groupe ou revoir l'accès.
+**Réglables depuis l'UI Odoo** (`models/batch_picking_settings_wizard.py`,
+assistant dédié — formulaire sous un menu "Paramètres de préparation
+groupée", en dehors du formulaire général de l'app Réglages) : ajouté
+suite à un retour utilisateur en test réel, le mode développeur (Réglages
+> Technique > Paramètres système) était jugé peu accessible pour un usage
+courant.
+
+**Essai initial abandonné** : d'abord implémenté via une extension de
+`res.config.settings` (mécanisme standard `config_parameter=...`, aucun
+code de lecture/écriture). Bug trouvé en test réel : Odoo traite ce modèle
+spécialement et l'ouvre toujours dans la coquille complète de l'app
+Réglages (barre "Settings > General Settings > ...") au lieu d'un simple
+dialogue — impossible de revenir à l'écran d'origine une fois ouvert.
+Remplacé par un `TransientModel` ordinaire (même pattern fiable que
+`x_batch_picking_wizard`) : lecture/écriture explicite de
+`ir.config_parameter` dans `default_get()`/`action_save()`. Résout au
+passage le point de vigilance précédent sur l'accès (`res.config.settings`
+est réservé par défaut au groupe Réglages `base.group_system` — plus
+d'objet, le nouvel assistant est en `base.group_user` comme les autres
+menus internes du module).
 
 ## 5. Compatibilité avec le suivi client existant (F08)
 

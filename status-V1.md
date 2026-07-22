@@ -44,12 +44,15 @@ Palette/typographie/dark mode complets, audit RTL/accessibilité, checkout en fe
 
 Voir `CLAUDE.md` § Préparation groupée et `docs/specs_preparation_groupee.md` pour la conception complète.
 
-**Code terminé, 3 bugs trouvés et corrigés en test réel** (WSL/Docker utilisateur — ce sandbox n'a pas Docker) :
+**Code terminé, plusieurs bugs trouvés et corrigés en test réel** (WSL/Docker utilisateur — ce sandbox n'a pas Docker) :
 - Moteur de clustering (`batch_picking_engine.py`, pur Python) : testé et validé directement en sandbox (5 scénarios).
 - Dépendance `stock_picking_batch` manquante (`AttributeError` sur `batch_id`) — corrigé.
-- `NotNullViolation` sur `order_id` à la sauvegarde du wizard — `force_save="1"` insuffisant ; corrigé en profondeur en transformant `order_id`/`line_count`/`qty_total` en champs **calculés** (dépendants de `picking_id` uniquement, seul champ fiablement transmis par le client) plutôt que peuplés par défaut. Reste à confirmer en réel.
+- `NotNullViolation` sur `order_id` à la sauvegarde du wizard — `force_save="1"` insuffisant ; corrigé en transformant `order_id`/`line_count`/`qty_total` en champs **calculés** (dépendants de `picking_id` uniquement) plutôt que peuplés par défaut.
+- `stock.quant.package` renommé `stock.package` en Odoo 19 (`KeyError` au clic sur "Créer les lots") — corrigé.
+- "Recalculer les suggestions" écrasait les numéros de lot déjà ajustés à la main — corrigé (n'ajoute plus que les commandes pas encore listées).
+- Paramètres réglables : `res.config.settings` abandonné (Odoo l'ouvre dans la coquille complète de l'app Réglages, impossible de revenir en arrière) — remplacé par un assistant dédié (`x_batch_picking_settings_wizard`).
 
-**Reste à faire une fois le débogage terminé** : calibrer les paramètres par défaut (`ir.config_parameter`, voir menu "Paramètres de préparation groupée") avec des données réelles ; tester un vrai cycle complet (suggestion → ajustement → création du lot → collecte → tri).
+**Reste à faire** : valider le parcours Pick → Pack (zone de tri) → Ship en conditions réelles (processus détaillé donné à l'utilisateur, pas encore testé de bout en bout) ; calibrer les paramètres par défaut avec des données réelles.
 
 ## 5. Sécurité (transversal — bloquant pour release)
 
