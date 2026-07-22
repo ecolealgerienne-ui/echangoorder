@@ -175,6 +175,16 @@ elle exposer en interne.
 Rétrocompatible : sur un entrepôt resté à 1 étape, `_prep_status()` se
 comporte exactement comme avant (aucun picking Pick/Pack à considérer).
 
+**Bug trouvé au premier test réel (2026-07-22)** : `AttributeError:
+'stock.picking' object has no attribute 'batch_id'` à l'ouverture du
+wizard. Confirmé contre le code source Odoo 19 : `batch_id` n'est PAS
+défini dans le module `stock` de base (contrairement à l'hypothèse
+initiale de la revue Odoo — l'erreur d'origine dans cette revue), mais
+dans un module séparé `stock_picking_batch` (Community, LGPL-3, dépend
+uniquement de `stock`), jamais déclaré dans les dépendances du module
+`echango_order`. Corrigé (`__manifest__.py`) — nécessite `-u echango_order`
+pour qu'Odoo installe cette dépendance manquante.
+
 Tests exécutés (moteur de clustering uniquement, pur Python) :
 regroupement par similarité, seuil minimal, plafond de bacs, règle
 fair-play, déterminisme — tous passés. Le wizard lui-même (collecte des
