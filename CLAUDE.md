@@ -262,6 +262,8 @@ Avant de créer un champ custom, le module OCA gratuit `stock_picking_product_in
 
 ## Préparation groupée des commandes (batch picking + zone de tri, décision produit 2026-07)
 
+Résumé condensé — voir `docs/specs_preparation_groupee.md` pour la conception complète (algorithme détaillé, modèle Odoo, et surtout la base posée pour la future app préparateur : écrans pressentis, modèle de données à exposer, question ouverte d'authentification interne).
+
 **Décision produit (2026-07, suite à échange avec l'utilisateur)** : en attendant l'app préparateur (hors périmètre Phase 1/1.5, cf. roadmap macro), la préparation des commandes se fait entièrement dans l'UI back-office Odoo standard. Besoin exprimé : les préparateurs perdent du temps à parcourir l'entrepôt une fois par commande — regrouper la collecte de plusieurs commandes en une seule tournée (réduire les déplacements), puis séparer/contrôler dans une **vraie zone de tri physique** (poste dédié, sert aussi au contrôle qualité et à la vérification de quantité, pas juste un point de séparation).
 
 **Conception challengée par 3 revues spécialisées avant tout codage** (agents dédiés : logistique/entrepôt, Odoo/ERP technique, algorithmique/optimisation) — un blocage réel a été trouvé et corrigé avant d'écrire la moindre ligne de route à étapes (voir ci-dessous), plusieurs trous algorithmiques comblés (seuil minimal de similarité, tie-break déterministe, règle fair-play), et deux angles morts métier notés pour plus tard (temps de traitement au poste de tri comme contrainte dure, tension entre similarité produit et risque d'erreur de tri — non résolu, à observer en test réel).
