@@ -270,7 +270,18 @@ probablement via de nouveaux contrôleurs dédiés (pas les mêmes que
 - `sale.order` : référence, `x_reception_mode`, `x_creneau` — déjà exposés
   côté client (F08/F09), réutilisables tels quels côté préparateur.
 
-### 6.3 Question ouverte — authentification préparateur
+### 6.3 Scan code-barres — exigence confirmée (2026-07-22, échange avec l'utilisateur)
+
+Besoin explicite : l'opérateur doit pouvoir **scanner les produits** (pas de saisie manuelle) à deux moments — pendant la collecte groupée (Pick, confirmer chaque article prélevé) et pendant la mise en bac (Pack, affecter au bon `stock.package`) — objectif : éliminer les erreurs de frappe, pas juste un confort.
+
+**Recherché et écarté pour un usage immédiat (avant l'app préparateur)** :
+- **App "Code-barres" native d'Odoo** (`stock_barcode`) : confirmée **Enterprise uniquement** — absente du dépôt Community (`odoo/odoo` public, vérifié directement, 404 sur `addons/stock_barcode`). Pas d'équivalent en Community pour l'instant.
+- **Alternative OCA** (`stock_barcodes`, dépôt `OCA/stock-logistics-barcode`) : existe mais **s'arrête à la version 16.0** (404 confirmés sur les branches 18.0 et 19.0) — pas porté sur Odoo 19, inutilisable sans un vrai travail de portage.
+- Des apps tierces payantes existent sur l'Odoo Apps Store (non vérifiées pour la 19.0) — décision commerciale/fournisseur, pas tranchée.
+
+**Conclusion** : pas de solution de scan gratuite et à jour pour Odoo 19 Community aujourd'hui, ni native ni OCA. Le scan devra donc être **construit dans l'app préparateur elle-même** (caméra du téléphone côté Flutter — ex. package `mobile_scanner` ou équivalent — plutôt que de dépendre de l'app Barcode d'Odoo), appelant de nouveaux endpoints `/echango/*` dédiés aux opérateurs internes (voir §6.2/§6.4 pour le modèle de données). Cette décision élimine aussi la dépendance à Enterprise ou à un module OCA non maintenu pour la version cible.
+
+### 6.4 Question ouverte — authentification préparateur
 
 L'app cliente utilise téléphone + PIN (F02, mécanisme custom `x_pin` sur
 `res.users`, groupe portail). Les préparateurs sont des **utilisateurs
@@ -280,7 +291,7 @@ Odoo (login/mot de passe interne), pas le mécanisme téléphone/PIN pensé
 spécifiquement pour des clients. **Non tranché, à décider au lancement de
 ce chantier.**
 
-### 6.4 Risques connus à ne pas re-découvrir plus tard
+### 6.5 Risques connus à ne pas re-découvrir plus tard
 
 - **Tension similarité produit / risque d'erreur de tri** (remontée par la
   revue logistique, non résolue) : un lot à forte similarité (beaucoup

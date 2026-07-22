@@ -226,6 +226,7 @@ Voir `docs/specs_preparation_groupee.md` pour la conception complète (algorithm
 - Paramètres réglables via un assistant dédié (`x_batch_picking_settings_wizard`, menu "Paramètres de préparation groupée") — lecture/écriture explicite de `ir.config_parameter`. **`res.config.settings` essayé puis abandonné** (bug trouvé en test réel) : ce modèle est traité spécialement par Odoo, s'ouvre toujours dans la coquille complète de l'app Réglages plutôt qu'en simple dialogue.
 - Conception passée par 3 revues spécialisées avant codage (logistique, Odoo, algorithmique) — voir `docs/specs_preparation_groupee.md` pour le détail.
 - **Hors périmètre v1** : app préparateur mobile, automatisation sans validation humaine, chaîne du froid/frais-surgelé, gestion des ruptures de stock découvertes en cours de tournée sur un lot déjà en cours.
+- **Scan code-barres, exigence confirmée pour l'app préparateur (futur)** : éliminer les erreurs de frappe au Pick et au Pack. Vérifié (2026-07-22) : ni l'app Barcode native d'Odoo (`stock_barcode`, Enterprise uniquement, absente du dépôt Community) ni son alternative OCA (`stock_barcodes`, arrêtée à la version 16.0, pas portée en 19) ne conviennent pour Odoo 19 Community. Le scan sera construit dans l'app préparateur elle-même (caméra du téléphone côté Flutter), pas via Odoo — voir `docs/specs_preparation_groupee.md` § 6.3.
 
 ## Documentation
 
