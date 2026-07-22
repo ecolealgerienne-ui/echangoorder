@@ -52,9 +52,9 @@ Odoo.
 **Regroupement de commandes en un lot de collecte** : `stock.picking.batch`
 (modèle standard), appliqué à l'étape Pick seulement.
 
-**Suivi par commande individuelle au poste de tri** : `stock.quant.package`
+**Suivi par commande individuelle au poste de tri** : `stock.package`
 (modèle standard, mécanisme "Mettre en colis") — un bac/colis par commande.
-Aucun champ standard ne relie `stock.quant.package` à `sale.order` :
+Aucun champ standard ne relie `stock.package` à `sale.order` :
 **convention de nommage** (`package.name = order.name`), pas de nouveau
 champ custom. Le wizard (§4) crée ce package au moment de la création du
 lot, mais son remplissage réel (quel produit va dans quel bac) reste un
@@ -126,7 +126,7 @@ Garder un humain dans la boucle est une décision produit assumée pour
 cette v1 : aucun retour terrain mesuré à ce stade, une automatisation
 totale et silencieuse est jugée risquée. Bouton "Créer les lots" :
 matérialise les `stock.picking.batch` réels (un par valeur distincte de
-`batch_index`) + un `stock.quant.package` par commande.
+`batch_index`) + un `stock.package` par commande.
 
 **Paramètres réglables** (`ir.config_parameter`, `data/batch_picking_data.xml`
 — pas de nouveau modèle pour quelques scalaires) :
@@ -220,7 +220,7 @@ plus tard.
    emplacement de stockage (une fois les emplacements précis en place,
    voir §7) plutôt que par commande — c'est le cœur du gain de
    déplacement recherché. Chaque article scanné/coché devrait indiquer
-   dans quel bac/commande il va (voir `stock.quant.package`, §2).
+   dans quel bac/commande il va (voir `stock.package`, §2).
 3. **Poste de tri** — vue par commande du lot : liste attendue vs. liste
    collectée, validation quantité par quantité (le contrôle qualité
    demandé), fermeture du colis.
@@ -239,7 +239,7 @@ probablement via de nouveaux contrôleurs dédiés (pas les mêmes que
 - `stock.picking` (par étape Pick/Pack/Ship) : état, `user_id`
   (responsable), lignes de mouvement (`stock.move.line` : produit,
   quantité, emplacement source/destination).
-- `stock.quant.package` : nom (= référence commande, voir §2), contenu.
+- `stock.package` : nom (= référence commande, voir §2), contenu.
 - `sale.order` : référence, `x_reception_mode`, `x_creneau` — déjà exposés
   côté client (F08/F09), réutilisables tels quels côté préparateur.
 

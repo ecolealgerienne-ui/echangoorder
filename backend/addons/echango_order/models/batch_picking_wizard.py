@@ -175,10 +175,14 @@ class BatchPickingWizard(models.TransientModel):
         """Matérialise les lots validés (ou ajustés) par l'opérateur en
         vrais `stock.picking.batch` — un batch par valeur distincte de
         `batch_index` parmi les lignes non exclues (0/vide = exclue).
-        Crée aussi un `stock.quant.package` par commande, nommé d'après sa
+        Crée aussi un `stock.package` par commande, nommé d'après sa
         référence (`order.name`) — convention plutôt qu'un nouveau champ
-        de liaison (aucun champ standard ne relie `stock.quant.package` à
-        `sale.order`, voir CLAUDE.md § Préparation groupée)."""
+        de liaison (aucun champ standard ne relie `stock.package` à
+        `sale.order`, voir CLAUDE.md § Préparation groupée). **Écart Odoo
+        19** : ce modèle s'appelait `stock.quant.package` dans toutes les
+        versions précédentes — renommé `stock.package` en 19 (confirmé
+        contre le code source), aucune notion d'`stock.quant.package` ne
+        subsiste."""
         self.ensure_one()
         groups = {}
         for line in self.line_ids:
@@ -190,7 +194,7 @@ class BatchPickingWizard(models.TransientModel):
             raise UserError("Aucun lot à créer — assignez au moins une commande à un numéro de lot.")
 
         Batch = self.env["stock.picking.batch"]
-        Package = self.env["stock.quant.package"]
+        Package = self.env["stock.package"]
         batches = Batch
         for index in sorted(groups):
             lines = groups[index]
