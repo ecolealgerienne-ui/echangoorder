@@ -48,7 +48,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       actions: [
         if (_status != null && !isGranted)
           PlaceholderAction(
-            label: (_status == PermissionStatus.permanentlyDenied
+            label: () => (_status == PermissionStatus.permanentlyDenied
                     ? 'notificationSettings.openSettings'
                     : 'permissions.allow')
                 .tr(),
@@ -59,7 +59,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
           ? const SizedBox.shrink()
           : Text(
               (isGranted ? 'notificationSettings.enabled' : 'notificationSettings.disabled').tr(),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColorTokens.of(context).textMuted),
             ),
     );
   }

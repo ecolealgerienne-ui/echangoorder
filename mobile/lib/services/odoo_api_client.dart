@@ -263,16 +263,30 @@ class OdooApiClient {
     return result;
   }
 
-  /// F04/F05 — disponibilité stock, via un contrôleur étroit en `sudo()`
-  /// plutôt que le champ calculé `qty_available` exposé au portail via
+  /// F04/F05 — disponibilité stock + nombre de variantes, via un
+  /// contrôleur étroit en `sudo()` plutôt que les champs calculés
+  /// `qty_available`/`product_variant_count` exposés au portail via
   /// `call_kw` (cascade d'`AccessError` sur `product.product` puis
-  /// `stock.warehouse`, voir status-V1.md § Points de vigilance).
-  Future<Map<int, double>> getStock({required List<int> productIds}) async {
-    if (productIds.isEmpty) return {};
+  /// `stock.warehouse`, voir status-V1.md § Points de vigilance —
+  /// `product_variant_count` déclenche exactement le même problème,
+  /// constaté par l'utilisateur, d'où son ajout ici plutôt que dans les
+  /// `fields` d'un `search_read` direct). Les deux viennent du même
+  /// `search()` de templates côté serveur, réunis dans un seul appel
+  /// plutôt que deux endpoints séparés pour éviter un aller-retour de
+  /// plus sur les grilles (Accueil/Recherche), qui appellent déjà
+  /// `getPromotions` en parallèle.
+  Future<({Map<int, double> stock, Map<int, int> variantCounts})> getStock({
+    required List<int> productIds,
+  }) async {
+    if (productIds.isEmpty) return (stock: <int, double>{}, variantCounts: <int, int>{});
     final result =
         await _rpc('/echango/catalog/stock', {'product_ids': productIds}) as Map<String, dynamic>;
     final stock = result['stock'] as Map<String, dynamic>;
-    return stock.map((key, value) => MapEntry(int.parse(key), (value as num).toDouble()));
+    final variantCounts = result['variant_counts'] as Map<String, dynamic>;
+    return (
+      stock: stock.map((key, value) => MapEntry(int.parse(key), (value as num).toDouble())),
+      variantCounts: variantCounts.map((key, value) => MapEntry(int.parse(key), (value as num).toInt())),
+    );
   }
 
   /// Badge "Promo" (module standard `loyalty`, promotions automatiques

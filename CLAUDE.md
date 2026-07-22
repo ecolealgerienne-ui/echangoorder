@@ -53,6 +53,25 @@ La **Phase 1 (MVP)** ne concerne que l'app mobile client. Elle est spécifiée e
 
 **Hors périmètre Phase 1** (voir specs §5) : paiement en ligne, programme fidélité, GPS temps réel, app Préparateurs, app Transporteur, intégration Fleetbase active, filtres avancés catalogue, favoris, chat support, avis produits.
 
+**F04 fusionné dans l'Accueil (décision produit, 2026-07-20)** : plus d'écran/onglet Catalogue séparé — le bandeau catégories de `HomeScreen` (F03) filtre directement sa propre grille de produits (`categ_id` ajouté au domaine `search_read`) au lieu de naviguer vers un écran dédié. `CatalogScreen` (liste des catégories) et `CategoryProductsScreen` (grille par catégorie) supprimés, barre de navigation passée de 4 à 3 onglets (Accueil/Panier/Profil). La recherche texte (`SearchScreen`) reste un écran à part entière — déplacée sous l'onglet Accueil (`/home/search`, dossier `screens/search/`) plutôt que `screens/catalog/` (dossier supprimé, ne contenait plus qu'elle).
+
+**F04 recherche supprimée + navigation simplifiée (décision produit, 2026-07-21)** : `SearchScreen` supprimé à son tour (dossier `screens/search/` effacé, route `/home/search` retirée) — catalogue plafonné à ~300 produits, le bandeau catégories déjà en place suffit à filtrer sans recherche texte dédiée. Dans la foulée, la barre de navigation à onglets elle-même est retirée (`NavigationBar` de `MainTabScaffold` supprimée) : avec seulement 2 destinations restantes (Accueil/Profil) et `CartBar` déjà présente en bas, elle empilait du chrome vertical pour peu de valeur. Remplacée par une `AppBar` commune aux 2 onglets — titre = nom de l'app (`common.appName`, "Echango Order", espace réservé pour un futur logo en `Row` avant le `Text`), bouton icône unique (`Icons.person_outline`/`Icons.storefront_outlined`) qui bascule directement vers l'autre onglet (`navigationShell.goBranch()`) plutôt qu'un menu déroulant — jugé inutile avec seulement 2 destinations. `HomeScreen`/`ProfileScreen` n'ont donc plus leur propre `AppBar` (`ProfileScreen` passe `showAppBar: false` à `ScreenPlaceholder`, le titre "Profil" reste affiché en en-tête de contenu).
+
+### Phase 1.5 (décision produit, 2026-07-20)
+
+**F11 (Notifications Push) et F12 (Partage Produit — réception du deep link uniquement) sont reportées en Phase 1.5**, retirées du périmètre de clôture de la Phase 1 — toutes deux sont code-complètes mais dépendent d'un déploiement réel non encore fait, pas d'un développement restant :
+
+- **F11** nécessite un projet Firebase Cloud Messaging en production (clés serveur réelles) et un webhook Odoo joignable depuis l'extérieur — impossible à opérer/tester depuis un Docker/WSL local, requiert le VPS.
+- **F12** — le bouton de partage (lien placeholder, `share_plus`) reste en Phase 1 et fonctionne déjà ; seule la **réception** du deep link (ouvrir l'app depuis un lien partagé, Universal Links/App Links) est reportée : elle nécessite un domaine réel servant les fichiers d'association en HTTPS, et la publication effective de l'app sur Google Play/App Store.
+
+Reprises dès le déploiement VPS + soumission aux stores. Voir `status-V1.md` § 1bis pour le détail de suivi.
+
+### Images produit — S3 au déploiement VPS (décision utilisateur, 2026-07-21)
+
+Actuellement, les images produit (`image_128`/`image_1920`) transitent en **base64 dans le JSON** des réponses (`search_read`, contrôleurs custom) et sont affichées côté app via `Image.memory(base64Decode(...))` — identifié comme un point de performance à revoir (voir `status-V1.md` § 4, audit du 2026-07-21).
+
+**Au déploiement VPS, ces images seront hébergées sur S3.** Toute future refonte du chargement d'image doit donc viser directement une **URL S3** (champ URL côté Odoo, ou module de stockage S3 pour les attachments/champs binaires — mécanisme exact à choisir au moment du déploiement) + un vrai widget d'image réseau avec cache disque côté Flutter — **pas** une étape intermédiaire par l'endpoint local Odoo `/web/image/<model>/<id>/<field>` qu'il faudrait ensuite re-migrer.
+
 ## Exigences transversales (non négociables)
 
 - **Sécurité** : HTTPS/TLS 1.3 obligatoire partout, PIN jamais stocké en clair (Keychain/Keystore uniquement), session expirée après 24h d'inactivité, délai progressif anti brute-force sur le PIN (1s/2s/4s/8s puis blocage après 5 échecs), endpoints publics filtrés + rate limités.
@@ -174,6 +193,10 @@ Il vérifie trois choses : (1) `fr.json` et `ar.json` ont exactement les mêmes 
 
 **Si du texte reste en français en mode AR malgré ce test qui passe** : ce n'est pas un problème de traduction manquante mais probablement un souci de rebuild — les fichiers JSON sont des *assets* embarqués au build, un hot reload ne les recharge pas toujours. Faire un arrêt complet + `flutter run` (pas juste hot reload/hot restart) avant de considérer que c'est un bug.
 
+**`PlaceholderAction.label` (`widgets/screen_placeholder.dart`) est un `String Function()`, jamais une `String` déjà résolue** — bug trouvé par l'utilisateur (2026-07-20) : les boutons de la page Profil restaient dans l'ancienne langue après changement de langue. Cause : `'clé'.tr()` appelé une fois dans le `build()` de l'écran *appelant* (ex. `ProfileScreen`) fige la chaîne au moment de la construction. Toujours écrire `label: () => 'clé'.tr()` (jamais `label: 'clé'.tr()`), y compris pour les deux libellés non traduits par exception ("Français"/"العربية" → `() => 'Français'`) — la fonction est appelée à l'intérieur de `ScreenPlaceholder.build()`, au même endroit que le titre.
+
+**`context.setLocale()` seul ne suffit pas à rafraîchir les pages déjà montées dans la barre de navigation à onglets** — creusé après le correctif ci-dessus (l'utilisateur a signalé que les boutons de Profil restaient bloqués malgré tout, et que la barre du bas ne se mettait à jour qu'après un changement d'onglet). Cause : `StatefulShellRoute` garde chaque onglet vivant via un `IndexedStack` — ces pages déjà montées ne sont pas reconstruites par le mécanisme de dépendance interne d'easy_localization dans ce contexte, seule une navigation (changement d'onglet) force `go_router` à les reconstruire. Plutôt que de recharger toute l'app (perte de la pile de navigation), `state/locale_state.dart` (`LocaleState`, un `ChangeNotifier` comme `CartState`/`AuthState`) force un rebuild ciblé : `LanguageSettingsScreen` appelle `context.read<LocaleState>().notifyLocaleChanged()` juste après `await context.setLocale(...)`, et `ScreenPlaceholder`/`MainTabScaffold`/`HomeScreen` (les points touchés par le bug + l'autre racine d'onglet gardée vivante) appellent `context.watch<LocaleState>()` en tête de leur `build()`. Tout nouvel écran gardé vivant dans la barre de navigation à onglets (actuellement Accueil/Profil) qui affiche du texte traduit statique doit faire de même.
+
 ## Principe architecture Odoo — standard avant custom
 
 **Règle non négociable pour tout développement backend : s'appuyer au maximum sur les modèles, champs et mécanismes standards d'Odoo** (logiciel stable depuis des années) plutôt que de recréer une couche custom. Un ajout custom (nouveau modèle, nouveau champ `x_*`, nouveau contrôleur HTTP) n'est justifié que lorsqu'Odoo standard **n'a aucun équivalent** pour le besoin — à vérifier explicitement avant toute création, et à documenter ici.
@@ -251,6 +274,7 @@ Avant de créer un champ custom, le module OCA gratuit `stock_picking_product_in
 
 - `docs/specs_macro_drive_transport.md` — vision produit globale (Echango Order + Echango Delivery), roadmap macro, architecture Odoo ↔ Fleetbase.
 - `docs/specs_phase1_echango_order.md` — specs détaillées Phase 1 (wireframes, API, critères d'acceptation QA par fonctionnalité).
+- `docs/design_direction.md` — direction visuelle retenue (**Casbah**, décision 2026-07-20) : palette, typographie FR/AR, langage de formes, plan de mise à jour du thème par phases. Les deux pistes non retenues (Souk, Zellige) y sont archivées pour référence future.
 - `status-V1.md` — suivi de l'avancement de l'implémentation Phase 1, à tenir à jour à chaque étape.
 
 ## Conventions de travail

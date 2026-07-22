@@ -34,7 +34,19 @@ class EchangoCatalogController(http.Controller):
         templates = request.env["product.template"].sudo().search([
             ("id", "in", ids), ("sale_ok", "=", True),
         ])
-        return {"stock": {str(t.id): t.qty_available for t in templates}}
+        return {
+            "stock": {str(t.id): t.qty_available for t in templates},
+            # F05 — même raison que `qty_available` ci-dessus : un
+            # `search_read` portail direct sur `product.template` déclenche
+            # un `AccessError` en calculant `product_variant_count` (dépend
+            # de `product_variant_ids`, `product.product`, non accessible au
+            # portail) — constaté par l'utilisateur en testant l'ajout
+            # rapide depuis les grilles (voir `product_grid_tile.dart`/
+            # `add_to_cart.dart`). Résolu ici en `sudo()`, sur les mêmes
+            # `templates` déjà chargés pour `qty_available` (aucune requête
+            # supplémentaire).
+            "variant_counts": {str(t.id): t.product_variant_count for t in templates},
+        }
 
     @http.route("/echango/catalog/promotions", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
     @require_fresh_session

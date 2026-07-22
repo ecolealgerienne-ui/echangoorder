@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../errors/app_error.dart';
 import '../../errors/app_messenger.dart';
 import '../../errors/error_state_view.dart';
+import '../../navigation/cart_sheet.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/auth_state.dart';
 import '../../state/cart_state.dart';
@@ -14,6 +15,7 @@ import '../../utils/order_status.dart';
 import '../../utils/pagination.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/load_more_button.dart';
+import '../../widgets/shimmer_loader.dart';
 
 /// F09 — historique des commandes du client connecté. `sale.order` est
 /// déjà lisible par le portail (règle standard, restreinte à ses propres
@@ -67,6 +69,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     return orders;
   }
 
+  Future<void> _handleRefresh() async {
+    _load();
+    try {
+      await _ordersFuture;
+    } catch (_) {
+      // Déjà affiché par le FutureBuilder (snapshot.hasError).
+    }
+  }
+
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
     final generation = _loadGeneration;
@@ -102,7 +113,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       if (unavailable.isNotEmpty) {
         AppMessenger.showInfo(context, 'order.reorderUnavailableWarning');
       }
-      context.go('/cart');
+      if (!context.mounted) return;
+      await showCartSheet(context);
     } on AppError catch (e) {
       if (mounted) AppMessenger.showError(context, e, onRetry: () => _reorder(order));
     }
@@ -117,38 +129,42 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       body: SafeArea(
         child: isGuest || _ordersFuture == null
             ? _emptyState(context, isGuest: isGuest)
-            : FutureBuilder<List<Map<String, dynamic>>>(
-                future: _ordersFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    final error = snapshot.error is AppError
-                        ? snapshot.error as AppError
-                        : const AppError(AppError.unknown);
-                    return ErrorStateView.forError(error, onRetry: _load);
-                  }
-                  final orders = [...snapshot.data!, ..._extraOrders];
-                  if (orders.isEmpty) {
-                    return _emptyState(context, isGuest: false);
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    itemCount: orders.length + (_hasMore ? 1 : 0),
-                    separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (context, index) {
-                      if (index == orders.length) {
-                        return LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore);
-                      }
-                      return _OrderCard(
-                        order: orders[index],
-                        onTap: () => context.push('/profile/orders/${orders[index]['name']}'),
-                        onReorder: () => _reorder(orders[index]),
-                      );
-                    },
-                  );
-                },
+            : RefreshIndicator(
+                onRefresh: _handleRefresh,
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _ordersFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const _OrderListSkeleton();
+                    }
+                    if (snapshot.hasError) {
+                      final error = snapshot.error is AppError
+                          ? snapshot.error as AppError
+                          : const AppError(AppError.unknown);
+                      return ErrorStateView.forError(error, onRetry: _load);
+                    }
+                    final orders = [...snapshot.data!, ..._extraOrders];
+                    if (orders.isEmpty) {
+                      return _emptyState(context, isGuest: false);
+                    }
+                    return ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      itemCount: orders.length + (_hasMore ? 1 : 0),
+                      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+                      itemBuilder: (context, index) {
+                        if (index == orders.length) {
+                          return LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore);
+                        }
+                        return _OrderCard(
+                          order: orders[index],
+                          onTap: () => context.push('/profile/orders/${orders[index]['name']}'),
+                          onReorder: () => _reorder(orders[index]),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
       ),
     );
@@ -186,8 +202,15 @@ class _OrderCard extends StatelessWidget {
       _ => prepStatusLabel(order) ?? 'order.statusConfirmed'.tr(),
     };
 
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColorTokens.of(context).surface,
+        borderRadius: BorderRadius.circular(AppLayout.radius),
+        boxShadow: AppElevation.of(context),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
+        borderRadius: BorderRadius.circular(AppLayout.radius),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -212,6 +235,38 @@ class _OrderCard extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Squelette chatoyant pendant le chargement de l'historique (direction
+/// Casbah, phase E) — remplace le spinner générique.
+class _OrderListSkeleton extends StatelessWidget {
+  const _OrderListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      itemCount: 4,
+      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) => Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColorTokens.of(context).surface,
+          borderRadius: BorderRadius.circular(AppLayout.radius),
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShimmerBox(width: 140, height: 16),
+            SizedBox(height: AppSpacing.xs),
+            ShimmerBox(width: 90, height: 12),
+            SizedBox(height: AppSpacing.sm),
+            ShimmerBox(width: 160, height: 14),
+          ],
         ),
       ),
     );

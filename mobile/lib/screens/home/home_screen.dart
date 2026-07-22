@@ -8,6 +8,7 @@ import '../../errors/error_state_view.dart';
 import '../../services/odoo_api_client.dart';
 import '../../state/cart_state.dart';
 import '../../state/favorites_state.dart';
+import '../../state/locale_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/add_to_cart.dart';
 import '../../utils/pagination.dart';
@@ -15,6 +16,7 @@ import '../../utils/product_enrichment.dart';
 import '../../utils/toggle_favorite.dart';
 import '../../widgets/load_more_button.dart';
 import '../../widgets/product_grid_tile.dart';
+import '../../widgets/shimmer_loader.dart';
 
 /// F03 — Accueil : grille des produits vendables (`product.template`,
 /// `sale_ok = true`) via le `search_read` standard d'Odoo. La curation
@@ -26,6 +28,19 @@ import '../../widgets/product_grid_tile.dart';
 /// Pagination (demande utilisateur) : `kListPageSize` produits par page,
 /// chargement à la demande via `LoadMoreButton` plutôt que tout afficher
 /// d'un coup — voir `utils/pagination.dart`.
+///
+/// Bandeau catégories (direction Casbah, phase C) : filtrent directement
+/// la grille ci-dessous plutôt que de naviguer vers un écran dédié —
+/// décision produit du 2026-07-20 (demande utilisateur) qui a fait
+/// disparaître l'ancien onglet/écran Catalogue (`CatalogScreen`/
+/// `CategoryProductsScreen` supprimés, leur rôle est repris ici).
+///
+/// Pas de barre de recherche ni d'`AppBar` propre (décision produit du
+/// 2026-07-21, demande utilisateur) : catalogue plafonné à ~300 produits,
+/// le bandeau catégories suffit à filtrer sans une recherche texte dédiée
+/// (`SearchScreen`/`/home/search` supprimés) ; le titre/la marque de l'app
+/// est désormais affiché une fois pour toutes dans `MainTabScaffold`,
+/// partagé avec l'onglet Profil, plutôt que répété par écran.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -46,10 +61,17 @@ class _HomeScreenState extends State<HomeScreen> {
   // trouvée à l'audit technique du 2026-07-19).
   int _loadGeneration = 0;
 
+  // Bandeau catégories : masqué silencieusement en cas d'échec de
+  // chargement plutôt que de gêner l'accès à la grille produits (qui reste
+  // l'essentiel de l'écran). `null` = puce "Tous" (aucun filtre).
+  Future<List<Map<String, dynamic>>>? _categoriesFuture;
+  int? _selectedCategoryId;
+
   @override
   void initState() {
     super.initState();
     _loadProducts();
+    _loadCategories();
     // Non bloquant et silencieux : un échec (invité sans session Odoo,
     // réseau...) ne doit pas empêcher de parcourir l'Accueil, les cœurs
     // restent juste tous "non favoris" dans ce cas.
@@ -66,12 +88,35 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _loadCategories() {
+    setState(() {
+      _categoriesFuture = context.read<OdooApiClient>().readGroup(
+        model: 'product.template',
+        domain: const [
+          ['sale_ok', '=', true],
+        ],
+        groupBy: const ['categ_id'],
+      );
+    });
+  }
+
+  /// Sélectionne une catégorie (filtre la grille) — retaper la puce déjà
+  /// sélectionnée réinitialise le filtre (bascule vers "Tous") plutôt que
+  /// d'exiger un bouton de réinitialisation séparé.
+  void _selectCategory(int? categoryId) {
+    final next = _selectedCategoryId == categoryId ? null : categoryId;
+    if (next == _selectedCategoryId) return;
+    _selectedCategoryId = next;
+    _loadProducts();
+  }
+
   Future<List<Map<String, dynamic>>> _fetchProducts({required int offset}) async {
     final api = context.read<OdooApiClient>();
     final products = await api.searchRead(
       model: 'product.template',
-      domain: const [
+      domain: [
         ['sale_ok', '=', true],
+        if (_selectedCategoryId != null) ['categ_id', '=', _selectedCategoryId],
       ],
       fields: const ['name', 'list_price', 'image_128'],
       limit: kListPageSize,
@@ -103,6 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _handleRefresh() async {
     _loadProducts();
+    _loadCategories();
     try {
       await _productsFuture;
     } catch (_) {
@@ -112,11 +158,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Force un rebuild au changement de langue (bug trouvé par
+    // l'utilisateur, 2026-07-20 — voir `state/locale_state.dart`) : l'Accueil
+    // est aussi une racine d'onglet gardée vivante par `StatefulShellRoute`.
+    context.watch<LocaleState>();
     final cart = context.watch<CartState>();
     final favorites = context.watch<FavoritesState>();
 
     return Scaffold(
-      appBar: AppBar(title: Text('screens.Home.title'.tr())),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _handleRefresh,
@@ -124,7 +173,16 @@ class _HomeScreenState extends State<HomeScreen> {
             future: _productsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
+                return CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildCategoryChips(context)),
+                    const SliverPadding(
+                      padding: EdgeInsets.all(AppSpacing.lg),
+                      sliver: _ProductGridSkeleton(),
+                    ),
+                  ],
+                );
               }
               if (snapshot.hasError) {
                 final error =
@@ -132,52 +190,155 @@ class _HomeScreenState extends State<HomeScreen> {
                 return ErrorStateView.forError(error, onRetry: _loadProducts);
               }
               final products = [...snapshot.data!, ..._extraProducts];
-              if (products.isEmpty) {
-                return const ErrorStateView(
-                  icon: Icons.storefront_outlined,
-                  titleKey: 'emptyStates.productsTitle',
-                  messageKey: 'emptyStates.productsMessage',
-                );
-              }
               return CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  SliverPadding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: AppSpacing.md,
-                        crossAxisSpacing: AppSpacing.md,
-                        childAspectRatio: 0.62,
+                  SliverToBoxAdapter(child: _buildCategoryChips(context)),
+                  if (products.isEmpty)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: ErrorStateView(
+                        icon: Icons.storefront_outlined,
+                        titleKey: 'emptyStates.productsTitle',
+                        messageKey: 'emptyStates.productsMessage',
                       ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final product = products[index];
-                          final productId = product['id'] as int;
-                          return ProductGridTile(
-                            product: product,
-                            onTap: () => context.push('/home/product/$productId'),
-                            cartQty: cart.quantityFor(productId),
-                            onIncrement: () => addProductToCart(context, productId),
-                            onDecrement: () => decrementCartProduct(context, productId),
-                            isFavorite: favorites.isFavorite(productId),
-                            onToggleFavorite: () => toggleFavorite(context, productId),
-                          );
-                        },
-                        childCount: products.length,
+                    )
+                  else ...[
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+                      sliver: SliverGrid(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: AppSpacing.md,
+                          crossAxisSpacing: AppSpacing.md,
+                          childAspectRatio: 0.62,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final product = products[index];
+                            final productId = product['id'] as int;
+                            return ProductGridTile(
+                              product: product,
+                              onTap: () => context.push('/home/product/$productId', extra: product),
+                              cartQty: cart.quantityFor(productId),
+                              onIncrement: () =>
+                                  addProductOrOpenDetail(context, product, '/home/product/$productId'),
+                              onDecrement: () => decrementCartProduct(context, productId),
+                              isFavorite: favorites.isFavorite(productId),
+                              onToggleFavorite: () => toggleFavorite(context, productId),
+                            );
+                          },
+                          childCount: products.length,
+                        ),
                       ),
                     ),
-                  ),
-                  if (_hasMore)
-                    SliverToBoxAdapter(
-                      child: LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore),
-                    ),
+                    if (_hasMore)
+                      SliverToBoxAdapter(
+                        child: LoadMoreButton(isLoading: _isLoadingMore, onPressed: _loadMore),
+                      ),
+                  ],
                 ],
               );
             },
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChips(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _categoriesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _CategoryChipsSkeleton();
+        }
+        // Décoratif uniquement : une erreur ou une liste vide ne doit rien
+        // afficher plutôt que de perturber l'accès à la grille produits.
+        if (snapshot.hasError || (snapshot.data?.isEmpty ?? true)) {
+          return const SizedBox.shrink();
+        }
+        final groups = snapshot.data!;
+        return SizedBox(
+          height: 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            // +1 : puce "Tous" en tête, représente la grille déjà affichée
+            // (sélectionnée, non interactive) plutôt qu'une vraie catégorie.
+            itemCount: groups.length + 1,
+            separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return ChoiceChip(
+                  label: Text('catalog.allCategories'.tr()),
+                  selected: _selectedCategoryId == null,
+                  onSelected: (_) => _selectCategory(null),
+                );
+              }
+              final categField = groups[index - 1]['categ_id'] as List<dynamic>?;
+              if (categField == null) return const SizedBox.shrink();
+              final categId = categField[0] as int;
+              final categName = categField[1] as String;
+              return ChoiceChip(
+                label: Text(categName),
+                selected: _selectedCategoryId == categId,
+                onSelected: (_) => _selectCategory(categId),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CategoryChipsSkeleton extends StatelessWidget {
+  const _CategoryChipsSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        itemCount: 4,
+        separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, index) => const ShimmerBox(
+          width: 72,
+          height: 32,
+          borderRadius: BorderRadius.all(Radius.circular(999)),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductGridSkeleton extends StatelessWidget {
+  const _ProductGridSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverGrid(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: AppSpacing.md,
+        crossAxisSpacing: AppSpacing.md,
+        childAspectRatio: 0.62,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Expanded(child: ShimmerBox(width: double.infinity, height: double.infinity)),
+            const SizedBox(height: AppSpacing.xs),
+            const ShimmerBox(width: double.infinity, height: 14),
+            const SizedBox(height: AppSpacing.xs),
+            ShimmerBox(width: 60, height: 12, borderRadius: BorderRadius.circular(4)),
+          ],
+        ),
+        childCount: 6,
       ),
     );
   }

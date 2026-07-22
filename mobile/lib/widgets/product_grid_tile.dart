@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/currency.dart';
+import 'pressable_scale.dart';
 
 /// Tuile produit réutilisée par l'Accueil (F03), le Catalogue/Recherche
 /// (F04) et l'écran d'ajout de favoris.
@@ -24,8 +25,12 @@ import '../utils/currency.dart';
 /// (num?, absent/null si la remise n'est pas exprimée en %), fusionnés par
 /// l'écran appelant comme `qty_available` — voir
 /// `OdooApiClient.getPromotions`, module standard `loyalty` ; masqué si le
-/// produit est épuisé, couleur dédiée (`AppColors.promo`) pour le
+/// produit est épuisé, couleur dédiée (`tokens.promo`) pour le
 /// distinguer du bouton "Acheter" (vert) et du badge "Épuisé" (rouge).
+///
+/// La tuile est présentée comme une carte (fond + ombre légère, direction
+/// Casbah — voir `docs/design_direction.md`) plutôt qu'à même le fond de
+/// l'écran, pour lui donner du relief.
 class ProductGridTile extends StatelessWidget {
   final Map<String, dynamic> product;
   final VoidCallback onTap;
@@ -57,102 +62,121 @@ class ProductGridTile extends StatelessWidget {
     final onPromo = product['on_promo'] as bool? ?? false;
     final promoPercent = (product['promo_percent'] as num?)?.toDouble();
     final imageBase64 = product['image_128'];
+    final tokens = AppColorTokens.of(context);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppLayout.radius),
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Container(
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(AppLayout.radius),
-                  ),
-                  child: imageBase64 is String
-                      ? Opacity(
-                          opacity: outOfStock ? 0.4 : 1,
-                          child: Image.memory(base64Decode(imageBase64), fit: BoxFit.cover),
-                        )
-                      : const Icon(Icons.image_not_supported_outlined, size: 40, color: AppColors.textMuted),
-                ),
-                if (outOfStock)
-                  Positioned(
-                    top: AppSpacing.xs,
-                    left: AppSpacing.xs,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        borderRadius: BorderRadius.circular(AppLayout.radius),
+        boxShadow: AppElevation.of(context),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppLayout.radius),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(
+                      clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
-                        color: AppColors.danger,
-                        borderRadius: BorderRadius.circular(AppLayout.radius / 2),
+                        color: tokens.background,
+                        borderRadius: BorderRadius.circular(AppLayout.radius),
                       ),
-                      child: Text(
-                        'catalog.outOfStock'.tr(),
-                        style: const TextStyle(color: AppColors.background, fontSize: 11, fontWeight: FontWeight.w600),
-                      ),
+                      child: imageBase64 is String
+                          ? Opacity(
+                              opacity: outOfStock ? 0.4 : 1,
+                              child: Image.memory(base64Decode(imageBase64), fit: BoxFit.cover),
+                            )
+                          : Icon(Icons.image_not_supported_outlined, size: 40, color: tokens.textMuted),
                     ),
-                  )
-                // Épuisé prime sur promo — pas de sens à mettre en avant
-                // une réduction sur un produit qu'on ne peut pas acheter.
-                else if (onPromo)
-                  Positioned(
-                    top: AppSpacing.xs,
-                    left: AppSpacing.xs,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.promo,
-                        borderRadius: BorderRadius.circular(AppLayout.radius / 2),
+                    if (outOfStock)
+                      // PositionedDirectional (start, pas left) : suit le sens
+                      // RTL/LTR ambiant plutôt qu'un côté physique fixe (audit
+                      // RTL, phase F — le badge doit rester du côté "lecture
+                      // en premier", donc à droite en arabe).
+                      PositionedDirectional(
+                        top: AppSpacing.xs,
+                        start: AppSpacing.xs,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: tokens.danger,
+                            borderRadius: BorderRadius.circular(AppLayout.radius / 2),
+                          ),
+                          child: Text(
+                            'catalog.outOfStock'.tr(),
+                            style: TextStyle(color: tokens.onDanger, fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      )
+                    // Épuisé prime sur promo — pas de sens à mettre en avant
+                    // une réduction sur un produit qu'on ne peut pas acheter.
+                    else if (onPromo)
+                      PositionedDirectional(
+                        top: AppSpacing.xs,
+                        start: AppSpacing.xs,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: tokens.promo,
+                            borderRadius: BorderRadius.circular(AppLayout.radius / 2),
+                          ),
+                          child: Text(
+                            promoPercent != null
+                                ? 'catalog.onPromoPercent'.tr(namedArgs: {'percent': promoPercent.toStringAsFixed(0)})
+                                : 'catalog.onPromo'.tr(),
+                            style: TextStyle(color: tokens.onPromo, fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ),
                       ),
-                      child: Text(
-                        promoPercent != null
-                            ? 'catalog.onPromoPercent'.tr(namedArgs: {'percent': promoPercent.toStringAsFixed(0)})
-                            : 'catalog.onPromo'.tr(),
-                        style: const TextStyle(color: AppColors.background, fontSize: 11, fontWeight: FontWeight.w600),
+                    if (onToggleFavorite != null)
+                      PositionedDirectional(
+                        top: AppSpacing.xs,
+                        end: AppSpacing.xs,
+                        child: _FavoriteButton(isFavorite: isFavorite, onPressed: onToggleFavorite!),
                       ),
-                    ),
-                  ),
-                if (onToggleFavorite != null)
-                  Positioned(
-                    top: AppSpacing.xs,
-                    right: AppSpacing.xs,
-                    child: _FavoriteButton(isFavorite: isFavorite, onPressed: onToggleFavorite!),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
-          Text(formatPrice(context, price), style: Theme.of(context).textTheme.bodySmall),
-          if (cartQty != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            _CartQuantityControl(
-              qty: cartQty!,
-              outOfStock: outOfStock,
-              onIncrement: onIncrement,
-              onDecrement: onDecrement,
-            ),
-          ] else if (onAdd != null)
-            Align(
-              alignment: Alignment.centerRight,
-              // Pas de padding/constraints custom : on garde la zone de
-              // tap par défaut d'IconButton (>= 44px, cf. CLAUDE.md §
-              // Accessibilité) plutôt que de la resserrer visuellement.
-              child: IconButton(
-                onPressed: outOfStock ? null : onAdd,
-                icon: Icon(
-                  Icons.add_circle,
-                  color: outOfStock ? AppColors.disabled : AppColors.primary,
+                  ],
                 ),
-                tooltip: 'actions.addToCart'.tr(),
               ),
-            ),
-        ],
+              const SizedBox(height: AppSpacing.xs),
+              Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
+              Text(formatPrice(context, price), style: Theme.of(context).textTheme.bodySmall),
+              if (cartQty != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                _CartQuantityControl(
+                  qty: cartQty!,
+                  outOfStock: outOfStock,
+                  onIncrement: onIncrement,
+                  onDecrement: onDecrement,
+                ),
+              ] else if (onAdd != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  // Pas de padding/constraints custom : on garde la zone de
+                  // tap par défaut d'IconButton (>= 44px, cf. CLAUDE.md §
+                  // Accessibilité) plutôt que de la resserrer visuellement.
+                  child: PressableScale(
+                    enabled: !outOfStock,
+                    child: IconButton(
+                      onPressed: outOfStock ? null : onAdd,
+                      icon: Icon(
+                        Icons.add_circle,
+                        color: outOfStock ? tokens.disabled : tokens.primary,
+                      ),
+                      tooltip: 'actions.addToCart'.tr(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -166,14 +190,15 @@ class _FavoriteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColorTokens.of(context);
     return Material(
-      color: AppColors.background.withValues(alpha: 0.85),
+      color: tokens.surface.withValues(alpha: 0.85),
       shape: const CircleBorder(),
       child: IconButton(
         onPressed: onPressed,
         icon: Icon(
           isFavorite ? Icons.favorite : Icons.favorite_border,
-          color: isFavorite ? AppColors.danger : AppColors.textMuted,
+          color: isFavorite ? tokens.danger : tokens.textMuted,
         ),
         iconSize: 20,
         visualDensity: VisualDensity.compact,
@@ -201,11 +226,14 @@ class _CartQuantityControl extends StatelessWidget {
       return SizedBox(
         width: double.infinity,
         height: AppLayout.minTouchHeight,
-        child: ElevatedButton.icon(
-          onPressed: outOfStock ? null : onIncrement,
-          icon: const Icon(Icons.add, size: 18),
-          label: Text('actions.buy'.tr()),
-          style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
+        child: PressableScale(
+          enabled: !outOfStock,
+          child: ElevatedButton.icon(
+            onPressed: outOfStock ? null : onIncrement,
+            icon: const Icon(Icons.add, size: 18),
+            label: Text('actions.buy'.tr()),
+            style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
+          ),
         ),
       );
     }
@@ -214,16 +242,25 @@ class _CartQuantityControl extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            onPressed: onDecrement,
-            icon: const Icon(Icons.remove_circle_outline),
-            visualDensity: VisualDensity.compact,
+          PressableScale(
+            child: IconButton(
+              onPressed: onDecrement,
+              icon: const Icon(Icons.remove_circle_outline),
+              visualDensity: VisualDensity.compact,
+            ),
           ),
-          Text('$qty', style: Theme.of(context).textTheme.bodyMedium),
-          IconButton(
-            onPressed: outOfStock ? null : onIncrement,
-            icon: const Icon(Icons.add_circle_outline),
-            visualDensity: VisualDensity.compact,
+          AnimatedSwitcher(
+            duration: AppMotion.fast,
+            transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+            child: Text('$qty', key: ValueKey(qty), style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          PressableScale(
+            enabled: !outOfStock,
+            child: IconButton(
+              onPressed: outOfStock ? null : onIncrement,
+              icon: const Icon(Icons.add_circle_outline),
+              visualDensity: VisualDensity.compact,
+            ),
           ),
         ],
       ),

@@ -79,48 +79,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return ScreenPlaceholder(
       screenKey: 'Profile',
+      // `showAppBar: false` (2026-07-21, demande utilisateur) : l'AppBar
+      // est désormais commune aux 2 onglets (`MainTabScaffold`, toujours
+      // "Echango Order" + bouton de bascule) — le titre "Profil" reste
+      // affiché en en-tête de contenu (voir `ScreenPlaceholder`) plutôt que
+      // dans une 2e AppBar redondante.
+      showAppBar: false,
       actions: [
         PlaceholderAction(
-          label: 'screens.Addresses.title'.tr(),
+          label: () => 'screens.Addresses.title'.tr(),
           onPressed: () => _requireAccountThen(context, () => context.push('/profile/addresses')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.Favorites.title'.tr(),
+          label: () => 'screens.Favorites.title'.tr(),
           onPressed: () => _requireAccountThen(context, () => context.push('/profile/favorites')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.ChangePin.title'.tr(),
+          label: () => 'screens.ChangePin.title'.tr(),
           onPressed: () => _requireAccountThen(context, () => context.push('/profile/change-pin')),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.NotificationSettings.title'.tr(),
+          label: () => 'screens.NotificationSettings.title'.tr(),
           onPressed: () => context.push('/profile/notifications'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.LanguageSettings.title'.tr(),
+          label: () => 'screens.LanguageSettings.title'.tr(),
           onPressed: () => context.push('/profile/language'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'screens.OrderHistory.title'.tr(),
+          label: () => 'screens.OrderHistory.title'.tr(),
           onPressed: () => context.push('/profile/orders'),
         ),
         PlaceholderAction(
-          label: 'screens.About.title'.tr(),
+          label: () => 'screens.About.title'.tr(),
           onPressed: () => context.push('/profile/about'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'actions.logout'.tr(),
+          label: () => 'actions.logout'.tr(),
           onPressed: () => _logout(context),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'actions.deleteAccount'.tr(),
+          label: () => 'actions.deleteAccount'.tr(),
           onPressed: () => _requireAccountThen(context, () => showDeleteAccountDialog(context)),
           variant: AppButtonVariant.danger,
         ),
@@ -143,13 +149,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final profile = snapshot.data!;
         final name = profile['name'] as String? ?? '';
         final phone = profile['phone'] as String? ?? '';
+        final textMuted = AppColorTokens.of(context).textMuted;
         return InkWell(
           onTap: () => _editName(name),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             child: Row(
               children: [
-                const Icon(Icons.person_outline, size: 40, color: AppColors.textMuted),
+                Icon(Icons.person_outline, size: 40, color: textMuted),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
@@ -160,7 +167,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
-                const Icon(Icons.edit_outlined, size: 18, color: AppColors.textMuted),
+                Icon(Icons.edit_outlined, size: 18, color: textMuted),
               ],
             ),
           ),

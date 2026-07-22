@@ -73,7 +73,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     return ScreenPlaceholder(
       screenKey: 'ChangePin',
       actions: [
-        PlaceholderAction(label: 'common.confirm'.tr(), onPressed: _submit),
+        PlaceholderAction(label: () => 'common.confirm'.tr(), onPressed: _submit),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

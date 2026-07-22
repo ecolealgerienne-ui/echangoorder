@@ -66,7 +66,7 @@ class _VitrineScreenState extends State<VitrineScreen> {
       screenKey: 'Vitrine',
       showAppBar: false,
       actions: [
-        PlaceholderAction(label: 'actions.signUpToOrder'.tr(), onPressed: _goToAuth),
+        PlaceholderAction(label: () => 'actions.signUpToOrder'.tr(), onPressed: _goToAuth),
       ],
       child: FutureBuilder<List<Map<String, dynamic>>>(
         future: _productsFuture,

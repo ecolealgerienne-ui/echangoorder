@@ -1,5 +1,6 @@
 {
   "common": {
+    "appName": "Echango Order",
     "next": "التالي",
     "back": "رجوع",
     "skip": "تخطي",
@@ -34,8 +35,6 @@
   },
   "nav": {
     "home": "الرئيسية",
-    "catalog": "الكتالوج",
-    "cart": "السلة",
     "profile": "الملف الشخصي"
   },
   "checkout": {
@@ -61,7 +60,8 @@
   },
   "cart": {
     "subtotal": "المجموع الفرعي",
-    "total": "الإجمالي"
+    "total": "الإجمالي",
+    "viewCart": "عرض سلتي"
   },
   "order": {
     "confirmCancel": "تأكيد الإلغاء",
@@ -188,13 +188,13 @@
     "useGpsLocation": "استخدام موقعي الحالي",
     "retry": "إعادة المحاولة",
     "sendPinResetRequest": "إرسال الطلب",
-    "browseCatalog": "تصفح الكتالوج",
     "loadMore": "عرض المزيد"
   },
   "catalog": {
     "outOfStock": "غير متوفر",
     "onPromo": "عرض",
-    "onPromoPercent": "-{percent}%"
+    "onPromoPercent": "-{percent}%",
+    "allCategories": "الكل"
   },
   "emptyStates": {
     "cartTitle": "سلتك فارغة",
@@ -206,8 +206,6 @@
     "searchMessage": "جرّب كلمة بحث أخرى.",
     "productsTitle": "لا توجد منتجات متاحة",
     "productsMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا.",
-    "categoriesTitle": "لا توجد فئات متاحة",
-    "categoriesMessage": "عد لاحقًا، الكتالوج قيد التحديث حاليًا.",
     "favoritesTitle": "لا توجد منتجات مفضلة بعد",
     "favoritesMessage": "تُضاف منتجاتك المطلوبة هنا تلقائيًا — ويمكنك أيضًا إضافة منتجات بنفسك."
   },
@@ -246,10 +244,6 @@
     "Login": { "title": "تسجيل الدخول", "subtitle": "تسجيل الدخول — F02" },
     "ForgotPin": { "title": "نسيت الرمز السري", "subtitle": "إعادة تعيين الرمز السري — F02" },
     "Reauth": { "title": "انتهت صلاحية الجلسة", "subtitle": "إعادة المصادقة بالرمز السري — الأمان" },
-    "Home": { "title": "الرئيسية", "subtitle": "الرئيسية — F03" },
-    "Catalog": { "title": "الكتالوج", "subtitle": "الفئات — F04" },
-    "CategoryProducts": { "title": "المنتجات", "subtitle": "منتجات حسب الفئة — F04" },
-    "Search": { "title": "بحث", "subtitle": "البحث — F04" },
     "ProductDetail": { "title": "تفاصيل المنتج", "subtitle": "بطاقة المنتج — F05" },
     "Cart": { "title": "سلتي", "subtitle": "السلة — F06" },
     "CheckoutReceptionMode": { "title": "طريقة الاستلام", "subtitle": "طريقة الاستلام — F07" },

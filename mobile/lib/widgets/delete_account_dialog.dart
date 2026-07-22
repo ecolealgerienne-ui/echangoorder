@@ -70,6 +70,7 @@ class _DeleteAccountDialogContentState extends State<_DeleteAccountDialogContent
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColorTokens.of(context);
     return AlertDialog(
       title: Text('deleteAccount.title'.tr()),
       content: Column(
@@ -78,7 +79,7 @@ class _DeleteAccountDialogContentState extends State<_DeleteAccountDialogContent
         children: [
           Text(
             'deleteAccount.body'.tr(),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.textMuted),
           ),
           const SizedBox(height: AppSpacing.md),
           PinInputField(
@@ -97,7 +98,7 @@ class _DeleteAccountDialogContentState extends State<_DeleteAccountDialogContent
           onPressed: _isSubmitting || validatePin(_pinController.text) != null ? null : _submit,
           child: Text(
             'deleteAccount.confirm'.tr(),
-            style: const TextStyle(color: AppColors.danger),
+            style: TextStyle(color: tokens.danger),
           ),
         ),
       ],

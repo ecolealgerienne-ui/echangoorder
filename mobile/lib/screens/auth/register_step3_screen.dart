@@ -74,7 +74,7 @@ class _RegisterStep3ScreenState extends State<RegisterStep3Screen> {
     return ScreenPlaceholder(
       screenKey: 'RegisterStep3',
       actions: [
-        PlaceholderAction(label: 'common.confirm'.tr(), onPressed: () => _submit(authState, api)),
+        PlaceholderAction(label: () => 'common.confirm'.tr(), onPressed: () => _submit(authState, api)),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

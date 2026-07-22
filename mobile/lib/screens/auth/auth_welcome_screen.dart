@@ -16,14 +16,14 @@ class AuthWelcomeScreen extends StatelessWidget {
     return ScreenPlaceholder(
       screenKey: 'AuthWelcome',
       actions: [
-        PlaceholderAction(label: 'actions.signUp'.tr(), onPressed: () => context.push('/register/step1')),
+        PlaceholderAction(label: () => 'actions.signUp'.tr(), onPressed: () => context.push('/register/step1')),
         PlaceholderAction(
-          label: 'actions.logIn'.tr(),
+          label: () => 'actions.logIn'.tr(),
           onPressed: () => context.push('/login'),
           variant: AppButtonVariant.secondary,
         ),
         PlaceholderAction(
-          label: 'actions.continueAsGuest'.tr(),
+          label: () => 'actions.continueAsGuest'.tr(),
           onPressed: authState.continueAsGuest,
           variant: AppButtonVariant.secondary,
         ),
