@@ -139,11 +139,30 @@ class BatchPickingWizard(models.TransientModel):
         return commands
 
     def action_refresh(self):
-        """Relance le calcul (ex. après qu'un opérateur a confirmé
-        d'autres commandes depuis l'ouverture du wizard)."""
+        """Ajoute les commandes candidates pas encore listées (ex. un
+        opérateur a confirmé d'autres commandes depuis l'ouverture du
+        wizard) — SANS toucher aux lignes déjà présentes. Bug signalé par
+        l'utilisateur (2026-07-22) : la version précédente supprimait puis
+        recalculait tout depuis zéro à chaque clic, écrasant
+        systématiquement les numéros de lot déjà ajustés à la main —
+        contraire à la décision produit "garder un humain dans la boucle"
+        (voir CLAUDE.md § Préparation groupée). Les numéros de lot des
+        nouvelles suggestions sont décalés au-delà du plus grand numéro
+        déjà utilisé, pour ne jamais fusionner accidentellement une
+        nouvelle commande dans un lot déjà validé/ajusté par coïncidence
+        de numérotation (les numéros n'ont de sens que dans le calcul qui
+        les a produits, pas de façon stable d'un appel à l'autre)."""
         self.ensure_one()
-        self.line_ids.unlink()
-        self.line_ids = self._compute_suggestions()
+        existing_picking_ids = set(self.line_ids.picking_id.ids)
+        offset = max(self.line_ids.mapped("batch_index"), default=0)
+        new_commands = []
+        for command in self._compute_suggestions():
+            vals = command[2]
+            if vals["picking_id"] in existing_picking_ids:
+                continue
+            new_commands.append((0, 0, {**vals, "batch_index": vals["batch_index"] + offset}))
+        if new_commands:
+            self.line_ids = new_commands
         return {
             "type": "ir.actions.act_window",
             "res_model": self._name,
