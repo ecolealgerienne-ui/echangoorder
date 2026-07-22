@@ -29,6 +29,7 @@ mesure du branchement de chaque écran (F02 auth en premier).
         "views/res_partner_views.xml",
         "views/res_users_views.xml",
         "views/batch_picking_wizard_views.xml",
+        "views/batch_picking_settings_views.xml",
     ],
     "installable": True,
     "application": True,
