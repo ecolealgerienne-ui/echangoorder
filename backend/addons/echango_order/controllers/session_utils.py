@@ -15,13 +15,29 @@ from odoo.http import request
 # restent hors de portée de ce décorateur, propre aux contrôleurs custom.
 SESSION_INACTIVITY_LIMIT = timedelta(hours=24)
 
+# Bug trouvé en test réel (2026-07-22) : deux appels /echango/* quasi
+# simultanés pour le même utilisateur (ex. getStock/getPromotions
+# parallélisés, cf. status-V1.md § Audit de performance) écrivaient tous
+# les deux x_last_activity sur la même ligne res_users au même instant —
+# `ERROR: could not serialize access due to concurrent update` côté
+# Postgres. Throttle de l'écriture (déjà identifié comme piste
+# d'optimisation dans status-V1.md, "à valider avant de le faire" —
+# validé avec l'utilisateur suite à ce bug) : n'écrit que si la dernière
+# valeur connue date de plus de quelques minutes, largement suffisant
+# face à une fenêtre d'expiration de 24h — imprécision négligeable,
+# réduit fortement (sans l'éliminer totalement : deux tout premiers
+# appels rigoureusement simultanés peuvent encore tous les deux décider
+# d'écrire) la fréquence des écritures concurrentes sur la même ligne.
+ACTIVITY_WRITE_THROTTLE = timedelta(minutes=2)
+
 
 def require_fresh_session(func):
     """Décorateur pour les méthodes de contrôleur `auth="user"` : renvoie
     `{"error": "auth.session_expired"}` (déjà mappé côté Flutter vers
     AppError.authSessionExpired, qui déclenche la ré-authentification) si
     plus de 24h se sont écoulées depuis le dernier appel réussi, sinon
-    laisse passer et met à jour x_last_activity."""
+    laisse passer et met à jour x_last_activity (au plus une fois par
+    ACTIVITY_WRITE_THROTTLE, voir commentaire ci-dessus)."""
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -31,7 +47,8 @@ def require_fresh_session(func):
         if last and (now - last) > SESSION_INACTIVITY_LIMIT:
             return {"error": "auth.session_expired"}
         result = func(self, *args, **kwargs)
-        user.sudo().write({"x_last_activity": now})
+        if not last or (now - last) > ACTIVITY_WRITE_THROTTLE:
+            user.sudo().write({"x_last_activity": now})
         return result
 
     return wrapper
