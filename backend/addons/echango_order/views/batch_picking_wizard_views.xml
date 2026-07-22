@@ -13,9 +13,9 @@
                 </p>
                 <field name="line_ids">
                     <list string="Commandes candidates" editable="bottom">
-                        <field name="order_id" readonly="1"/>
-                        <field name="line_count" readonly="1"/>
-                        <field name="qty_total" readonly="1"/>
+                        <field name="order_id" readonly="1" force_save="1"/>
+                        <field name="line_count" readonly="1" force_save="1"/>
+                        <field name="qty_total" readonly="1" force_save="1"/>
                         <field name="batch_index"/>
                         <field name="picking_id" column_invisible="1"/>
                     </list>
