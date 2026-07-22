@@ -107,7 +107,7 @@ class BatchPickingWizard(models.TransientModel):
                 qty_total=sum(lines.mapped("product_uom_qty")),
                 waiting_hours=waiting_hours,
             ))
-            by_key[order.id] = (order, pick, lines)
+            by_key[order.id] = pick
 
         batches = compute_batches(
             engine_orders,
@@ -121,13 +121,20 @@ class BatchPickingWizard(models.TransientModel):
         commands = []
         for batch_index, batch in enumerate(batches, start=1):
             for key in batch:
-                order, pick, lines = by_key[key]
+                pick = by_key[key]
+                # order_id/line_count/qty_total ne sont plus transmis ici :
+                # ce sont des champs calculés sur BatchPickingWizardLine
+                # (dépendants de picking_id), voir le commentaire sur ce
+                # modèle — bug trouvé en test réel (2026-07-22, cf.
+                # CLAUDE.md § Préparation groupée) : le client web n'envoie
+                # pas les champs readonly peuplés seulement par défaut lors
+                # de la création d'un One2many éditable, même avec
+                # force_save="1" (insuffisant dans ce cas précis). Seul
+                # picking_id (non readonly, juste column_invisible) survit
+                # de façon fiable à la sauvegarde côté client.
                 commands.append((0, 0, {
-                    "order_id": order.id,
                     "picking_id": pick.id,
                     "batch_index": batch_index,
-                    "line_count": len(lines),
-                    "qty_total": sum(lines.mapped("product_uom_qty")),
                 }))
         return commands
 
@@ -187,19 +194,44 @@ class BatchPickingWizardLine(models.TransientModel):
     """Une ligne = une commande candidate proposée pour un lot, avec le
     numéro de lot suggéré par le calcul — éditable par l'opérateur avant
     validation (garder un humain dans la boucle, décision produit, voir
-    CLAUDE.md § Préparation groupée)."""
+    CLAUDE.md § Préparation groupée).
+
+    `order_id`/`line_count`/`qty_total` sont des champs **calculés**
+    (dépendants de `picking_id` uniquement) plutôt que peuplés directement
+    par `_compute_suggestions()` — bug trouvé en test réel (2026-07-22) :
+    le client web n'envoie pas au serveur les champs `readonly="1"`
+    peuplés seulement via `default_get` lors de la création des lignes
+    d'un One2many éditable, même avec `force_save="1"` (insuffisant ici,
+    contrairement à l'usage habituel de cet attribut). En passant par un
+    vrai `compute(store=True)`, Odoo recalcule ces valeurs côté serveur à
+    partir de `picking_id` (seul champ qui survit de façon fiable à la
+    sauvegarde, car non `readonly`) — plus aucune dépendance à ce que le
+    client renvoie correctement des champs en lecture seule.
+    """
 
     _name = "x_batch_picking_wizard_line"
     _description = "Commande proposée pour un lot de préparation groupée"
 
     wizard_id = fields.Many2one("x_batch_picking_wizard", required=True, ondelete="cascade")
-    order_id = fields.Many2one("sale.order", string="Commande", required=True)
     picking_id = fields.Many2one("stock.picking", string="Bon de collecte (Pick)", required=True)
+    order_id = fields.Many2one(
+        "sale.order", string="Commande",
+        compute="_compute_order_fields", store=True,
+    )
+    line_count = fields.Integer(string="Nb lignes", compute="_compute_order_fields", store=True)
+    qty_total = fields.Float(string="Quantité totale", compute="_compute_order_fields", store=True)
     batch_index = fields.Integer(
         string="N° de lot suggéré",
         help="0 ou vide = commande exclue de ce cycle, ne sera pas regroupée. "
              "Modifiable avant de cliquer sur \"Créer les lots\" — des lignes "
              "avec le même numéro rejoignent le même stock.picking.batch.",
     )
-    line_count = fields.Integer(string="Nb lignes")
-    qty_total = fields.Float(string="Quantité totale")
+
+    @api.depends("picking_id")
+    def _compute_order_fields(self):
+        for line in self:
+            order = line.picking_id.sale_id
+            order_lines = order.order_line.filtered(lambda l: not l.is_reward_line)
+            line.order_id = order.id
+            line.line_count = len(order_lines)
+            line.qty_total = sum(order_lines.mapped("product_uom_qty"))

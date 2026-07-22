@@ -185,6 +185,20 @@ uniquement de `stock`), jamais déclaré dans les dépendances du module
 `echango_order`. Corrigé (`__manifest__.py`) — nécessite `-u echango_order`
 pour qu'Odoo installe cette dépendance manquante.
 
+**2e bug trouvé au test réel (2026-07-22)** : `NotNullViolation` sur
+`order_id` à la sauvegarde du wizard — le client web n'envoie pas les
+champs `readonly="1"` peuplés seulement via `default_get` (pas un vrai
+`compute`) lors de la création des lignes d'un One2many éditable.
+`force_save="1"` (mécanisme standard prévu pour ce cas) s'est avéré
+**insuffisant** ici et l'erreur a persisté. Corrigé en profondeur :
+`order_id`/`line_count`/`qty_total` sur `x_batch_picking_wizard_line`
+sont devenus des champs **calculés** (`compute`, `store=True`),
+dépendants uniquement de `picking_id` (résolu via `stock.picking.sale_id`,
+champ standard du module `sale_stock`) — seul `picking_id` (non
+`readonly`) survit de façon fiable à la sauvegarde côté client ; Odoo
+recalcule le reste côté serveur, sans dépendre de ce que le client
+retransmet.
+
 Tests exécutés (moteur de clustering uniquement, pur Python) :
 regroupement par similarité, seuil minimal, plafond de bacs, règle
 fair-play, déterminisme — tous passés. Le wizard lui-même (collecte des
