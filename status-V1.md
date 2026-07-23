@@ -51,7 +51,8 @@ Voir `CLAUDE.md` § Préparation groupée et `docs/specs_preparation_groupee.md`
 - `stock.quant.package` renommé `stock.package` en Odoo 19 (`KeyError` au clic sur "Créer les lots") — corrigé.
 - "Recalculer les suggestions" écrasait les numéros de lot déjà ajustés à la main — corrigé (n'ajoute plus que les commandes pas encore listées).
 - Paramètres réglables : `res.config.settings` abandonné (Odoo l'ouvre dans la coquille complète de l'app Réglages, impossible de revenir en arrière) — remplacé par un assistant dédié (`x_batch_picking_settings_wizard`).
-- Aucun mécanisme standard ne reliait le lot Pick à ses transferts Pack (ni Batch ni Wave Transfers) — l'opérateur de tri devait repasser par chaque commande individuellement. Corrigé : un 2e `stock.picking.batch` ("Tri — lot N") est désormais créé automatiquement pour les transferts Pack des mêmes commandes.
+- Aucun mécanisme standard ne relie le lot Pick à ses transferts Pack (ni Batch ni Wave Transfers). Décision produit (2026-07-22) : pas de code pour ça — un 2e lot automatique et le module OCA `stock_picking_show_linked` ont été envisagés puis écartés (complexité/dépendance externe pas prioritaires). L'opérateur de tri retrouve le transfert Pack via une recherche standard (Inventaire > Transferts, filtre "Document d'origine").
+- Besoin confirmé pour l'app préparateur future : scan code-barres (Pick + Pack, éliminer les erreurs de frappe) — ni l'app Barcode d'Odoo (Enterprise) ni son alternative OCA (arrêtée à la 16.0) ne conviennent pour Odoo 19 Community ; à construire dans l'app elle-même le moment venu (voir `docs/specs_preparation_groupee.md` § 6.3).
 
 **Reste à faire** : valider le parcours Pick → Pack (zone de tri, avec le 2e lot) → Ship en conditions réelles (processus détaillé donné à l'utilisateur, pas encore testé de bout en bout avec ce dernier correctif) ; calibrer les paramètres par défaut avec des données réelles.
 

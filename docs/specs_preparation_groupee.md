@@ -128,24 +128,36 @@ totale et silencieuse est jugée risquée. Bouton "Créer les lots" :
 matérialise les `stock.picking.batch` réels (un par valeur distincte de
 `batch_index`) + un `stock.package` par commande.
 
-**Trouvaille en test réel (2026-07-22) — 2e lot pour l'étape Pack** :
+**Navigation Pick → Pack — trouvaille en test réel (2026-07-22), puis décision produit** :
 en testant le parcours de bout en bout, aucun mécanisme standard ne relie
 le lot de collecte (Pick) à ses transferts Pack correspondants une fois
 la collecte validée — ni Batch ni Wave Transfers (confirmé contre la doc
 Odoo officielle : "Wave transfers can only contain product lines from
 transfers of the same operation type", donc jamais Pick+Pack mélangés).
-Sans correctif, l'opérateur de tri devait retrouver chaque commande une
-par une via la commande elle-même (`sale.order` → smart button
-"Livraison"), perdant tout l'intérêt du regroupement pour cette 2e étape.
-**Corrigé** : `action_create_batches()` résout aussi, pour les mêmes
-commandes, leurs transferts Pack (via `order.warehouse_id.pack_type_id`,
-même schéma que `pick_type_id`) et les regroupe dans un **second**
-`stock.picking.batch` ("Tri — lot N", vs "Collecte — lot N" pour le Pick)
-— toujours du standard, une 2e utilisation de `stock.picking.batch`, pas
-de nouveau modèle. Un module OCA (`stock_picking_show_linked`,
-`stock-logistics-warehouse`) existe pour naviguer d'un picking chaîné à
-l'autre via un bouton, mais reste une navigation commande par commande —
-ne remplace pas la vue de liste par lot recherchée ici.
+Sans rien faire, l'opérateur de tri doit retrouver chaque commande une par
+une. Trois options comparées :
+
+1. **Un 2e `stock.picking.batch` automatique pour le Pack** (implémenté
+   puis retiré) : `action_create_batches()` aurait résolu, pour les mêmes
+   commandes, leurs transferts Pack (via `order.warehouse_id.pack_type_id`,
+   même schéma que `pick_type_id`) et les aurait regroupés dans un second
+   lot ("Tri — lot N"). Toujours du standard (une 2e utilisation de
+   `stock.picking.batch`, pas de nouveau modèle), mais complexité jugée
+   pas prioritaire à ce stade par l'utilisateur — retiré.
+2. **Module OCA `stock_picking_show_linked`** (dépôt
+   `stock-logistics-warehouse`, confirmé porté en 19.0, AGPL-3, dépend
+   uniquement de `stock`) : bouton de navigation d'un picking chaîné à
+   l'autre. Écarté : reste une navigation commande par commande (pas une
+   vue de liste par lot), et ajoute une dépendance externe à récupérer et
+   déployer (pas juste `-u echango_order`) pour un gain jugé secondaire.
+3. **Rien — recherche standard, retenue pour cette v1** : Inventaire >
+   Transferts, filtrer sur "Document d'origine" = référence de la
+   commande. Vérifié en test réel : `stock.picking.origin` est un simple
+   champ texte, pas cliquable ni dans la liste des transferts d'un lot, ni
+   sur la fiche d'un transfert individuel — mais la recherche reste rapide
+   (2 clics) et ne nécessite aucun code ni dépendance. Décision produit
+   (2026-07-22) : suffisant pour l'usage back-office actuel, à revisiter
+   si le volume de commandes rend cette recherche manuelle trop lente.
 
 **Paramètres réglables** (`ir.config_parameter`, `data/batch_picking_data.xml`
 — pas de nouveau modèle pour quelques scalaires) :
