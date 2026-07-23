@@ -49,6 +49,7 @@ class CartState extends ChangeNotifier {
   double _amountTotal = 0;
   double _discount = 0;
   String? _verificationState;
+  String? _state;
 
   List<CartLine> get lines => _lines;
   double get amountSubtotal => _amountSubtotal;
@@ -63,6 +64,17 @@ class CartState extends ChangeNotifier {
   String? get verificationState => _verificationState;
   int get itemCount => _lines.length;
   bool get isEmpty => _lines.isEmpty;
+
+  /// `true` tant que le devis courant est un vrai brouillon (`state ==
+  /// 'draft'`) — bug signalé par l'utilisateur (2026-07-23) : une fois
+  /// confirmée (`state == 'sent'`), la commande reste volontairement "le
+  /// panier courant" côté serveur (modifiable tant qu'un opérateur ne l'a
+  /// pas prise en charge, voir CLAUDE.md § Statuts de commande), mais ne
+  /// doit plus jamais être présentée comme panier actif côté app.
+  /// `CartBar`/`CartScreen` doivent se fier à ceci plutôt qu'à
+  /// `itemCount`/`isEmpty` seuls pour décider de s'afficher.
+  bool get isDraft => _state == 'draft';
+  bool get hasActiveCart => isDraft && _lines.isNotEmpty;
 
   CartLine? _lineForProduct(int productId) {
     for (final line in _lines) {
@@ -84,6 +96,7 @@ class CartState extends ChangeNotifier {
     _amountTotal = (payload['amount_total'] as num?)?.toDouble() ?? 0;
     _discount = (payload['discount'] as num?)?.toDouble() ?? 0;
     _verificationState = payload['verification_state'] as String?;
+    _state = payload['state'] as String?;
     notifyListeners();
   }
 
@@ -92,28 +105,26 @@ class CartState extends ChangeNotifier {
   /// ailleurs dans l'app (cf. CLAUDE.md § Gestion des erreurs).
   Future<void> refresh() async => _applyPayload(await _api.getCart());
 
-  /// Réinitialise l'état localement, SANS appel serveur — bug signalé par
-  /// l'utilisateur (2026-07-23) : `CartBar` continuait d'afficher le total
-  /// d'une commande qui vient d'être confirmée. Cause : le devis passe en
-  /// `state = 'sent'` à la confirmation mais reste volontairement "le
+  /// Réinitialise l'état localement, SANS appel serveur — masque
+  /// `CartBar` instantanément juste après une confirmation réussie, sans
+  /// attendre l'aller-retour réseau d'un `refresh()`. Complète (ne
+  /// remplace pas) `isDraft`/`hasActiveCart` : le devis passe en
+  /// `state = 'sent'` à la confirmation et reste volontairement "le
   /// panier courant" côté serveur (`cart_controller.py._cart_order()`,
   /// domaine `draft`/`sent` — le client peut encore y ajouter des
   /// articles tant qu'un opérateur ne l'a pas pris en charge, voir
-  /// CLAUDE.md § Statuts de commande). Un `refresh()` juste après la
-  /// confirmation re-décrit donc cette même commande (même en apparence
-  /// un résidu, alors que c'est la définition serveur qui s'applique
-  /// correctement) — décision produit : l'app doit quand même la traiter
-  /// comme "panier vide" immédiatement après confirmation, uniquement
-  /// côté affichage. Le prochain vrai ajout resynchronise l'état correct
-  /// via `add()` (qui retourne toujours le panier serveur à jour, y
-  /// compris les articles de la commande déjà confirmée si le client en
-  /// ajoute un nouveau) — aucun risque de désynchronisation durable.
+  /// CLAUDE.md § Statuts de commande) — un `refresh()` ultérieur (ex.
+  /// ouverture de l'écran Panier) re-décrira correctement cette même
+  /// commande, mais `hasActiveCart` restera `false` puisque `state !=
+  /// 'draft'`, donc `CartBar` reste masquée même après ce refresh. Le
+  /// prochain vrai ajout via `add()` resynchronise l'état serveur exact.
   void clearLocally() {
     _lines = [];
     _amountSubtotal = 0;
     _amountTotal = 0;
     _discount = 0;
     _verificationState = null;
+    _state = null;
     notifyListeners();
   }
 

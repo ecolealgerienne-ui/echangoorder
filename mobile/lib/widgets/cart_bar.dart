@@ -20,7 +20,12 @@ class CartBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartState>();
-    if (cart.itemCount <= 0) return const SizedBox.shrink();
+    // `hasActiveCart` (pas `itemCount` seul) — bug signalé par l'utilisateur
+    // (2026-07-23) : une commande déjà confirmée (`state != 'draft'`) reste
+    // "le panier courant" côté serveur (modifiable pré-prise en charge,
+    // voir CLAUDE.md § Statuts de commande) mais ne doit plus jamais être
+    // présentée comme panier actif ici, même si elle a des lignes.
+    if (!cart.hasActiveCart) return const SizedBox.shrink();
 
     final tokens = AppColorTokens.of(context);
     // `IntrinsicHeight` (bug trouvé par l'utilisateur, 2026-07-21) : tant

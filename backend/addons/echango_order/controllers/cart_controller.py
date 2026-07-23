@@ -63,7 +63,7 @@ class EchangoCartController(http.Controller):
         if not order:
             return {
                 "order_id": None, "lines": [], "amount_subtotal": 0.0, "amount_total": 0.0, "discount": 0.0,
-                "verification_state": verification_state,
+                "verification_state": verification_state, "state": None,
             }
         # Promotions automatiques (badge "Promo") : `_update_programs_and_rewards`
         # seul (module standard `sale_loyalty`) recalcule l'éligibilité mais
@@ -131,6 +131,15 @@ class EchangoCartController(http.Controller):
             "amount_total": order.amount_total,
             "discount": order.reward_amount,
             "verification_state": verification_state,
+            # Bug signalé par l'utilisateur (2026-07-23) : CartBar affichait
+            # une commande déjà confirmée comme "panier actif". La commande
+            # reste volontairement modifiable après confirmation
+            # (`state='sent'`, tant qu'un opérateur ne l'a pas prise en
+            # charge — voir CLAUDE.md § Statuts de commande), mais l'app ne
+            # doit plus jamais la présenter comme panier une fois confirmée.
+            # `state` permet à l'app de faire la distinction (voir
+            # CartState.isDraft) sans changer ce comportement serveur.
+            "state": order.state,
         }
 
     @http.route("/echango/cart", type="jsonrpc", auth="user", methods=["POST"], csrf=False)
