@@ -14,6 +14,7 @@ class LegalDocumentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColorTokens.of(context);
     return Scaffold(
       appBar: AppBar(title: Text('legal.$docType'.tr())),
       body: SafeArea(
@@ -25,12 +26,12 @@ class LegalDocumentScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: tokens.surface,
                   borderRadius: BorderRadius.circular(AppLayout.radius),
                 ),
                 child: Text(
                   'legal.draftNotice'.tr(),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens.textMuted),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -38,11 +39,11 @@ class LegalDocumentScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'legal.version'.tr(),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens.textMuted),
               ),
               Text(
                 'legal.updatedOn'.tr(),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens.textMuted),
               ),
             ],
           ),

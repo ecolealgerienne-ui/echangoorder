@@ -26,6 +26,26 @@ from .session_utils import require_fresh_session
 # rempli automatiquement à la création) : un opérateur qui s'assigne le bon
 # signale "je m'en occupe" — c'est ce qui distingue "in_progress" de
 # "pending" ci-dessous, sans rien ajouter au modèle.
+#
+# Préparation groupée (batch picking + zone de tri, décision produit
+# 2026-07, voir CLAUDE.md § Préparation groupée) : `_prep_status` élargi
+# pour regarder TOUS les pickings actifs de la commande (Pick/Pack/Ship sur
+# un entrepôt configuré en 3 étapes), pas seulement le dernier "outgoing" —
+# corrige un blocage trouvé en revue technique avant tout codage : sur une
+# route à 3 étapes, Pick et Pack sont typés "internal", et le picking Ship
+# ("outgoing") reste `waiting`/`confirmed` (jamais `assigned`) tant que le
+# tri (Pack) n'est pas validé. Avec l'ancien filtre (seul "outgoing"
+# regardé), le statut serait resté bloqué sur "pending" pendant toute la
+# collecte ET le tri — précisément la phase que cette fonctionnalité doit
+# valoriser. "completed" reste dérivé du seul picking Ship (dernier maillon
+# inchangé) ; "in_progress" se déclenche dès qu'un opérateur s'assigne
+# N'IMPORTE QUEL picking de la chaîne (Pick, Pack ou Ship), pas besoin
+# d'attendre le tri — décision produit : pas de nouveau palier de statut
+# app pour "en cours de tri", perte de précision assumée plutôt que
+# d'étendre l'app mobile dans cette passe. Rétrocompatible : sur un
+# entrepôt resté à 1 étape (comportement historique), `pickings` ne
+# contient que le picking "outgoing" — comportement strictement identique
+# à avant.
 
 
 class EchangoOrderController(http.Controller):
@@ -42,19 +62,19 @@ class EchangoOrderController(http.Controller):
     """
 
     def _prep_status(self, order):
-        """F08 — voir le commentaire au-dessus de `_PENDING_PICKING_STATES`.
-        Une commande peut avoir plusieurs `stock.picking` dans des cas
-        avancés (reliquat partiel...) — on ne s'intéresse ici qu'au
-        principal bon de livraison sortant, le plus récent (`id desc`),
-        suffisant pour la simplicité recherchée en Phase 1 (pas de vrai
-        suivi préparateur multi-étapes)."""
-        picking = order.picking_ids.filtered(lambda p: p.picking_type_id.code == "outgoing")
-        picking = picking.sorted("id", reverse=True)[:1]
-        if not picking or picking.state == "cancel":
+        """F08 — voir le commentaire au-dessus de la classe. Regarde tous
+        les pickings actifs de la commande (pas seulement le dernier
+        "outgoing") pour rester correct sur un entrepôt à 3 étapes
+        (Pick+Pack+Ship, préparation groupée) comme sur l'historique à 1
+        étape."""
+        pickings = order.picking_ids.filtered(lambda p: p.state != "cancel")
+        if not pickings:
             return None
-        if picking.state == "done":
+        outgoing = pickings.filtered(lambda p: p.picking_type_id.code == "outgoing")
+        outgoing = outgoing.sorted("id", reverse=True)[:1]
+        if outgoing and outgoing.state == "done":
             return "completed"
-        if picking.state == "assigned" and picking.user_id:
+        if any(p.state == "assigned" and p.user_id for p in pickings):
             return "in_progress"
         return "pending"
 

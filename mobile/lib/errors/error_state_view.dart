@@ -9,6 +9,12 @@ import 'app_messenger.dart';
 /// injoignable) ET états vides (panier vide, aucune commande, aucun
 /// résultat — cf. specs UX §"définir les états vides pour chaque écran").
 /// Un seul widget pour garder un rendu cohérent partout dans l'app.
+///
+/// L'icône est présentée dans un badge circulaire teinté (direction Casbah,
+/// voir `docs/design_direction.md`) plutôt qu'affichée nue — un ensemble
+/// d'illustrations dédiées par contexte (panier vide, aucun résultat...)
+/// est envisageable mais nécessite des assets graphiques qui n'existent pas
+/// encore ; ce badge est l'amélioration réalisable sans eux.
 class ErrorStateView extends StatelessWidget {
   final IconData icon;
   final String titleKey;
@@ -46,6 +52,7 @@ class ErrorStateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedMessage = message ?? messageKey?.tr();
+    final tokens = AppColorTokens.of(context);
 
     return Center(
       child: Padding(
@@ -53,7 +60,13 @@ class ErrorStateView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: AppColors.textMuted),
+            Container(
+              width: 96,
+              height: 96,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: tokens.surface, shape: BoxShape.circle),
+              child: Icon(icon, size: 40, color: tokens.primary),
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
               titleKey.tr(),
@@ -65,7 +78,7 @@ class ErrorStateView extends StatelessWidget {
               Text(
                 resolvedMessage,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.textMuted),
               ),
             ],
             if (onRetry != null) ...[

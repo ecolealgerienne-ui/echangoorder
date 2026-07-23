@@ -108,7 +108,10 @@ class _CheckoutTimeslotScreenState extends State<CheckoutTimeslotScreen> {
       return ListTile(
         enabled: false,
         title: Text(formatSlotRange(slot.start, slot.end)),
-        trailing: Text('errors.checkout.slot_full'.tr(), style: const TextStyle(color: AppColors.textMuted)),
+        trailing: Text(
+          'errors.checkout.slot_full'.tr(),
+          style: TextStyle(color: AppColorTokens.of(context).textMuted),
+        ),
       );
     }
     return RadioListTile<DateTime>(

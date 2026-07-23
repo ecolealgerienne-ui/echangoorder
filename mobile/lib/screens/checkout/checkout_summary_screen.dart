@@ -88,7 +88,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
             notes: mode == ReceptionMode.delivery ? checkout.notes : null,
           );
       if (!mounted) return;
-      await context.read<CartState>().refresh();
+      context.read<CartState>().clearLocally();
       if (!mounted) return;
       context.read<CheckoutState>().reset();
       context.go('/cart/checkout/confirmation/${result['order_ref']}', extra: result);
@@ -114,6 +114,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
     final checkout = context.watch<CheckoutState>();
     final mode = checkout.receptionMode;
     final slot = checkout.slotStart;
+    final tokens = AppColorTokens.of(context);
 
     return Scaffold(
       appBar: AppBar(title: Text('screens.CheckoutSummary.title'.tr())),
@@ -165,7 +166,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   '${'checkout.promoAppliedPrefix'.tr()} $_appliedPromoCode',
-                  style: const TextStyle(color: AppColors.primary),
+                  style: TextStyle(color: tokens.primary),
                 ),
               ],
               const SizedBox(height: AppSpacing.md),
@@ -182,7 +183,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('checkout.discountLabel'.tr()),
-                    Text(formatPrice(context, cart.discount), style: const TextStyle(color: AppColors.promo)),
+                    Text(formatPrice(context, cart.discount), style: TextStyle(color: tokens.promo)),
                   ],
                 ),
               ],

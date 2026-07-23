@@ -7,3 +7,5 @@ from . import delivery_zone
 from . import rate_limit
 from . import timeslot_capacity
 from . import pin_reset_wizard
+from . import batch_picking_wizard
+from . import batch_picking_settings_wizard

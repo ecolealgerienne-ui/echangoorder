@@ -1,5 +1,6 @@
 {
   "common": {
+    "appName": "Echango Order",
     "next": "Suivant",
     "back": "Retour",
     "skip": "Passer",
@@ -34,8 +35,6 @@
   },
   "nav": {
     "home": "Accueil",
-    "catalog": "Catalogue",
-    "cart": "Panier",
     "profile": "Profil"
   },
   "checkout": {
@@ -61,7 +60,8 @@
   },
   "cart": {
     "subtotal": "Sous-total",
-    "total": "Total"
+    "total": "Total",
+    "viewCart": "Voir mon panier"
   },
   "order": {
     "confirmCancel": "Confirmer l'annulation",
@@ -188,13 +188,13 @@
     "useGpsLocation": "Utiliser ma position GPS",
     "retry": "Réessayer",
     "sendPinResetRequest": "Envoyer la demande",
-    "browseCatalog": "Voir le catalogue",
     "loadMore": "Charger plus"
   },
   "catalog": {
     "outOfStock": "Épuisé",
     "onPromo": "Promo",
-    "onPromoPercent": "-{percent}%"
+    "onPromoPercent": "-{percent}%",
+    "allCategories": "Tous"
   },
   "emptyStates": {
     "cartTitle": "Votre panier est vide",
@@ -206,8 +206,6 @@
     "searchMessage": "Essayez avec un autre mot-clé.",
     "productsTitle": "Aucun produit disponible",
     "productsMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour.",
-    "categoriesTitle": "Aucune catégorie disponible",
-    "categoriesMessage": "Revenez plus tard, notre catalogue est en cours de mise à jour.",
     "favoritesTitle": "Aucun favori pour l'instant",
     "favoritesMessage": "Vos produits commandés s'ajoutent ici automatiquement — vous pouvez aussi en ajouter vous-même."
   },
@@ -246,10 +244,6 @@
     "Login": { "title": "Se connecter", "subtitle": "Connexion — F02" },
     "ForgotPin": { "title": "PIN oublié", "subtitle": "Réinitialisation PIN — F02" },
     "Reauth": { "title": "Session expirée", "subtitle": "Ré-authentification par PIN — sécurité" },
-    "Home": { "title": "Accueil", "subtitle": "Accueil — F03" },
-    "Catalog": { "title": "Catalogue", "subtitle": "Catégories — F04" },
-    "CategoryProducts": { "title": "Produits", "subtitle": "Produits par catégorie — F04" },
-    "Search": { "title": "Rechercher", "subtitle": "Recherche — F04" },
     "ProductDetail": { "title": "Fiche produit", "subtitle": "Fiche produit — F05" },
     "Cart": { "title": "Mon Panier", "subtitle": "Panier — F06" },
     "CheckoutReceptionMode": { "title": "Réception", "subtitle": "Mode de réception — F07" },

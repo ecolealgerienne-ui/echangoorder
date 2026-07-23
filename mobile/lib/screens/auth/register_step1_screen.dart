@@ -57,7 +57,7 @@ class _RegisterStep1ScreenState extends State<RegisterStep1Screen> {
     return ScreenPlaceholder(
       screenKey: 'RegisterStep1',
       actions: [
-        PlaceholderAction(label: 'common.continue'.tr(), onPressed: _submit),
+        PlaceholderAction(label: () => 'common.continue'.tr(), onPressed: _submit),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -331,7 +331,7 @@ class _AddressFormScreenState extends State<_AddressFormScreen> {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   '📍 ${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColorTokens.of(context).textMuted),
                 ),
               ],
               const SizedBox(height: AppSpacing.md),

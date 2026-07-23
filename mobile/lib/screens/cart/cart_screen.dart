@@ -13,6 +13,8 @@ import '../../state/checkout_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/currency.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/pressable_scale.dart';
+import '../../widgets/shimmer_loader.dart';
 
 /// F06 — Panier : reflète le devis Odoo (`sale.order` brouillon) du
 /// client connecté, voir `state/cart_state.dart`. Pas encore de panier
@@ -85,7 +87,7 @@ class _CartScreenState extends State<CartScreen> {
         child: !isAuthenticated
             ? _emptyState(context)
             : _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const _CartLinesSkeleton()
                 : _error != null
                     ? ErrorStateView.forError(_error!, onRetry: _load)
                     : cart.isEmpty
@@ -96,27 +98,19 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _emptyState(BuildContext context) {
-    return Column(
-      children: [
-        const Expanded(
-          child: ErrorStateView(
-            icon: Icons.shopping_cart_outlined,
-            titleKey: 'emptyStates.cartTitle',
-            messageKey: 'emptyStates.cartMessage',
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: AppButton(
-            label: 'actions.browseCatalog'.tr(),
-            onPressed: () => context.go('/catalog'),
-          ),
-        ),
-      ],
+    // Demande utilisateur (2026-07-20) : bouton "Voir le catalogue" retiré —
+    // le panier vide est déjà accessible en un tap depuis l'onglet
+    // Catalogue de la barre de navigation, redondant avec un bouton dédié
+    // ici.
+    return const ErrorStateView(
+      icon: Icons.shopping_cart_outlined,
+      titleKey: 'emptyStates.cartTitle',
+      messageKey: 'emptyStates.cartMessage',
     );
   }
 
   Widget _cartContent(BuildContext context, CartState cart) {
+    final tokens = AppColorTokens.of(context);
     return Column(
       children: [
         Expanded(
@@ -134,8 +128,14 @@ class _CartScreenState extends State<CartScreen> {
         ),
         Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: AppColors.border)),
+          decoration: BoxDecoration(
+            color: tokens.surface,
+            // Barre d'action "ancrée" façon feuille (direction Casbah,
+            // phase D) : ombre portée vers le haut plutôt qu'un simple
+            // filet, pour la détacher du contenu qui défile derrière. Noir
+            // neutre à faible opacité (pas un token clair/sombre dédié) :
+            // se lit correctement dans les deux thèmes.
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 16, offset: const Offset(0, -4))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -146,7 +146,7 @@ class _CartScreenState extends State<CartScreen> {
                 _AmountRow(
                   label: 'checkout.discountLabel'.tr(),
                   amount: cart.discount,
-                  color: AppColors.promo,
+                  color: tokens.promo,
                 ),
               ],
               const SizedBox(height: AppSpacing.xs),
@@ -163,7 +163,7 @@ class _CartScreenState extends State<CartScreen> {
                         ? AppError.authAccountRejected
                         : AppError.authAccountPendingVerification,
                   )),
-                  style: const TextStyle(color: AppColors.danger),
+                  style: TextStyle(color: tokens.danger),
                 ),
               ],
               const SizedBox(height: AppSpacing.sm),
@@ -198,7 +198,7 @@ class _AmountRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = (emphasize
             ? Theme.of(context).textTheme.titleMedium
-            : Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted))
+            : Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColorTokens.of(context).textMuted))
         ?.copyWith(color: color);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -226,55 +226,106 @@ class _CartLineTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final qtyLabel = line.uom == null || line.uom!.isEmpty ? '${line.qty}' : '${line.qty} ${line.uom}';
+    final tokens = AppColorTokens.of(context);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 64,
-          height: 64,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppLayout.radius),
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: tokens.surface,
+        borderRadius: BorderRadius.circular(AppLayout.radius),
+        boxShadow: AppElevation.of(context),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: tokens.background,
+              borderRadius: BorderRadius.circular(AppLayout.radius),
+            ),
+            child: line.imageBase64 != null
+                ? Image.memory(base64Decode(line.imageBase64!), fit: BoxFit.cover)
+                : Icon(Icons.image_not_supported_outlined, color: tokens.textMuted),
           ),
-          child: line.imageBase64 != null
-              ? Image.memory(base64Decode(line.imageBase64!), fit: BoxFit.cover)
-              : const Icon(Icons.image_not_supported_outlined, color: AppColors.textMuted),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(line.name, style: Theme.of(context).textTheme.bodyMedium),
-              Text(
-                '${formatPrice(context, line.unitPrice)}${line.uom == null || line.uom!.isEmpty ? '' : ' / ${line.uom}'}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: line.qty > 1 ? () => onDecrement(line) : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                  ),
-                  Text(qtyLabel, style: Theme.of(context).textTheme.bodyMedium),
-                  IconButton(
-                    onPressed: () => onIncrement(line),
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => onRemove(line),
-                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-                  ),
-                ],
-              ),
-            ],
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(line.name, style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  '${formatPrice(context, line.unitPrice)}${line.uom == null || line.uom!.isEmpty ? '' : ' / ${line.uom}'}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  children: [
+                    PressableScale(
+                      enabled: line.qty > 1,
+                      child: IconButton(
+                        onPressed: line.qty > 1 ? () => onDecrement(line) : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                      ),
+                    ),
+                    AnimatedSwitcher(
+                      duration: AppMotion.fast,
+                      transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                      child: Text(qtyLabel, key: ValueKey(qtyLabel), style: Theme.of(context).textTheme.bodyMedium),
+                    ),
+                    PressableScale(
+                      child: IconButton(
+                        onPressed: () => onIncrement(line),
+                        icon: const Icon(Icons.add_circle_outline),
+                      ),
+                    ),
+                    const Spacer(),
+                    PressableScale(
+                      child: IconButton(
+                        onPressed: () => onRemove(line),
+                        icon: Icon(Icons.delete_outline, color: tokens.danger),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Squelette chatoyant pendant le chargement du panier (direction Casbah,
+/// phase D) — remplace le spinner générique.
+class _CartLinesSkeleton extends StatelessWidget {
+  const _CartLinesSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      itemCount: 4,
+      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) => const Row(
+        children: [
+          ShimmerBox(width: 64, height: 64),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ShimmerBox(width: double.infinity, height: 16),
+                SizedBox(height: AppSpacing.xs),
+                ShimmerBox(width: 100, height: 14),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

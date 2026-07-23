@@ -23,14 +23,15 @@ class AppMessenger {
   /// "Réessayer" optionnel (specs §4.4 : "retry automatique sur échec API" —
   /// ici le point d'accroche manuel une fois l'appel API réel branché).
   static void showError(BuildContext context, AppError error, {VoidCallback? onRetry}) {
+    final tokens = AppColorTokens.of(context);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(messageFor(error)),
-          backgroundColor: AppColors.danger,
+          backgroundColor: tokens.danger,
           action: onRetry != null
-              ? SnackBarAction(label: 'actions.retry'.tr(), textColor: AppColors.background, onPressed: onRetry)
+              ? SnackBarAction(label: 'actions.retry'.tr(), textColor: tokens.background, onPressed: onRetry)
               : null,
         ),
       );

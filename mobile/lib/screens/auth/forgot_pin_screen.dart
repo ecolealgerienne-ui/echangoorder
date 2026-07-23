@@ -74,9 +74,9 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
     return ScreenPlaceholder(
       screenKey: 'ForgotPin',
       actions: [
-        PlaceholderAction(label: 'actions.sendPinResetRequest'.tr(), onPressed: _submit),
+        PlaceholderAction(label: () => 'actions.sendPinResetRequest'.tr(), onPressed: _submit),
         PlaceholderAction(
-          label: 'common.back'.tr(),
+          label: () => 'common.back'.tr(),
           onPressed: () => context.pop(),
           variant: AppButtonVariant.secondary,
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'pressable_scale.dart';
 
 enum AppButtonVariant { primary, secondary, danger }
 
@@ -22,13 +23,14 @@ class AppButton extends StatelessWidget {
       child: Text(label, textAlign: TextAlign.center),
     );
 
+    final tokens = AppColorTokens.of(context);
     final Widget button = switch (variant) {
       AppButtonVariant.primary => ElevatedButton(onPressed: onPressed, child: child),
       AppButtonVariant.secondary => OutlinedButton(onPressed: onPressed, child: child),
       AppButtonVariant.danger => ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.danger,
-            foregroundColor: AppColors.background,
+            backgroundColor: tokens.danger,
+            foregroundColor: tokens.onDanger,
             minimumSize: const Size.fromHeight(AppLayout.minTouchHeight),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppLayout.radius)),
           ),
@@ -37,6 +39,9 @@ class AppButton extends StatelessWidget {
         ),
     };
 
-    return Padding(padding: const EdgeInsets.only(top: AppSpacing.sm), child: button);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: PressableScale(enabled: onPressed != null, child: button),
+    );
   }
 }

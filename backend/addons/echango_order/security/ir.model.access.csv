@@ -7,3 +7,6 @@ access_x_product_favorite_user,x_product_favorite.user,model_x_product_favorite,
 access_x_rate_limit_user,x_rate_limit.user,model_x_rate_limit,base.group_user,1,1,1,1
 access_x_timeslot_capacity_user,x_timeslot_capacity.user,model_x_timeslot_capacity,base.group_user,1,1,1,1
 access_x_pin_reset_wizard_system,x_pin_reset_wizard.system,model_x_pin_reset_wizard,base.group_system,1,1,1,1
+access_x_batch_picking_wizard_user,x_batch_picking_wizard.user,model_x_batch_picking_wizard,base.group_user,1,1,1,1
+access_x_batch_picking_wizard_line_user,x_batch_picking_wizard_line.user,model_x_batch_picking_wizard_line,base.group_user,1,1,1,1
+access_x_batch_picking_settings_wizard_user,x_batch_picking_settings_wizard.user,model_x_batch_picking_settings_wizard,base.group_user,1,1,1,1

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../errors/app_error.dart';
 import '../errors/app_messenger.dart';
@@ -24,6 +25,34 @@ Future<void> addProductToCart(BuildContext context, int productId, {num qty = 1,
       );
     }
   }
+}
+
+/// Ajout rapide depuis une grille produit (Accueil/Recherche/Favoris,
+/// bouton "Acheter"/`+`) : un produit qui a plusieurs variantes
+/// (couleur/taille...) ne peut pas être ajouté à l'aveugle avec la
+/// variante par défaut — signalé par l'utilisateur, l'ajout rapide ne
+/// proposait jamais le choix, contrairement à la fiche produit (F05).
+/// `product_variant_count` (champ standard Odoo, > 1 s'il y a au moins un
+/// attribut avec plusieurs valeurs à combiner) permet de le détecter sans
+/// charger `attribute_line_ids` juste pour cette vérification. Redirige
+/// vers la fiche produit (où le sélecteur de variante existe déjà) plutôt
+/// que de dupliquer ce sélecteur dans un dialogue de la grille — reste un
+/// ajout direct, inchangé, pour l'immense majorité des produits sans
+/// variante.
+Future<void> addProductOrOpenDetail(
+  BuildContext context,
+  Map<String, dynamic> product,
+  String detailRoute,
+) async {
+  final variantCount = (product['product_variant_count'] as num?)?.toInt() ?? 1;
+  if (variantCount > 1) {
+    // `extra: product` (2026-07-21, demande utilisateur) : la grille a déjà
+    // nom/prix/image/stock, transmis pour un affichage instantané de la
+    // fiche produit — voir `ProductDetailScreen.initialData`.
+    context.push(detailRoute, extra: product);
+    return;
+  }
+  await addProductToCart(context, product['id'] as int);
 }
 
 /// Diminue d'une unité la quantité déjà au panier pour ce produit (sans

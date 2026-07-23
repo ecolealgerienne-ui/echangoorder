@@ -54,3 +54,53 @@ String? prepStatusLabel(Map<String, dynamic> order) {
       return null;
   }
 }
+
+/// Étapes de la timeline visuelle de suivi (direction Casbah, phase E —
+/// voir `docs/design_direction.md`), avec l'index de l'étape atteinte.
+/// Réutilise les mêmes clés de traduction que [prepStatusLabel] (aucune
+/// nouvelle chaîne) plutôt que d'inventer des libellés de timeline
+/// distincts qui feraient doublon. `null` si la commande est annulée — pas
+/// de progression à afficher dans ce cas, voir l'appelant.
+class OrderTimelineProgress {
+  final List<String> steps;
+  final int currentIndex;
+
+  const OrderTimelineProgress({required this.steps, required this.currentIndex});
+}
+
+OrderTimelineProgress? orderTimelineProgress(Map<String, dynamic> order) {
+  final state = order['state'] as String?;
+  if (state == 'cancel') return null;
+
+  final isPickup = order['x_reception_mode'] == 'pickup';
+  final prepStatus = order['prep_status'] as String?;
+
+  final steps = [
+    'order.statusPendingReview'.tr(),
+    'order.prepPending'.tr(),
+    'order.prepInProgress'.tr(),
+    isPickup ? 'order.prepReadyPickup'.tr() : 'order.prepReadyDelivery'.tr(),
+    if (isPickup) 'order.prepCompletedPickup'.tr() else 'order.outForDelivery'.tr(),
+    if (!isPickup) 'order.delivered'.tr(),
+  ];
+
+  final int currentIndex;
+  if (state == 'sent') {
+    currentIndex = 0;
+  } else if (prepStatus == null || prepStatus == 'pending') {
+    currentIndex = 1;
+  } else if (prepStatus == 'in_progress') {
+    currentIndex = 2;
+  } else if (isPickup) {
+    // prepStatus == 'completed'.
+    currentIndex = order['x_pickup_collected'] == true ? 4 : 3;
+  } else {
+    currentIndex = switch (order['x_delivery_status'] as String?) {
+      'out_for_delivery' => 4,
+      'delivered' => 5,
+      _ => 3,
+    };
+  }
+
+  return OrderTimelineProgress(steps: steps, currentIndex: currentIndex);
+}

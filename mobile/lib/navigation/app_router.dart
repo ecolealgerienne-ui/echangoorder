@@ -8,9 +8,6 @@ import '../screens/auth/register_step1_screen.dart';
 import '../screens/auth/register_step2_screen.dart';
 import '../screens/auth/register_step3_screen.dart';
 import '../screens/cart/cart_screen.dart';
-import '../screens/catalog/catalog_screen.dart';
-import '../screens/catalog/category_products_screen.dart';
-import '../screens/catalog/search_screen.dart';
 import '../screens/checkout/checkout_address_screen.dart';
 import '../screens/checkout/checkout_out_of_zone_screen.dart';
 import '../screens/checkout/checkout_reception_mode_screen.dart';
@@ -35,6 +32,7 @@ import '../screens/system/maintenance_screen.dart';
 import '../screens/vitrine/vitrine_screen.dart';
 import '../state/auth_state.dart';
 import 'main_tab_scaffold.dart';
+import 'sheet_page.dart';
 
 const _publicPaths = [
   '/vitrine',
@@ -108,9 +106,80 @@ GoRouter buildAppRouter(AuthState authState) {
       ),
       // Affiché quand le health-check Odoo (GET /web/health) échoue, une fois branché.
       GoRoute(path: '/maintenance', builder: (context, state) => const MaintenanceScreen()),
+      // Panier flottant persistant (2026-07-20, décision produit) : `/cart`
+      // n'est plus un onglet de la barre de navigation (voir
+      // `navigation/main_tab_scaffold.dart`, `widgets/cart_bar.dart`) — il
+      // reste néanmoins enregistré ici, hors de la coquille à onglets, pour
+      // que ses routes filles `/cart/checkout/*` continuent de se résoudre
+      // (le contenu de `/cart` lui-même n'est affiché qu'en feuille modale,
+      // via `navigation/cart_sheet.dart`, jamais poussé comme route pleine
+      // page — la présence de la route reste nécessaire pour la
+      // hiérarchie de chemins go_router).
+      GoRoute(
+        path: '/cart',
+        builder: (context, state) => const CartScreen(),
+        // Tunnel checkout présenté en feuille (slide-up, coins arrondis,
+        // fond assombri) plutôt qu'en push plein écran classique —
+        // direction Casbah, voir `navigation/sheet_page.dart` et
+        // `docs/design_direction.md` § Phase D.
+        routes: [
+          GoRoute(
+            path: 'checkout/reception-mode',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutReceptionModeScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/address',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutAddressScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/out-of-zone',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutOutOfZoneScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/timeslot',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutTimeslotScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/summary',
+            pageBuilder: (context, state) => sheetPage(state: state, child: const CheckoutSummaryScreen()),
+          ),
+          GoRoute(
+            path: 'checkout/resolve-unavailable',
+            pageBuilder: (context, state) => sheetPage(
+              state: state,
+              child: CheckoutResolveUnavailableScreen(
+                lines: (state.extra as List).cast<Map<String, dynamic>>(),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: 'checkout/confirmation/:orderRef',
+            pageBuilder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return sheetPage(
+                state: state,
+                child: OrderConfirmationScreen(
+                  orderRef: state.pathParameters['orderRef']!,
+                  amountTotal: (extra?['amount_total'] as num?)?.toDouble(),
+                  receptionMode: extra?['reception_mode'] as String?,
+                  slotStart: extra?['slot_start'] as String?,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => MainTabScaffold(navigationShell: navigationShell),
         branches: [
+          // Catalogue (F04) fusionné dans l'Accueil (2026-07-20, demande
+          // utilisateur) : le bandeau catégories de HomeScreen filtre
+          // directement sa propre grille au lieu de naviguer vers un écran
+          // dédié — CatalogScreen/CategoryProductsScreen supprimés (rôle
+          // repris par HomeScreen). SearchScreen supprimé à son tour
+          // (2026-07-21, demande utilisateur) : catalogue plafonné à ~300
+          // produits, le bandeau catégories suffit à filtrer sans recherche
+          // texte dédiée.
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home',
@@ -118,75 +187,16 @@ GoRouter buildAppRouter(AuthState authState) {
               routes: [
                 GoRoute(
                   path: 'product/:productId',
-                  builder: (context, state) =>
-                      ProductDetailScreen(productId: state.pathParameters['productId']!),
-                ),
-              ],
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/catalog',
-              builder: (context, state) => const CatalogScreen(),
-              routes: [
-                GoRoute(
-                  path: 'category/:categoryId',
-                  builder: (context, state) => CategoryProductsScreen(
-                    categoryId: state.pathParameters['categoryId']!,
-                    categoryName: state.extra as String?,
+                  // `extra` (2026-07-21, demande utilisateur) : données déjà
+                  // chargées par l'écran d'origine (grille produits,
+                  // substitut...) transmises pour un affichage instantané —
+                  // voir `ProductDetailScreen.initialData`. `null` si accès
+                  // sans donnée préalable (ex. futur deep link F12) : l'écran
+                  // gère déjà ce cas (spinner classique).
+                  builder: (context, state) => ProductDetailScreen(
+                    productId: state.pathParameters['productId']!,
+                    initialData: state.extra as Map<String, dynamic>?,
                   ),
-                ),
-                GoRoute(path: 'search', builder: (context, state) => const SearchScreen()),
-                GoRoute(
-                  path: 'product/:productId',
-                  builder: (context, state) =>
-                      ProductDetailScreen(productId: state.pathParameters['productId']!),
-                ),
-              ],
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/cart',
-              builder: (context, state) => const CartScreen(),
-              routes: [
-                GoRoute(
-                  path: 'checkout/reception-mode',
-                  builder: (context, state) => const CheckoutReceptionModeScreen(),
-                ),
-                GoRoute(
-                  path: 'checkout/address',
-                  builder: (context, state) => const CheckoutAddressScreen(),
-                ),
-                GoRoute(
-                  path: 'checkout/out-of-zone',
-                  builder: (context, state) => const CheckoutOutOfZoneScreen(),
-                ),
-                GoRoute(
-                  path: 'checkout/timeslot',
-                  builder: (context, state) => const CheckoutTimeslotScreen(),
-                ),
-                GoRoute(
-                  path: 'checkout/summary',
-                  builder: (context, state) => const CheckoutSummaryScreen(),
-                ),
-                GoRoute(
-                  path: 'checkout/resolve-unavailable',
-                  builder: (context, state) => CheckoutResolveUnavailableScreen(
-                    lines: (state.extra as List).cast<Map<String, dynamic>>(),
-                  ),
-                ),
-                GoRoute(
-                  path: 'checkout/confirmation/:orderRef',
-                  builder: (context, state) {
-                    final extra = state.extra as Map<String, dynamic>?;
-                    return OrderConfirmationScreen(
-                      orderRef: state.pathParameters['orderRef']!,
-                      amountTotal: (extra?['amount_total'] as num?)?.toDouble(),
-                      receptionMode: extra?['reception_mode'] as String?,
-                      slotStart: extra?['slot_start'] as String?,
-                    );
-                  },
                 ),
               ],
             ),
@@ -200,8 +210,16 @@ GoRouter buildAppRouter(AuthState authState) {
                 GoRoute(path: 'favorites', builder: (context, state) => const FavoritesScreen()),
                 GoRoute(
                   path: 'product/:productId',
-                  builder: (context, state) =>
-                      ProductDetailScreen(productId: state.pathParameters['productId']!),
+                  // `extra` (2026-07-21, demande utilisateur) : données déjà
+                  // chargées par l'écran d'origine (grille produits,
+                  // substitut...) transmises pour un affichage instantané —
+                  // voir `ProductDetailScreen.initialData`. `null` si accès
+                  // sans donnée préalable (ex. futur deep link F12) : l'écran
+                  // gère déjà ce cas (spinner classique).
+                  builder: (context, state) => ProductDetailScreen(
+                    productId: state.pathParameters['productId']!,
+                    initialData: state.extra as Map<String, dynamic>?,
+                  ),
                 ),
                 GoRoute(path: 'change-pin', builder: (context, state) => const ChangePinScreen()),
                 GoRoute(
