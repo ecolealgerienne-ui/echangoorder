@@ -282,6 +282,15 @@ probablement via de nouveaux contrôleurs dédiés (pas les mêmes que
 - `sale.order` : référence, `x_reception_mode`, `x_creneau` — déjà exposés
   côté client (F08/F09), réutilisables tels quels côté préparateur.
 
+### 6.0 Précédent trouvé dans l'écosystème Odoo (recherche 2026-07-22)
+
+Avant de concevoir l'app préparateur, une recherche a confirmé que l'architecture envisagée ici (backend Odoo + app mobile dédiée scannant en caméra, plutôt que l'app Barcode d'Odoo) correspond à une pratique déjà établie dans l'écosystème, pas une invention isolée :
+
+- **OCA `stock-logistics-shopfloor`** (dépôt `OCA/wms`) : module `shopfloor` (API REST/JSON pour piloter des opérations d'entrepôt au scan) + `shopfloor_mobile` (frontend mobile dédié, séparé du backend) — exactement le schéma "API custom + app mobile propre" retenu ici. Modules notables très proches de ce chantier : `shopfloor_batch_automatic_creation` (création automatique de lots pour le cluster picking — même idée que notre moteur de clustering, en plus générique) et `shopfloor_cluster_picking_repack` (reconstitution des colis de livraison après collecte groupée — exactement notre étape Pack/mise en bac).
+- **Camptocamp "Odoo Moove"** (produit commercial, éditeur historique de l'écosystème OCA) : app de scan configurable avec séquence de scan optimisée par tâche — même direction commerciale.
+
+**Limite pratique** : ce dépôt OCA (comme `stock-logistics-barcode`, voir §6.3) **s'arrête à la version 18.0** — pas encore porté sur Odoo 19, donc pas installable tel quel aujourd'hui. Utile comme **référence de conception** (schéma d'API, découpage des opérations) au moment de concevoir l'app préparateur, pas comme dépendance à installer maintenant.
+
 ### 6.3 Scan code-barres — exigence confirmée (2026-07-22, échange avec l'utilisateur)
 
 Besoin explicite : l'opérateur doit pouvoir **scanner les produits** (pas de saisie manuelle) à deux moments — pendant la collecte groupée (Pick, confirmer chaque article prélevé) et pendant la mise en bac (Pack, affecter au bon `stock.package`) — objectif : éliminer les erreurs de frappe, pas juste un confort.
