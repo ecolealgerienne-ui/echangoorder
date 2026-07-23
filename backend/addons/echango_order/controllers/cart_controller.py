@@ -25,18 +25,24 @@ class EchangoCartController(http.Controller):
     """
 
     def _cart_order(self, create=False):
-        # `sent` inclus (F08, décision produit 2026-07 — voir CLAUDE.md §
-        # Statuts de commande) : une commande déjà "confirmée" côté client
-        # mais pas encore prise en charge par un opérateur (`action_
-        # confirm()` toujours pas appelé, voir `models/sale_order.py`)
-        # reste la commande courante — le client peut continuer à y
-        # ajouter des produits depuis le catalogue, pas seulement pendant
-        # qu'elle est en brouillon. Une fois prise en charge (`state ==
-        # 'sale'`), elle sort de ce domaine et un nouvel achat démarre un
-        # nouveau panier `draft`, comme avant.
+        # `sent` retiré du domaine (rupture nette, décision produit
+        # 2026-07-23, remplace l'essai précédent qui l'incluait) : inclure
+        # `sent` faisait qu'un nouvel ajout au panier depuis le catalogue
+        # s'attachait silencieusement à une commande déjà confirmée mais
+        # pas encore prise en charge par un opérateur — invisible pour le
+        # client (CartBar masquée pour toute commande non `draft`, voir
+        # CartState.hasActiveCart), potentiellement pendant des heures en
+        # conditions réelles. Désormais : le panier courant est
+        # strictement `draft` — une fois confirmée, la commande n'est
+        # plus jamais "le panier", un nouvel ajout démarre systématiquement
+        # une commande brouillon toute neuve. Modifier les détails d'une
+        # commande déjà confirmée (adresse/créneau) reste possible via
+        # `checkout_controller.py.confirm()`, qui garde volontairement son
+        # propre domaine `draft`/`sent` — sujet différent, pas concerné
+        # par ce changement.
         partner = request.env.user.partner_id
         order = request.env["sale.order"].sudo().search(
-            [("partner_id", "=", partner.id), ("state", "in", ("draft", "sent"))],
+            [("partner_id", "=", partner.id), ("state", "=", "draft")],
             order="id desc", limit=1,
         )
         if not order and create:
@@ -50,7 +56,7 @@ class EchangoCartController(http.Controller):
         return request.env["sale.order.line"].sudo().search([
             ("id", "=", line_id),
             ("order_id.partner_id", "=", partner.id),
-            ("order_id.state", "in", ("draft", "sent")),
+            ("order_id.state", "=", "draft"),
         ], limit=1)
 
     def _cart_payload(self, order):
