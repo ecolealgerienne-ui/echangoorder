@@ -95,6 +95,7 @@ Voir `CLAUDE.md` § Préparation groupée et `docs/specs_preparation_groupee.md`
 - [ ] Fournisseur SMS (confirmation après suppression de compte).
 - [ ] Images produit → S3 au déploiement VPS (voir CLAUDE.md § Images produit).
 - [ ] Préparation groupée : seuil de fenêtre de temps compatible, définition de la charge opérateur, calibration des 5 paramètres par défaut, gestion des ruptures de stock en cours de tournée (voir `docs/specs_preparation_groupee.md`).
+- [ ] Montant minimum de commande (idée non tranchée, 2026-07-23) — un seuil en dessous duquel la commande ne peut pas être validée. À trancher : montant exact, uniquement pour la livraison à domicile (rentabilité du déplacement) ou aussi pour le retrait en magasin, message d'erreur si le panier est sous le seuil.
 
 ## 8. Setup / environnement
 
