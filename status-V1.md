@@ -72,6 +72,7 @@ Voir `CLAUDE.md` § Préparation groupée et `docs/specs_preparation_groupee.md`
 | Délai progressif PIN (1/2/4/8s + blocage) | Terminé (code), non testé | `res.users._check_pin`, verrou `SELECT ... FOR UPDATE` (anti race condition sur tentatives parallèles) |
 | Filtrage champs API | Audité | `standard_price` restreint (`groups=`) sur `product.template`/`product.product` — reste du catalogue filtré au niveau des lignes (`ir.rule`) |
 | Rate limiting endpoints publics | Terminé | `x_rate_limit` (fenêtre fixe par IP, verrou anti race condition + contrainte unique), limite additionnelle par numéro sur `auth.login` |
+| Limite de commandes quotidienne (anti-abus) | Non démarré — décidé, pas codé | Max 2 commandes confirmées **non annulées** par jour et par client, décision produit 2026-07-23 (voir CLAUDE.md § Limite de commandes quotidienne) — vérification prévue à `/echango/checkout/confirm` |
 
 ## 6. i18n / RTL (transversal)
 

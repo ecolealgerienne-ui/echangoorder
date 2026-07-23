@@ -188,6 +188,10 @@ Plutôt qu'un service de géocodage externe, un modérateur valide **manuellemen
 - Statusbar + boutons "Valider"/"Rejeter" sur la fiche contact (`views/res_partner_views.xml`) + menu "Clients à valider".
 - Vérifié à `/echango/checkout/confirm` (seule action qui compte) ; l'app avertit dès le Panier pour éviter de remplir tout le tunnel pour rien.
 
+## Limite de commandes quotidienne — anti-abus (décision produit 2026-07-23, à implémenter)
+
+**Décidé, pas encore codé** : maximum **2 commandes confirmées par jour et par client**, pour éviter les abus (spam de commandes). Seules les commandes **non annulées** comptent dans cette limite — une commande annulée (F16) ne bloque pas un nouvel essai le même jour. Vérification prévue à `/echango/checkout/confirm` (même endroit que la vérification de compte ci-dessus), sur le nombre de `sale.order` du client avec `date_order` du jour et `state != 'cancel'`.
+
 ## Statuts de commande (F08)
 
 Cycle de vie côté client en 5-7 étapes, porté par des mécanismes Odoo standards :
