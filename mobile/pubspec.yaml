@@ -1,5 +1,5 @@
-name: echango_order
-description: Echango Order — app mobile client (commande alimentaire, livraison/retrait).
+name: echango_market
+description: Echango Market — app mobile client (commande alimentaire, livraison/retrait).
 publish_to: 'none'
 version: 0.1.0
 

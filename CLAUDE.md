@@ -12,6 +12,8 @@ Echango Order est une app mobile de commande alimentaire (livraison à domicile 
 
 La **Phase 1 (MVP)** ne concerne que l'app mobile client, spécifiée dans `docs/specs_phase1_echango_order.md` (v1.5 — 18 fonctionnalités F00 à F17). **Toujours consulter ces deux documents avant de développer une fonctionnalité** : wireframes, endpoints Odoo attendus, champs custom, critères d'acceptation QA.
 
+**Renommage de marque (décision produit, 2026-07-23)** : l'app s'appelle désormais **Echango Market** côté utilisateur (`common.appName`, `mobile/pubspec.yaml`, bundle ID `com.echangomarket` — voir § Environnement de dev — app mobile) — décidé avant toute publication sur les stores pour éviter un changement de bundle ID a posteriori (casserait la continuité de l'app publiée). Les identifiants techniques internes ne changent pas : module Odoo `echango_order`, repo GitHub `echangoorder`, noms de branches — "Echango Order" reste le nom de code interne du projet dans ce fichier et dans `status-V1.md`/`docs/`.
+
 ## Stack technique (Phase 1)
 
 - **Frontend mobile** : Flutter (iOS & Android), bilingue FR/AR avec support RTL natif
@@ -88,10 +90,11 @@ Sans ces déclarations, `flutter run` compile mais la demande de permission plan
 
 **Limite d'environnement (sandbox Claude Code)** : pas d'accès au SDK Flutter/Dart (réseau bloque `storage.googleapis.com`) — ni `flutter create`, ni `analyze`/`run`/`test` possibles ici. `mobile/android/`/`mobile/ios/` n'existent donc pas dans le repo : après avoir récupéré du code Flutter écrit par Claude Code, lancer une fois en local :
 ```powershell
-flutter create --org com.echangoorder .
+flutter create --org com.echangomarket .
 flutter pub get
 flutter analyze
 ```
+**Si `android/`/`ios/` existent déjà en local** (générés lors d'un test réel précédent, sous l'ancien org `com.echangoorder`) : relancer `flutter create --org com.echangomarket .` ne réécrit pas forcément l'`applicationId`/bundle identifier dans des fichiers déjà présents (`android/app/build.gradle`, `ios/Runner.xcodeproj`) — supprimer ces deux dossiers avant de relancer la commande, ou mettre à jour l'identifiant manuellement dedans.
 (`flutter create .` sur un dossier avec `pubspec.yaml` existant n'ajoute que les dossiers de plateforme manquants, ne touche ni `lib/` ni `pubspec.yaml`.) Toute vérification réelle se fait côté utilisateur, qui colle les erreurs dans la conversation.
 
 ## Environnement de dev — backend Odoo

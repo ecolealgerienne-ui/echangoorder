@@ -43,22 +43,22 @@ Future<void> main() async {
       path: 'assets/translations',
       fallbackLocale: const Locale('fr'),
       startLocale: const Locale('fr'),
-      child: EchangoOrderApp(authState: authState, apiClient: apiClient),
+      child: EchangoMarketApp(authState: authState, apiClient: apiClient),
     ),
   );
 }
 
-class EchangoOrderApp extends StatefulWidget {
+class EchangoMarketApp extends StatefulWidget {
   final AuthState authState;
   final OdooApiClient apiClient;
 
-  const EchangoOrderApp({super.key, required this.authState, required this.apiClient});
+  const EchangoMarketApp({super.key, required this.authState, required this.apiClient});
 
   @override
-  State<EchangoOrderApp> createState() => _EchangoOrderAppState();
+  State<EchangoMarketApp> createState() => _EchangoMarketAppState();
 }
 
-class _EchangoOrderAppState extends State<EchangoOrderApp> with WidgetsBindingObserver {
+class _EchangoMarketAppState extends State<EchangoMarketApp> with WidgetsBindingObserver {
   late final CartState _cartState;
   late final CheckoutState _checkoutState;
   late final FavoritesState _favoritesState;
@@ -112,7 +112,7 @@ class _EchangoOrderAppState extends State<EchangoOrderApp> with WidgetsBindingOb
         ChangeNotifierProvider<LocaleState>.value(value: _localeState),
       ],
       child: MaterialApp.router(
-        title: 'Echango Order',
+        title: 'Echango Market',
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(),
         darkTheme: buildAppDarkTheme(),

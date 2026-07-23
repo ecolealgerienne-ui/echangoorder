@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:echango_order/main.dart';
-import 'package:echango_order/services/odoo_api_client.dart';
-import 'package:echango_order/state/auth_state.dart';
+import 'package:echango_market/main.dart';
+import 'package:echango_market/services/odoo_api_client.dart';
+import 'package:echango_market/state/auth_state.dart';
 
 void main() {
   testWidgets('App builds and shows the Vitrine screen without crashing', (tester) async {
@@ -21,11 +21,11 @@ void main() {
         path: 'assets/translations',
         fallbackLocale: const Locale('fr'),
         startLocale: const Locale('fr'),
-        child: EchangoOrderApp(authState: AuthState(prefs), apiClient: OdooApiClient()),
+        child: EchangoMarketApp(authState: AuthState(prefs), apiClient: OdooApiClient()),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(EchangoOrderApp), findsOneWidget);
+    expect(find.byType(EchangoMarketApp), findsOneWidget);
   });
 }
