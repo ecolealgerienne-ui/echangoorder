@@ -92,6 +92,31 @@ class CartState extends ChangeNotifier {
   /// ailleurs dans l'app (cf. CLAUDE.md § Gestion des erreurs).
   Future<void> refresh() async => _applyPayload(await _api.getCart());
 
+  /// Réinitialise l'état localement, SANS appel serveur — bug signalé par
+  /// l'utilisateur (2026-07-23) : `CartBar` continuait d'afficher le total
+  /// d'une commande qui vient d'être confirmée. Cause : le devis passe en
+  /// `state = 'sent'` à la confirmation mais reste volontairement "le
+  /// panier courant" côté serveur (`cart_controller.py._cart_order()`,
+  /// domaine `draft`/`sent` — le client peut encore y ajouter des
+  /// articles tant qu'un opérateur ne l'a pas pris en charge, voir
+  /// CLAUDE.md § Statuts de commande). Un `refresh()` juste après la
+  /// confirmation re-décrit donc cette même commande (même en apparence
+  /// un résidu, alors que c'est la définition serveur qui s'applique
+  /// correctement) — décision produit : l'app doit quand même la traiter
+  /// comme "panier vide" immédiatement après confirmation, uniquement
+  /// côté affichage. Le prochain vrai ajout resynchronise l'état correct
+  /// via `add()` (qui retourne toujours le panier serveur à jour, y
+  /// compris les articles de la commande déjà confirmée si le client en
+  /// ajoute un nouveau) — aucun risque de désynchronisation durable.
+  void clearLocally() {
+    _lines = [];
+    _amountSubtotal = 0;
+    _amountTotal = 0;
+    _discount = 0;
+    _verificationState = null;
+    notifyListeners();
+  }
+
   Future<void> add({required int productId, num qty = 1, int? variantId}) async =>
       _applyPayload(await _api.addToCart(productId: productId, qty: qty, variantId: variantId));
 

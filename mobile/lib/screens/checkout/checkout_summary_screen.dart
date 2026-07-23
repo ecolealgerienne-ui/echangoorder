@@ -88,7 +88,7 @@ class _CheckoutSummaryScreenState extends State<CheckoutSummaryScreen> {
             notes: mode == ReceptionMode.delivery ? checkout.notes : null,
           );
       if (!mounted) return;
-      await context.read<CartState>().refresh();
+      context.read<CartState>().clearLocally();
       if (!mounted) return;
       context.read<CheckoutState>().reset();
       context.go('/cart/checkout/confirmation/${result['order_ref']}', extra: result);

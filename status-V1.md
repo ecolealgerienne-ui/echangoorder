@@ -2,9 +2,11 @@
 
 Suivi de l'avancement. Statuts : `Non démarré` · `En cours` · `Bloqué` · `Terminé`. Pour les décisions produit et leur justification, voir `CLAUDE.md` (ce fichier ne garde que l'état courant, pas l'historique du raisonnement).
 
-Dernière mise à jour : 2026-07-22
+Dernière mise à jour : 2026-07-23
 
 **État actuel** : Phase 1 (F00-F17) fonctionnellement close et validée en réel par l'utilisateur. Chantier design "Casbah" + simplification de navigation livrés et validés (§3). Phase 1.5 (F11/F12) en attente du déploiement VPS (§2). Nouveau chantier Phase 2 en cours : préparation groupée des commandes, backend livré, débogage en cours en test réel (§4).
+
+**🐛 Bug signalé par l'utilisateur et corrigé (2026-07-23)** : `CartBar` continuait d'afficher le total d'une commande qui vient d'être confirmée, en naviguant sur "Mes commandes". Pas un résidu — le devis passe en `state='sent'` à la confirmation mais reste volontairement "le panier courant" côté serveur (`cart_controller.py._cart_order()`, domaine `draft`/`sent`, voir CLAUDE.md § Statuts de commande) pour permettre d'y ajouter des articles tant qu'un opérateur ne l'a pas pris en charge. Décision produit (2026-07-23, après clarification) : l'app doit quand même l'afficher comme panier vide immédiatement après confirmation, sans changer ce comportement serveur. `CartState.clearLocally()` (nouveau, réinitialise l'état en mémoire sans appel serveur) appelé à la place de `refresh()` juste après une confirmation réussie (`checkout_summary_screen.dart`) — un ajout ultérieur resynchronise l'état correct via `add()`. **Non testé en réel.**
 
 ## 1. Fonctionnalités Phase 1 (F00–F17)
 
